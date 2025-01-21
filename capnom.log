@@ -1,0 +1,4 @@
+Línea 25: la clase MSComctlLib.ProgressBar del control ProgressBar1 no era una clase de control cargada.
+Línea 36: la clase MSComDlg.CommonDialog del control excel no era una clase de control cargada.
+Línea 43: la clase MSComDlg.CommonDialog del control CommonDialog1 no era una clase de control cargada.
+Línea 82: la clase MSFlexGridLib.MSFlexGrid del control ConNom1 no era una clase de control cargada.

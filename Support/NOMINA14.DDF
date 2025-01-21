@@ -1,0 +1,51 @@
+.OPTION EXPLICIT
+.Set Cabinet=off
+.Set Compress=off
+.Set MaxDiskSize=CDROM
+.Set ReservePerCabinetSize=6144
+.Set DiskDirectoryTemplate=".."
+.Set CompressionType=MSZIP
+.Set CompressionLevel=7
+.Set CompressionMemory=21
+.Set CabinetNameTemplate="Nomina2017.CAB"
+"Setup.Lst"
+"setup.exe"
+.Set Cabinet=on
+.Set Compress=on
+"Nomina2017.exe"
+"msvbvm60.dll"
+"oleaut32.dll"
+"olepro32.dll"
+"asycfilt.dll"
+"stdole2.tlb"
+"COMCAT.DLL"
+"VB6ES.DLL"
+"MSO.DLL"
+"EXCEL.EXE"
+"DBLIST32.OCX"
+"DBLSTES.DLL"
+"MSADODC.OCX"
+"msstdfmt.dll"
+"STDFTES.DLL"
+"ADODCES.DLL"
+"MSDATGRD.OCX"
+"DATGDES.DLL"
+"MSDATLST.OCX"
+"DATLSES.DLL"
+"ComDlg32.OCX"
+"CMDLGES.DLL"
+"MSFLXGRD.OCX"
+"FLXGDES.DLL"
+"MSHFLXGD.OCX"
+"MSHFGES.DLL"
+"OWC10.DLL"
+"RICHTX32.OCX"
+"RICHED32.DLL"
+"RCHTXES.DLL"
+"TABCTL32.OCX"
+"TABCTES.DLL"
+"mscomctl.OCX"
+"MSCMCES.DLL"
+"SETUP1.EXE"
+"VB6STKIT.DLL"
+"ST6UNST.EXE"

@@ -1,0 +1,211 @@
+[Root]
+Most Recent Package=Paquete de instalación estándar 2
+
+[Package|Paquete de instalación estándar 1|Root]
+SubWizProgID=PDWizard.SetupPkgSubWiz
+BuildFolder=a:\
+
+[Package|Paquete de instalación estándar 1|Configure DAO ISAMs]
+Applicable=No
+
+[Package|Paquete de instalación estándar 1|Configure DAO ODBC]
+JetWorkspace=
+ODBCDirect=
+
+[Package|Paquete de instalación estándar 1|Files Found]
+
+[Package|Paquete de instalación estándar 1|Files Released]
+
+[Package|Paquete de instalación estándar 1|Missing Dependency Information]
+
+[Package|Paquete de instalación estándar 1|Out-of-Date Dependency Information]
+C:\windows\system\MSFLXGRD.OCX=
+
+[Package|Paquete de instalación estándar 1|Files Added]
+
+[Package|Paquete de instalación estándar 1|Files Removed]
+
+[Package|Paquete de instalación estándar 1|Files In Project]
+C:\progvb\nomina1.exe=Yes
+C:\windows\system\MSVBVM60.DLL=Yes
+C:\windows\system\OLEAUT32.DLL=Yes
+C:\windows\system\OLEPRO32.DLL=Yes
+C:\windows\system\ASYCFILT.DLL=Yes
+C:\windows\system\STDOLE2.TLB=Yes
+C:\Archivos de programa\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\COMCAT.DLL=Yes
+C:\windows\system\VB6ES.DLL=Yes
+C:\windows\system\TABCTL32.OCX=Yes
+C:\windows\system\TABCTES.DLL=Yes
+C:\windows\system\MSFLXGRD.OCX=Yes
+C:\windows\system\FLXGDES.DLL=Yes
+C:\windows\system\DBLIST32.OCX=Yes
+C:\windows\system\DBLSTES.DLL=Yes
+C:\windows\system\ComDlg32.ocx=Yes
+C:\windows\system\CMDLGES.DLL=Yes
+C:\windows\system\MSCOMCTL.OCX=Yes
+C:\windows\system\MSCMCES.DLL=Yes
+C:\Archivos de programa\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP.EXE=Yes
+C:\Archivos de programa\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP1.EXE=Yes
+C:\windows\system\VB6STKIT.DLL=Yes
+C:\Archivos de programa\Microsoft Visual Studio\VB98\Wizards\PDWizard\ST6UNST.EXE=Yes
+
+[Package|Paquete de instalación estándar 1|Configure Registry Files]
+Applicable=No
+
+[Package|Paquete de instalación estándar 1|Configure Remote Servers]
+Applicable=No
+
+[Package|Paquete de instalación estándar 1|Install Locations]
+C:\progvb\nomina1.exe=$(AppPath)
+C:\windows\system\MSVBVM60.DLL=$(WinSysPathSysFile)
+C:\windows\system\OLEAUT32.DLL=$(WinSysPathSysFile)
+C:\windows\system\OLEPRO32.DLL=$(WinSysPathSysFile)
+C:\windows\system\ASYCFILT.DLL=$(WinSysPathSysFile)
+C:\windows\system\STDOLE2.TLB=$(WinSysPathSysFile)
+C:\Archivos de programa\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\COMCAT.DLL=$(WinSysPathSysFile)
+C:\windows\system\VB6ES.DLL=$(WinSysPath)
+C:\windows\system\TABCTL32.OCX=$(WinSysPath)
+C:\windows\system\TABCTES.DLL=$(WinSysPath)
+C:\windows\system\MSFLXGRD.OCX=$(WinSysPath)
+C:\windows\system\FLXGDES.DLL=$(WinSysPath)
+C:\windows\system\DBLIST32.OCX=$(WinSysPath)
+C:\windows\system\DBLSTES.DLL=$(WinSysPath)
+C:\windows\system\ComDlg32.ocx=$(WinSysPath)
+C:\windows\system\CMDLGES.DLL=$(WinSysPath)
+C:\windows\system\MSCOMCTL.OCX=$(WinSysPath)
+C:\windows\system\MSCMCES.DLL=$(WinSysPath)
+C:\Archivos de programa\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP.EXE=$(AppPath)
+C:\Archivos de programa\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP1.EXE=$(WinPath)
+C:\windows\system\VB6STKIT.DLL=$(WinSysPathSysFile)
+C:\Archivos de programa\Microsoft Visual Studio\VB98\Wizards\PDWizard\ST6UNST.EXE=$(WinPath)
+
+[Package|Paquete de instalación estándar 1|Configure Shared Files]
+Applicable=Yes
+C:\progvb\nomina1.exe=Yes
+
+[Package|Paquete de instalación estándar 1|Distribution]
+Type=single
+Size=
+Title=nomina1
+
+[Package|Paquete de instalación estándar 1|IconGroups]
+Group0=nomina1
+PrivateGroup0=Verdadero
+Parent0=$(Programs)
+
+[Package|Paquete de instalación estándar 1|nomina1]
+Icon1=nomina1.exe
+Title1=nomina1
+StartIn1=$(AppPath)
+Key1=Icon1
+
+
+[Package|Paquete de instalación estándar 2|Root]
+SubWizProgID=PDWizard.SetupPkgSubWiz
+BuildFolder=C:\progvb\NOMINA\Paquete
+
+[Package|Paquete de instalación estándar 2|Configure DAO ISAMs]
+Applicable=No
+
+[Package|Paquete de instalación estándar 2|Configure DAO ODBC]
+JetWorkspace=
+ODBCDirect=
+
+[Package|Paquete de instalación estándar 2|Files Found]
+
+[Package|Paquete de instalación estándar 2|Files Released]
+
+[Package|Paquete de instalación estándar 2|Missing Dependency Information]
+
+[Package|Paquete de instalación estándar 2|Out-of-Date Dependency Information]
+C:\windows\system\MSFLXGRD.OCX=
+
+[Package|Paquete de instalación estándar 2|Files Added]
+
+[Package|Paquete de instalación estándar 2|Files Removed]
+
+[Package|Paquete de instalación estándar 2|Files In Project]
+C:\progvb\nomina1.exe=Yes
+C:\windows\system\MSVBVM60.DLL=Yes
+C:\windows\system\OLEAUT32.DLL=Yes
+C:\windows\system\OLEPRO32.DLL=Yes
+C:\windows\system\ASYCFILT.DLL=Yes
+C:\windows\system\STDOLE2.TLB=Yes
+C:\Archivos de programa\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\COMCAT.DLL=Yes
+C:\windows\system\VB6ES.DLL=Yes
+C:\windows\system\TABCTL32.OCX=Yes
+C:\windows\system\TABCTES.DLL=Yes
+C:\windows\system\MSFLXGRD.OCX=Yes
+C:\windows\system\FLXGDES.DLL=Yes
+C:\windows\system\DBLIST32.OCX=Yes
+C:\windows\system\DBLSTES.DLL=Yes
+C:\windows\system\ComDlg32.ocx=Yes
+C:\windows\system\CMDLGES.DLL=Yes
+C:\windows\system\MSCOMCTL.OCX=Yes
+C:\windows\system\MSCMCES.DLL=Yes
+C:\Archivos de programa\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP.EXE=Yes
+C:\Archivos de programa\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP1.EXE=Yes
+C:\windows\system\VB6STKIT.DLL=Yes
+C:\Archivos de programa\Microsoft Visual Studio\VB98\Wizards\PDWizard\ST6UNST.EXE=Yes
+
+[Package|Paquete de instalación estándar 2|Configure Registry Files]
+Applicable=No
+
+[Package|Paquete de instalación estándar 2|Configure Remote Servers]
+Applicable=No
+
+[Package|Paquete de instalación estándar 2|Install Locations]
+C:\progvb\nomina1.exe=$(AppPath)
+C:\windows\system\MSVBVM60.DLL=$(WinSysPathSysFile)
+C:\windows\system\OLEAUT32.DLL=$(WinSysPathSysFile)
+C:\windows\system\OLEPRO32.DLL=$(WinSysPathSysFile)
+C:\windows\system\ASYCFILT.DLL=$(WinSysPathSysFile)
+C:\windows\system\STDOLE2.TLB=$(WinSysPathSysFile)
+C:\Archivos de programa\Microsoft Visual Studio\VB98\Wizards\PDWizard\Redist\COMCAT.DLL=$(WinSysPathSysFile)
+C:\windows\system\VB6ES.DLL=$(WinSysPath)
+C:\windows\system\TABCTL32.OCX=$(WinSysPath)
+C:\windows\system\TABCTES.DLL=$(WinSysPath)
+C:\windows\system\MSFLXGRD.OCX=$(WinSysPath)
+C:\windows\system\FLXGDES.DLL=$(WinSysPath)
+C:\windows\system\DBLIST32.OCX=$(WinSysPath)
+C:\windows\system\DBLSTES.DLL=$(WinSysPath)
+C:\windows\system\ComDlg32.ocx=$(WinSysPath)
+C:\windows\system\CMDLGES.DLL=$(WinSysPath)
+C:\windows\system\MSCOMCTL.OCX=$(WinSysPath)
+C:\windows\system\MSCMCES.DLL=$(WinSysPath)
+C:\Archivos de programa\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP.EXE=$(AppPath)
+C:\Archivos de programa\Microsoft Visual Studio\VB98\Wizards\PDWizard\SETUP1.EXE=$(WinPath)
+C:\windows\system\VB6STKIT.DLL=$(WinSysPathSysFile)
+C:\Archivos de programa\Microsoft Visual Studio\VB98\Wizards\PDWizard\ST6UNST.EXE=$(WinPath)
+
+[Package|Paquete de instalación estándar 2|Configure Shared Files]
+Applicable=Yes
+C:\progvb\nomina1.exe=Yes
+
+[Package|Paquete de instalación estándar 2|Distribution]
+Type=multi
+Size=1.44 MB
+Title=nomina1
+
+[Package|Paquete de instalación estándar 2|IconGroups]
+Group0=nomina1
+PrivateGroup0=Verdadero
+Parent0=$(Programs)
+
+[Package|Paquete de instalación estándar 2|nomina1]
+Icon1=nomina1.exe
+Title1=nomina1
+StartIn1=$(AppPath)
+Key1=Icon1
+
+[Package|Paquete de instalación estándar 2|Package]
+PackageFolder=C:\progvb\NOMINA\Paquete
+ProjectFolder=C:\progvb\NOMINA
+ServerSideCab=
+File1=C:\progvb\NOMINA\Paquete\setup.exe
+File2=C:\progvb\NOMINA\Paquete\Setup.Lst
+File3=C:\progvb\NOMINA\Paquete\nomina1.CAB
+File4=C:\progvb\NOMINA\Paquete\nomina2.CAB
+Handler1=PDWizard.FloppyDplySubWiz
+Handler2=PDWizard.FolderDplySubWiz
+Handler3=PDWizard.WebPostDplySubWiz

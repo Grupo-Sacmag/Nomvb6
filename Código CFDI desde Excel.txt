@@ -1,0 +1,84 @@
+'''''''Nuevo código para capturar cfdi directo de excel SUA''''''
+
+Dim oRS As New ADODB.Recordset
+Dim oConn As New ADODB.Connection
+'Abrir excel
+    With excel1
+        .CancelError = True
+        On Error GoTo ErrHandler
+        '.ShowOpen
+    End With
+    'If (Excel.FileName <> "") Then
+    oConn.Open "Provider=Microsoft.ACE.OLEDB.12.0;" & _
+                "data source= ""cedula oportuno obr-pat_gbl.xls""; " & _
+                "Extended Properties= ""Excel 8.0;HDR=Yes"""
+    Set oRS = New ADODB.Recordset
+    With oRS
+        .CursorLocation = adUseClient
+        .CursorType = adOpenStatic
+        .LockType = adLockOptimistic
+    End With
+    oRS.Open "SELECT * FROM [Cedula Oportuno Obr-Pat_gbl.Rpt$]", oConn, , , adCmdText
+    'Llamar funcion para llenar flexgrid
+    Call Llenar_FlexGrid(oConn, oRS)
+    'End If
+    Sua.Cols = 6
+    'Depurar excel
+    '2 quitar filas que no sirven que no estan en blanco
+    For n = 0 To 19
+        Sua.RemoveItem 1
+    Next
+    For i = Sua.Rows - 1 To Sua.FixedRows Step -1
+        If (Sua.TextMatrix(i, 4) = "" Or IsNull(Sua.TextMatrix(i, 4))) And (Sua.TextMatrix(i, 5) = "" Or IsNull(Sua.TextMatrix(i, 5))) Then
+            Sua.RemoveItem (i)
+        End If
+    Next
+    For n = Sua.Rows - 1 To 0 Step -1
+        If (Sua.TextMatrix(n, 3) = "") Then
+            Sua.RemoveItem (n)
+        Else
+            Exit For
+        End If
+    Next
+    '3Acomodar salarios en la fila correcta
+    Dim Salario(700) As Integer
+    Salario(0) = 0
+    Dim g As Integer
+    g = 1
+    For i = 1 To Sua.Rows - 1
+        If Sua.TextMatrix(i, 5) <> "0" Then
+            Salario(g) = i
+            If Sua.TextMatrix(i - 1, 4) <> "" Then
+                Sua.TextMatrix(Salario(g - 1), 4) = Sua.TextMatrix(i - 1, 4)
+                g = g + 1
+            End If
+        End If
+    Next i
+    Sua.TextMatrix(Salario(g - 1), 4) = Sua.TextMatrix(Sua.Rows - 1, 4)
+    For n = Sua.Rows - 1 To 0 Step -1
+        If (Sua.TextMatrix(n, 5) = "0") Then
+            Sua.RemoveItem (n)
+        End If
+    Next n
+ErrHandler:
+'Agregar SDI-Comparacion para llenar el flexgrid nomcf con los datos del flexgrid sua
+    For i = 1 To NOMCF.Rows - 3
+        For g = 1 To Sua.Rows - 1
+            If (Trim(NOMCF.TextMatrix(i, 2)) = Trim(Sua.TextMatrix(g, 5))) Then
+                NOMCF.TextMatrix(i, 58) = Sua.TextMatrix(g, 4)
+        
+            End If
+        Next g
+    Next i
+
+'LLenar los sdi vacios con 0
+    For i = NOMCF.Rows - 3 To 1 Step -1
+        If (NOMCF.TextMatrix(i, 58) = "" Or IsNull(NOMCF.TextMatrix(i, 58))) Then
+            NOMCF.TextMatrix(i, 58) = Format("0", "#,##0.00")
+        End If
+'Pintar de rojo las filas donde el salario base sea mayor al SDI
+        If (CDbl(Trim(NOMCF.TextMatrix(i, 56))) >= CDbl(Trim(NOMCF.TextMatrix(i, 58)))) Then
+            pintarRojo (i)
+        End If
+    Next i
+    '''''''''''''''''''''Termina nuevo código para capturar cfdi directo de excel SUA'''''''''''''''''''''''''''

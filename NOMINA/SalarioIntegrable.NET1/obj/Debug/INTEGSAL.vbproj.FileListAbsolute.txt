@@ -1,0 +1,10 @@
+C:\2015\PROGVB\NOMINA\SalarioIntegrable.NET1\obj\Debug\Interop.MSAdodcLib.dll
+C:\2015\PROGVB\NOMINA\SalarioIntegrable.NET1\obj\Debug\Interop.MSDataGridLib.dll
+C:\2015\PROGVB\NOMINA\SalarioIntegrable.NET1\obj\Debug\Interop.MSFlexGridLib.dll
+C:\2015\PROGVB\NOMINA\SalarioIntegrable.NET1\obj\Debug\Interop.MSHierarchicalFlexGridLib.dll
+C:\2015\PROGVB\NOMINA\SalarioIntegrable.NET1\obj\Debug\AxInterop.MSDataGridLib.dll
+C:\2015\PROGVB\NOMINA\SalarioIntegrable.NET1\obj\Debug\AxInterop.MSFlexGridLib.dll
+C:\2015\PROGVB\NOMINA\SalarioIntegrable.NET1\obj\Debug\AxInterop.MSHierarchicalFlexGridLib.dll
+C:\2015\PROGVB\NOMINA\SalarioIntegrable.NET1\obj\Debug\SalarioIntegrable.exe
+C:\2015\PROGVB\NOMINA\SalarioIntegrable.NET1\obj\Debug\SalarioIntegrable.xml
+C:\2015\PROGVB\NOMINA\SalarioIntegrable.NET1\obj\Debug\SalarioIntegrable.pdb

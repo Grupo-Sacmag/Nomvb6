@@ -1,0 +1,35 @@
+.OPTION EXPLICIT
+.Set Cabinet=off
+.Set Compress=off
+.Set MaxDiskSize=1457664
+.Set ReservePerCabinetSize=6144
+.Set DiskDirectoryTemplate=".."
+.Set CompressionType=MSZIP
+.Set CompressionLevel=7
+.Set CompressionMemory=21
+.Set CabinetNameTemplate="nomina*.CAB"
+"Setup.Lst"
+"setup.exe"
+.Set Cabinet=on
+.Set Compress=on
+"nomina1.exe"
+"MSVBVM60.DLL"
+"OLEAUT32.DLL"
+"OLEPRO32.DLL"
+"ASYCFILT.DLL"
+"STDOLE2.TLB"
+"COMCAT.DLL"
+"VB6ES.DLL"
+"TABCTL32.OCX"
+"TABCTES.DLL"
+"MSFLXGRD.OCX"
+"FLXGDES.DLL"
+"DBLIST32.OCX"
+"DBLSTES.DLL"
+"ComDlg32.ocx"
+"CMDLGES.DLL"
+"MSCOMCTL.OCX"
+"MSCMCES.DLL"
+"SETUP1.EXE"
+"VB6STKIT.DLL"
+"ST6UNST.EXE"

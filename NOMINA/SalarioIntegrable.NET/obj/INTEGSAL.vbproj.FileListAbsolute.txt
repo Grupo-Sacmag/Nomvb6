@@ -1,0 +1,11 @@
+C:\2011\PROGVB\NOMINA\SalarioIntegrable.NET\obj\Debug\ResolveAssemblyReference.cache
+C:\2011\PROGVB\NOMINA\SalarioIntegrable.NET\obj\Debug\Interop.MSAdodcLib.dll
+C:\2011\PROGVB\NOMINA\SalarioIntegrable.NET\obj\Debug\Interop.MSDataGridLib.dll
+C:\2011\PROGVB\NOMINA\SalarioIntegrable.NET\obj\Debug\Interop.MSFlexGridLib.dll
+C:\2011\PROGVB\NOMINA\SalarioIntegrable.NET\obj\Debug\Interop.MSHierarchicalFlexGridLib.dll
+C:\2011\PROGVB\NOMINA\SalarioIntegrable.NET\obj\Debug\AxInterop.MSDataGridLib.dll
+C:\2011\PROGVB\NOMINA\SalarioIntegrable.NET\obj\Debug\AxInterop.MSFlexGridLib.dll
+C:\2011\PROGVB\NOMINA\SalarioIntegrable.NET\obj\Debug\AxInterop.MSHierarchicalFlexGridLib.dll
+C:\2011\PROGVB\NOMINA\SalarioIntegrable.NET\obj\Debug\INTEGSAL.vbproj.ResolveComReference.cache
+C:\2011\PROGVB\NOMINA\SalarioIntegrable.NET\obj\Debug\SalarioIntegrable.SalInteg.resources
+C:\2011\PROGVB\NOMINA\SalarioIntegrable.NET\obj\Debug\INTEGSAL.vbproj.GenerateResource.Cache
