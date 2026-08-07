@@ -42,6 +42,9 @@ Begin VB.Form PeCfdi
    End
    Begin VB.Menu ArCf 
       Caption         =   "&Archivo"
+      Begin VB.Menu DB 
+         Caption         =   "&DB"
+      End
       Begin VB.Menu ArCfAbr 
          Caption         =   "&Abrir"
       End
@@ -106,7 +109,7 @@ PCpCfdi.Clear: PCpCfdi.Rows = 200: PCpCfdi.Cols = 9: PCpCfdi.FixedCols = 0
 End Sub
 
 Private Sub ArCfAbr_Click()
-   Dim EmpNum As Long, nombre As String, Cadena1
+   Dim EmpNum As Long, Nombre As String, Cadena1
    PCpCfdi.Rows = 1
     Close 1, 2
     
@@ -117,8 +120,8 @@ Private Sub ArCfAbr_Click()
     For i = 1 To cm: Get 2, i, personal: Get 1, i, Empleado_1
     
     If IsNumeric(Empleado_1.Cpostal) Then
-           nombre = (Trim(personal.nom) + " " + Trim(personal.ape1) + " " + Trim(personal.ape2))
-           Cadena1 = Format(i, "####0") & Chr(9) & nombre & Chr(9) & Empleado_1.Direccion _
+           Nombre = (Trim(personal.nom) + " " + Trim(personal.ape1) + " " + Trim(personal.ape2))
+           Cadena1 = Format(i, "####0") & Chr(9) & Nombre & Chr(9) & Empleado_1.Direccion _
                      & Chr(9) & Empleado_1.Colonia & Chr(9) & Empleado_1.Ciudad _
                      & Chr(9) & Empleado_1.Estado & Chr(9) & Empleado_1.Delegacion _
                      & Chr(9) & Empleado_1.Cpostal & Chr(9) & Empleado_1.correo
@@ -155,6 +158,68 @@ Private Sub ArCfSale_Click()
    Close
    Unload PeCfdi
 End Sub
+Private Sub DB_Click()
+    On Error GoTo ErrHandler
+
+    Dim oRS As ADODB.Recordset
+    Dim con As ADODB.Connection
+    Dim sSQL As String
+    Dim abrEmpresa As String
+    Dim i As Integer, j As Integer
+    Dim strconnect As String
+
+    Set oRS = New ADODB.Recordset
+    Set con = New ADODB.Connection
+
+    ' Conexión a SQL Server
+    strconnect = "Provider=SQLOLEDB;Data Source=SQL6012.site4now.net;Initial Catalog=db_a4091b_sacmag"
+    con.Open strconnect, "db_a4091b_sacmag_admin", "Sacmag2020"
+
+    ' Asegurarse de que emp tenga valor
+    If IsNull(emp) Or Trim(emp) = "" Then
+        MsgBox "No se especificó la empresa.", vbExclamation, "Aviso"
+        GoTo CleanUp
+    End If
+
+    ' Construir llamada al procedimiento almacenado
+    sSQL = "EXEC sp_ObtenerDatosSatPorEmpresa '" & Replace(Trim(emp), "'", "''") & "'"
+
+    ' Ejecutar el procedimiento
+    oRS.Open sSQL, con, adOpenStatic, adLockReadOnly
+
+    ' Verificar si hay datos
+    If oRS.EOF Then
+        MsgBox "No se encontraron datos.", vbInformation, "Consulta"
+        GoTo CleanUp
+    End If
+
+    ' Configurar grid
+    PCpCfdi.Rows = 1
+    PCpCfdi.Cols = oRS.Fields.Count
+
+    ' Llenar el MSFlexGrid
+    i = 1
+    Do While Not oRS.EOF
+        PCpCfdi.Rows = PCpCfdi.Rows + 1
+        For j = 0 To oRS.Fields.Count - 1
+            PCpCfdi.TextMatrix(i, j) = oRS.Fields(j).Value & ""
+        Next j
+        oRS.MoveNext
+        i = i + 1
+    Loop
+
+CleanUp:
+    If Not oRS Is Nothing Then If oRS.State = 1 Then oRS.Close
+    If Not con Is Nothing Then If con.State = 1 Then con.Close
+    Set oRS = Nothing
+    Set con = Nothing
+    Exit Sub
+
+ErrHandler:
+    MsgBox "Error " & Err.Number & ": " & Err.Description, vbCritical, "Error"
+    Resume CleanUp
+End Sub
+
 
 Private Sub EdCfCopia_Click()
  Dim Temporal1
@@ -260,6 +325,9 @@ Private Sub Form_Load()
   
     If (UCase(abrEmpresa) = "SACM") Then
         abrEmpresa = "SACMAG"
+    End If
+    If (UCase(abrEmpresa) = "SUPT") Then
+        abrEmpresa = "SUPTER"
     End If
     If (UCase(abrEmpresa) = "COOR") Then
         abrEmpresa = "CORDINA"

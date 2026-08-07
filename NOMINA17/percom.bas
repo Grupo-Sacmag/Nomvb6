@@ -928,34 +928,36 @@ Sub centrar(ancho2, micadena As String, anchototal As Long)
      ancho2 = ancho1 - ancho
 End Sub
 
-Sub factor(antig, facto)
+Sub factor(antig, facto) 'vacaciones 2023
+      
       Select Case antig
         Case 1
-         vac = 1.0458333
+            vac = 1.0493
         Case 2
-         vac = 1.047222
+            vac = 1.0507
         Case 3
-         vac = 1.0486111
+            vac = 1.0521
         Case 4
-         vac = 1.05
-        Case 5 To 9
-         vac = 1.05139
-        Case 10 To 14
-         vac = 1.05278
-        Case 15 To 19
-         vac = 1.05417
-        Case 20 To 24
-         vac = 1.05556
-        Case 25 To 29
-         vac = 1.05694
-        Case 31 To 34
-            vac = 1.05833
-        Case 35 To 39
-            vac = 1.05972
+            vac = 1.0534
+        Case 5
+            vac = 1.0548
+        Case 6 To 10
+            vac = 1.0562
+        Case 11 To 15
+            vac = 1.0575
+        Case 16 To 20
+            vac = 1.0589
+        Case 21 To 25
+            vac = 1.0603
+        Case 26 To 30
+            vac = 1.0616
+        Case 31 To 35
+            vac = 1.063
         Case Else
-            vac = 1.05972
+            vac = 1.063
       End Select
       facto = vac
+
 End Sub
 Sub calculo_compl2(base, impto, psub)
      Close 3: Close 4: Close 5

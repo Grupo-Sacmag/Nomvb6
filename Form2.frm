@@ -349,7 +349,7 @@ Begin VB.Form Form2
          Width           =   2775
       End
       Begin VB.Label Label10 
-         Caption         =   "Viáticos diarios:"
+         Caption         =   "Viaticos diarios:"
          Height          =   255
          Left            =   120
          TabIndex        =   20
@@ -397,7 +397,7 @@ Begin VB.Form Form2
       Width           =   3495
    End
    Begin VB.Menu cedulaFiscal 
-      Caption         =   "Cédula fiscal"
+      Caption         =   "Cedula fiscal"
    End
 End
 Attribute VB_Name = "Form2"
@@ -463,11 +463,11 @@ If KeyAscii = 13 And Text2.Text <> "" Then
     
     Get 4, idNomina, Clbnx
     
-    respuesta = MsgBox("Se eliminará el número de tarjeta: " + Clbnx.Q1 + " , ¿Deseas continuar?", vbOKCancel)
+    respuesta = MsgBox("Se eliminar? el n?mero de tarjeta: " + Clbnx.Q1 + " , ?Deseas continuar?", vbOKCancel)
     
     If respuesta = vbOK Then
-        ' Código para eliminar los datos bancarios
-        respuestaDos = MsgBox("Esta acción es irreversible asegurate de tener un copia del número de tarjeta.", vbOKCancel)
+        ' C?digo para eliminar los datos bancarios
+        respuestaDos = MsgBox("Esta acci?n es irreversible asegurate de tener un copia del n?mero de tarjeta.", vbOKCancel)
         
         If respuestaDos = vbOK Then
 
@@ -475,15 +475,15 @@ If KeyAscii = 13 And Text2.Text <> "" Then
             
             Put 4, idNomina, Clbnx
             
-            MsgBox ("Se elimino el número de tarjeta.")
+            MsgBox ("Se elimino el n?mero de tarjeta.")
             
         ElseIf respuestaDos = vbCancel Then
-            MsgBox "Operación cancelada"
+            MsgBox "Operaci?n cancelada"
         End If
 
     ElseIf respuesta = vbCancel Then
 
-        MsgBox "Operación cancelada."
+        MsgBox "Operaci?n cancelada."
     End If
 
 End If
@@ -495,12 +495,12 @@ Private Sub Text3_Change()
     Dim texto As String
     texto = Text3.Text
     
-    ' Verificar que el texto tiene más de 3 caracteres
+    ' Verificar que el texto tiene m?s de 3 caracteres
     If Len(texto) > 3 Then
-        ' Copiar el texto en Text2 menos los últimos 3 caracteres
+        ' Copiar el texto en Text2 menos los ?ltimos 3 caracteres
         Text4.Text = Left(texto, Len(texto) - 3)
     Else
-        ' Si el texto tiene 3 o menos caracteres, Text2 será vacío
+        ' Si el texto tiene 3 o menos caracteres, Text2 ser? vac?o
         Text4.Text = ""
     End If
     
@@ -523,31 +523,28 @@ End Sub
 
 
 Sub calcularSalarioDiario()
-Dim anoIngreso As Integer
 Dim antiguedad As Integer
 Dim facto As Double
 Dim totalIngr As Currency
 
-    anoIngreso = Val(Mid$(Text1.Text, 7, 4))
-    
-        antiguedad = empresa.ao + 2 - anoIngreso
-        facto = 0
-        totalIngr = 0
-         
-        If IsNumeric(Text9.Text) Then totalIngr = totalIngr + Text9.Text
-        If IsNumeric(Text10.Text) Then totalIngr = totalIngr + Text10.Text
-        If IsNumeric(Text11.Text) Then totalIngr = totalIngr + Text11.Text
-         
-        factor antiguedad, facto
-         
-        Text12.Text = Format((totalIngr * facto), z1$)
-         
-        If IsNumeric(Text12.Text) Then
-            If Text12.Text > (25 * empresa.sm) Then
-                Text12.Text = Format((25 * empresa.sm), z1$)
-            End If
+    antiguedad = CalcularAntiguedad(Text1.Text)
+    facto = 0
+    totalIngr = 0
+     
+    If IsNumeric(Text9.Text) Then totalIngr = totalIngr + Text9.Text
+    If IsNumeric(Text10.Text) Then totalIngr = totalIngr + Text10.Text
+    If IsNumeric(Text11.Text) Then totalIngr = totalIngr + Text11.Text
+     
+    factor antiguedad, facto
+     
+    Text12.Text = Format((totalIngr * facto), z1$)
+     
+    If IsNumeric(Text12.Text) Then
+        If Text12.Text > (25 * empresa.sm) Then
+            Text12.Text = Format((25 * empresa.sm), z1$)
         End If
-        
+    End If
+    
 End Sub
 
 Private Sub cedulaFiscal_Click()
@@ -571,10 +568,10 @@ Private Sub eliminarRegistro()
     Dim countMaestro As Integer
     
     ' Pregunta al usuario si desea eliminar el registro
-    respuesta = MsgBox("¿Desea eliminar el registro?", vbYesNo + vbQuestion, "Confirmar eliminación")
+    respuesta = MsgBox("?Desea eliminar el registro?", vbYesNo + vbQuestion, "Confirmar eliminaci?n")
 
     If respuesta = vbNo Then
-        MsgBox "Operación cancelada.", vbInformation
+        MsgBox "Operaci?n cancelada.", vbInformation
         Exit Sub
     End If
 
@@ -653,7 +650,7 @@ Private Sub eliminarRegistro()
     Close 3
     Close 8
     
-    MsgBox "Registro eliminado con éxito.", vbInformation
+    MsgBox "Registro eliminado con ?xito.", vbInformation
     limpiarCampos
 End Sub
 Private Sub limpiarCampos()
@@ -682,9 +679,13 @@ Dim largoArticulo As Double
 
 On Error GoTo Error:
 
-    Dim salarioDiario As Currency: salarioDiario = 0: salarioDiario = CCur(Text9.Text)
-    Dim viaticosDiarios As Currency: viaticosDiarios = 0: viaticosDiarios = CCur(Text10.Text)
-    Dim otrosDiarios As Currency: otrosDiarios = 0: otrosDiarios = CCur(Text11.Text)
+    Dim salarioDiario As Currency: salarioDiario = 0
+    Dim viaticosDiarios As Currency: viaticosDiarios = 0
+    Dim otrosDiarios As Currency: otrosDiarios = 0
+    
+    If IsNumeric(Text9.Text) Then salarioDiario = CCur(Text9.Text)
+    If IsNumeric(Text10.Text) Then viaticosDiarios = CCur(Text10.Text)
+    If IsNumeric(Text11.Text) Then otrosDiarios = CCur(Text11.Text)
 
     ingresoTotal = salarioDiario + viaticosDiarios + otrosDiarios
     ingresoTotal = ingresoTotal * 30
@@ -717,21 +718,21 @@ Public Sub cargarEmpleado(id As Integer)
     Text16.Text = id
     
     ' FECHA ALTA
-    Text1.Text = personal.fal
+    Text1.Text = Trim(personal.fal)
     ' FECHA BAJA
-    Text2.Text = personal.fab
+    Text2.Text = Trim(personal.fab)
     ' RFC
-    Text3.Text = personal.RFC
+    Text3.Text = Trim(personal.RFC)
     ' CURP
-    Text4.Text = Otros_Rgtros.curp
+    Text4.Text = Trim(Otros_Rgtros.curp)
     ' NOMBRE
-    Text5.Text = personal.nom
+    Text5.Text = Trim(personal.nom)
     ' APELLIDO P
-    Text6.Text = personal.ape1
+    Text6.Text = Trim(personal.ape1)
     ' APELLIDO M
-    Text7.Text = personal.ape2
+    Text7.Text = Trim(personal.ape2)
     ' NUMERO SS
-    Text8.Text = personal.imss
+    Text8.Text = Replace(Trim(personal.imss), "-", "")
     ' INGRESO DIARIO NORMAL
     Text9.Text = personal.ingr
     ' O.F DIARIOS
@@ -752,7 +753,7 @@ Private Sub Command1_Click()
     Dim camposValidos As Boolean
     Dim noDuplicado As Boolean
     
-    ' Verificar campos vacíos y establecer la bandera correspondiente
+    ' Verificar campos vac?os y establecer la bandera correspondiente
     verificarCamposVacios
     sinCamposVacios = Not algunCampoVacioGlobal
     
@@ -820,7 +821,7 @@ Private Sub ValidarCampos()
     
     fechaValida = IsValidDate(Text1.Text)
     
-    If Text2.Text = "" Then
+    If Trim(Text2.Text) = "" Then
         fechaOpcionalValida = True
     Else
         fechaOpcionalValida = IsValidDate(Text2.Text)
@@ -859,10 +860,10 @@ End Sub
 
 Private Sub actualizarRegistro()
     Dim respuesta As VbMsgBoxResult
-    respuesta = MsgBox("¿Desea actualizar los registros?", vbYesNo + vbQuestion, "Confirmar actualización")
+    respuesta = MsgBox("?Desea actualizar los registros?", vbYesNo + vbQuestion, "Confirmar actualizaci?n")
 
     If respuesta = vbNo Then
-        MsgBox "Operación cancelada.", vbInformation
+        MsgBox "Operaci?n cancelada.", vbInformation
         Exit Sub
     End If
 
@@ -872,7 +873,7 @@ End Sub
 
 Private Sub guardarRegistro()
 
-Close "Bnxcla.dno"
+Close 4
 On Error GoTo manejador
     Dim registro As Integer
     registro = Val(Text16.Text)
@@ -884,13 +885,13 @@ On Error GoTo manejador
     personal.nom = Text5.Text
     personal.ape1 = Text6.Text
     personal.ape2 = Text7.Text
-    personal.imss = Text8.Text
-    personal.ingr = Text9.Text
-    personal.viat = Text10.Text
-    personal.otras = Text11.Text
-    personal.integrado = Text12.Text
-    maestro.O_1 = Text13.Text
-    maestro.por_1 = Text14.Text
+    personal.imss = Replace(Text8.Text, "-", "")
+    If IsNumeric(Text9.Text) Then personal.ingr = Text9.Text Else personal.ingr = 0
+    If IsNumeric(Text10.Text) Then personal.viat = Text10.Text Else personal.viat = 0
+    If IsNumeric(Text11.Text) Then personal.otras = Text11.Text Else personal.otras = 0
+    If IsNumeric(Text12.Text) Then personal.integrado = Text12.Text Else personal.integrado = 0
+    If IsNumeric(Text13.Text) Then maestro.O_1 = Text13.Text Else maestro.O_1 = 0
+    If IsNumeric(Text14.Text) Then maestro.por_1 = Text14.Text Else maestro.por_1 = 0
      
     Put 2, registro, personal
     Put 3, registro, Otros_Rgtros
@@ -899,9 +900,15 @@ On Error GoTo manejador
     MsgBox "Se guardó con éxito."
     
     limpiarCampos
+    Exit Sub
     
 manejador:
-    MsgBox (Err.Number & "" & Err.Description)
+    If Err.Number = 13 Then
+        MsgBox "Error 13: Error de tipo." & vbCrLf & _
+               "Por favor, asegúrese de que los campos numéricos (Sueldo Diario, Viáticos, Otras Percepciones, Número de Obra, Porcentaje) no estén vacíos y contengan únicamente números.", vbCritical, "Error de Validación de Datos"
+    Else
+        MsgBox "Error " & Err.Number & ": " & Err.Description, vbCritical, "Error al Guardar"
+    End If
 End Sub
 
 Private Function IsValidDate(ByVal fecha As String) As Boolean
@@ -919,10 +926,10 @@ Private Function IsValidCURP(ByVal curp As String) As Boolean
     Dim regex As Object
     Set regex = CreateObject("VBScript.RegExp")
     
-    ' Patrón de expresión regular para validar CURP
+    ' Patr?n de expresi?n regular para validar CURP
     regex.Pattern = "^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[0-9]{2}$"
     
-    ' Aplicar la expresión regular a la cadena CURP
+    ' Aplicar la expresi?n regular a la cadena CURP
     IsValidCURP = regex.Test(curp)
 End Function
 

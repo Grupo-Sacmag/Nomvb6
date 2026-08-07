@@ -181,9 +181,11 @@ Type CAT_AX
     C4 As String * 5
     C5 As String * 5
 End Type
+Rem es la tarjeta banamex
 Type Clabnx
     Q1 As String * 16
- End Type
+End Type
+ 
  Type da_id
        Emp_Rfc As String * 25
        Emp_Dom As String * 70
@@ -193,7 +195,7 @@ Type Clabnx
        Rep_Rfc As String * 25
        Rep_Curp As String * 25
        suc As String * 4
-       cta As String * 12
+       CTA As String * 12
        dias As Integer
        clte As String * 12
   End Type
@@ -202,7 +204,7 @@ Type Clabnx
      ubi As Integer
      renglon As Long
      texto As String
-     Poliza As Integer
+     poliza As Integer
      Impresion As Integer
  End Type
  Type refo
@@ -623,14 +625,14 @@ Sub calculo(base, impto, psub)
      
     If Form8.Option4.Value = True Then 'Retencion mensual
         mesNomina = Trim(Left(Form8.Combo1.Text, 3))
-        AñoNomina = Right(Trim(Form8.Label7.Caption), 4)
+        Aï¿½oNomina = Right(Trim(Form8.Label7.Caption), 4)
         Close 35
-        Open CStr(Trim(Form1.Dir1)) + "\" + mesNomina + "1" + AñoNomina + ".NOM" For Random As 35 Len = Len(nomina)
+        Open CStr(Trim(Form1.Dir1)) + "\" + mesNomina + "1" + Aï¿½oNomina + ".NOM" For Random As 35 Len = Len(nomina)
         Get 35, regtro, nomina
         IngresosAnteriores = nomina.sueldo + nomina.hs_nor + nomina.hs_dbl + nomina.hs_tri + nomina.aguin + nomina.ptu + nomina.viaticos + nomina.pvac + nomina.otras '+ nomina.exentos
         ImpuestoAnteriorRetenido = nomina.ispt
         Close 35: Close 36
-        Open CStr(Trim(Form1.Dir1)) + "\" + mesNomina + "1" + AñoNomina + ".cmp" For Random As 36 Len = Len(nom_com)
+        Open CStr(Trim(Form1.Dir1)) + "\" + mesNomina + "1" + Aï¿½oNomina + ".cmp" For Random As 36 Len = Len(nom_com)
         Get 36, regtro, nom_com
         ImpuestoAnteriorTotal = nom_com.ImpTot
         subsidioCausado = nom_com.subapl
@@ -762,9 +764,11 @@ Sub factor(antig, facto) 'vacaciones 2023
         Case 26 To 30
             vac = 1.0616
         Case 31 To 35
-            vac = 1.063
+            vac = 1.0769
+        Case 36 To 40
+            vac = 1.0923    
         Case Else
-            vac = 1.063
+            vac = 1.1077
       End Select
       facto = vac
 
@@ -864,3 +868,87 @@ Else
   
 
 
+
+
+Public Function CalcularAntiguedad(ByVal fechaAlta As String) As Integer
+    On Error GoTo error_handler
+    
+    Dim dIngr As Integer, mIngr As Integer, yIngr As Integer
+    Dim dCalc As Integer, mCalc As Integer, yCalc As Integer
+    Dim antig As Integer
+    
+    ' Parsear fecha de ingreso (dd/mm/yyyy)
+    dIngr = Val(Left$(fechaAlta, 2))
+    mIngr = Val(Mid$(fechaAlta, 4, 2))
+    yIngr = Val(Mid$(fechaAlta, 7, 4))
+    
+    If yIngr < 1900 Then
+        CalcularAntiguedad = 1
+        Exit Function
+    End If
+    
+    ' Valores por defecto
+    dCalc = 0
+    mCalc = 0
+    yCalc = empresa.ao
+    
+    ' Intentar obtener la fecha seleccionada en la pantalla de captura (Form8)
+    On Error Resume Next
+    If Form8.Combo1.ListIndex >= 0 Then
+        mCalc = Form8.Combo1.ListIndex + 1
+        If Form8.Option3.Value = True Then
+            dCalc = 15
+        Else
+            dCalc = 30
+        End If
+    End If
+    On Error GoTo error_handler
+    
+    ' Si no esta cargada la pantalla o no hay seleccion valida, tomar fecha de la PC
+    If mCalc <= 0 Or dCalc <= 0 Then
+        dCalc = Day(Date)
+        mCalc = Month(Date)
+    End If
+    
+    If yCalc < 1900 Then yCalc = Year(Date)
+    
+    ' Calculo de anos por calendario
+    antig = yCalc - yIngr
+    
+    ' Ajustar (restar 1 ano) si no ha llegado su dia de aniversario en este ano de nomina (anos de aniversario reales)
+    If mCalc < mIngr Then
+        antig = antig - 1
+    ElseIf mCalc = mIngr And dCalc < dIngr Then
+        antig = antig - 1
+    End If
+    
+    ' Sumar 1 ano a los anos completos de aniversario reales
+    antig = antig + 1
+    
+    ' Regla de minimo 1 ano (para evitar anos negativos por entradas invalidas)
+    If antig < 1 Then antig = 1
+    
+    CalcularAntiguedad = antig
+    
+    On Error Resume Next
+    Dim fNum As Integer
+    fNum = FreeFile
+    Open "c:\Users\david.albino\Desktop\debug_antiguedad.txt" For Append As fNum
+    Print #fNum, "FechaAlta=" & fechaAlta & " dCalc=" & dCalc & " mCalc=" & mCalc & " yCalc=" & yCalc & " antig=" & antig
+    Close fNum
+    On Error GoTo error_handler
+    
+    Exit Function
+
+error_handler:
+    ' En caso de cualquier error imprevisto, regresar calculo basico por ano
+    Dim yea As Integer
+    yea = Val(Mid$(fechaAlta, 7, 4))
+    If yea > 0 Then
+        antig = yCalc - yea
+        If antig < 1 Then antig = 1
+        CalcularAntiguedad = antig
+    Else
+        CalcularAntiguedad = 1
+    End If
+End Function

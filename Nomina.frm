@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{F9043C88-F6F2-101A-A3C9-08002B2F49FB}#1.2#0"; "ComDlg32.OCX"
+Object = "{F9043C88-F6F2-101A-A3C9-08002B2F49FB}#1.2#0"; "comdlg32.ocx"
 Begin VB.Form Form1 
    Caption         =   "Nomina:"
    ClientHeight    =   7530
@@ -526,22 +526,23 @@ Private Sub empcom_Click()
 End Sub
 
 Private Sub File1_KeyPress(KeyAscii As Integer)
-Dim archivoDirectorio As String
-
-    If KeyAscii = 13 Then
-        archivoDirectorio = File1.FileName
-        If archivoDirecto <> " " Then
-            Form1.Hide
-            Form8.Show
-            Form8.Option2 = True
-            Form8.presionarOption2
-            Form8.Text1.Text = Left(archivoDirectorio, Len(archivoDirectorio) - 4)
-            Form8.presionarEnterForm8
-            Form8.main
-        End If
-    End If
-    
-End Sub
+  Dim archivoDirectorio As String
+  
+      If KeyAscii = 13 Then
+          archivoDirectorio = File1.FileName
+          If archivoDirectorio <> "" Then
+              On Error Resume Next
+              ChDrive File1.Path
+              ChDir File1.Path
+              On Error GoTo 0
+              Form1.Hide
+              Load FormViewer
+              FormViewer.Show
+              FormViewer.LoadPayroll File1.Path & "\" & archivoDirectorio
+          End If
+      End If
+      
+  End Sub
 
 Private Sub NomAcu_Click(Index As Integer)
   Unload Form1

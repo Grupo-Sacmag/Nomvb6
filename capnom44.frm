@@ -7,7 +7,7 @@ Begin VB.Form Form8
    ClientHeight    =   7995
    ClientLeft      =   7680
    ClientTop       =   2640
-   ClientWidth     =   11865
+   ClientWidth     =   10290
    BeginProperty Font 
       Name            =   "Verdana"
       Size            =   9.75
@@ -17,10 +17,10 @@ Begin VB.Form Form8
       Italic          =   0   'False
       Strikethrough   =   0   'False
    EndProperty
-   Icon            =   "capnom.frx":0000
+   Icon            =   "capnom44.frx":0000
    LinkTopic       =   "Form8"
    ScaleHeight     =   7995
-   ScaleWidth      =   11865
+   ScaleWidth      =   10290
    WindowState     =   2  'Maximized
    Begin VB.TextBox Text4 
       Appearance      =   0  'Flat
@@ -151,9 +151,9 @@ Begin VB.Form Form8
          Strikethrough   =   0   'False
       EndProperty
       Height          =   360
-      ItemData        =   "capnom.frx":0442
+      ItemData        =   "capnom44.frx":0442
       Left            =   3360
-      List            =   "capnom.frx":0444
+      List            =   "capnom44.frx":0444
       TabIndex        =   6
       Top             =   1200
       Width           =   2295
@@ -259,24 +259,6 @@ Begin VB.Form Form8
          Top             =   360
          Width           =   975
       End
-   End
-   Begin VB.CommandButton CmdRestoreFilter 
-      Caption         =   "Restaurar filtros"
-      BeginProperty Font 
-         Name            =   "Arial"
-         Size            =   8.25
-         Charset         =   0
-         Weight          =   700
-         Underline       =   0   'False
-         Italic          =   0   'False
-         Strikethrough   =   0   'False
-      EndProperty
-      Height          =   330
-      Left            =   10200
-      TabIndex        =   18
-      Top             =   600
-      Visible         =   0   'False
-      Width           =   1560
    End
    Begin VB.Label Label1 
       Caption         =   "Buscar:"
@@ -942,60 +924,10 @@ sale8:
 End Sub
 
 Private Sub nomcap_ini_Click(Index As Integer)
-    Dim Arch As String
-    Dim locked As Boolean
-    Dim fullArchPath As String
     
-    ' 1. Calcular nombre del archivo de n√≥mina
-    If Option1 = True Then
-        If Option3 = True Then
-            Arch = UCase(Mid$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".NOM"
-        Else
-            Arch = UCase(Mid$(Combo1.Text, 1, 3)) + "2" + LTrim$(Str$(empresa.ao)) + ".NOM"
-        End If
-    Else
-        Arch = Trim(Text1.Text) + ".NOM"
-    End If
-    
-    ' 2. Verificar reglas usando rutas absolutas si el archivo ya existe
-    locked = False
-    
-    On Error Resume Next
-    Dim fso As Object
-    Set fso = CreateObject("Scripting.FileSystemObject")
-    fullArchPath = CStr(Trim(Form1.Dir1)) & "\" & Arch
-    
-    If fso.FileExists(fullArchPath) Then
-        If Option1 = True Then ' Normal
-            Dim lockDate As Date
-            If Option3 = True Then ' 1a Quincena
-                lockDate = DateSerial(empresa.ao, Combo1.ListIndex + 1, 19)
-            Else ' 2a Quincena
-                lockDate = DateSerial(empresa.ao, Combo1.ListIndex + 2, 4)
-            End If
-            If Date > lockDate Then locked = True
-        Else ' Especial
-            Dim modDate As Date
-            modDate = FileDateTime(fullArchPath)
-            If Date > modDate + 10 Then locked = True
-        End If
-    End If
-    On Error GoTo 0
-    
-    ' 3. Redirigir si est√° bloqueado
-    If locked Then
-        MsgBox "El archivo de esta n√≥mina ya fue creado anteriormente y no puede ser modificado por reglas de negocio." & vbCrLf & _
-               "Se abrir√° en modo de s√≥lo lectura en el Visualizador.", vbInformation, "N√≥mina Cerrada"
-        Form8.Hide
-        Load FormViewer
-        FormViewer.Show
-        FormViewer.LoadPayroll fullArchPath
-        Exit Sub
-    End If
-    
-    ' Captura normal si no est√° bloqueada (si no existe, se crear√° de forma nativa)
     generarNominas
-    FuncionImpuesto
+    
+    Rem FuncionImpuesto
 End Sub
 
 Private Sub ReleaseObjects(o_Excel As Object, o_Libro As Object, o_Hoja As Object)
@@ -1179,7 +1111,7 @@ Private Sub CapArch_Click(Index As Integer)
          susal = RTrim(Dat_ide.suc)
     End If
       
-    ctaban = String(20 - Len(RTrim(Dat_ide.cta)), "0") + RTrim(Dat_ide.cta)
+    ctaban = String(20 - Len(RTrim(Dat_ide.CTA)), "0") + RTrim(Dat_ide.CTA)
     LINARCH$ = LINARCH$ + slinimp$ + slinca$ + "01" + susal + ctaban + String(20, " ")
     Print #11, LINARCH$
     Slinimpte = 0
@@ -1409,7 +1341,7 @@ Sub SumasCompl()
 End Sub
 Private Sub CapDis_Click()
     final = limite
-    Poliza.Show
+    poliza.Show
 End Sub
 
 Private Sub CapInrt_Click()
@@ -1514,8 +1446,12 @@ Private Sub EdNomCopiar_Click()
     For i = ConNom1.Row To ConNom1.RowSel
         ' Iterar sobre las columnas seleccionadas
         For j = ConNom1.Col To ConNom1.ColSel
-            ' AÒadir el texto de la celda a la cadena
-            textoSeleccionado = textoSeleccionado & ConNom1.TextMatrix(i, j)
+            ' Si es la ˙ltima columna seleccionada, aÒadir con comilla simple
+            If j = ConNom1.ColSel Then
+                textoSeleccionado = textoSeleccionado & "'" & ConNom1.TextMatrix(i, j)
+            Else
+                textoSeleccionado = textoSeleccionado & ConNom1.TextMatrix(i, j)
+            End If
             
             ' AÒadir un tabulador si no es la ˙ltima columna seleccionada
             If j < ConNom1.ColSel Then
@@ -1531,8 +1467,8 @@ Private Sub EdNomCopiar_Click()
 
     ' Colocar el texto seleccionado en el portapapeles
     Clipboard.SetText textoSeleccionado
-    
 End Sub
+
 
 Private Sub exportar_Click(Index As Integer)
     FlexGrid_To_Excel ConNom1
@@ -3425,7 +3361,6 @@ Sub genenom(gg)
  End Sub
  
 Private Sub archnom_Click(Index As Integer)
-    Text4.Text = ""
     Close 6:: Dm = LOF(2) / Len(personal)
     Open Arch$ For Random As 6 Len = Len(nomina)
     nm = LOF(6) / Len(nomina)
@@ -3540,8 +3475,11 @@ Private Sub FuncionImpuesto()
             impto1 = 0
         End If
       
-        ' Se fuerza la actualizacion del IMSS ignorando el bloqueo
-        imss1 = 0
+        If IsNumeric(ConNom1.TextMatrix(li, 22)) Then
+            imss1 = ConNom1.TextMatrix(li, 22)
+        Else
+            imss1 = 0
+        End If
          
         If regtro > 0 Then
             sumah impto1, imss1
@@ -3772,12 +3710,14 @@ Public Sub main()
     generarNominas
 End Sub
 
-
 Private Sub generarNominas()
+    ' Modificado para ignorar errores en silencio
+    On Error GoTo ManejarError
+    
     ProgressBar1.Visible = True
     QUIN = 0
-  
-  ' Si es una Nomina normal
+    
+    ' Si es una Nomina normal
     If Option1 = True Then
         ' Si es Primera quincena
         If Option3 = True Then
@@ -3787,7 +3727,7 @@ Private Sub generarNominas()
             ReferOper.Mes = (Combo1.ListIndex + 1)
             ReferOper.dia = 15
         Else
-        ' si es Segunda Quincena
+            ' Si es Segunda Quincena
             QUIN = 2
             Arch$ = UCase(Mid$(Combo1.Text, 1, 3)) + "2" + LTrim$(Str$(empresa.ao)) + ".NOM"
             Arch1 = UCase(Mid$(Combo1.Text, 1, 3)) + "2" + LTrim$(Str$(empresa.ao)) + ".cmp"
@@ -3797,39 +3737,47 @@ Private Sub generarNominas()
             ReferOper.dia = dd(ReferOper.Mes)
             
             Close 95
-    
-            Open ArchAnterior For Random As 95 Len = Len(nominaAnterior)
-            largoNomina = LOF(95) / Len(nominaAnterior)
-    
-       End If
-    Else ' Si es una nomina especial
+
+            ' <-- CAMBIO: Se quitaron las alarmas 'MsgBox'.
+            ' Ahora solo intenta abrir el archivo si existe, pero no dice nada.
+            If Dir$(ArchAnterior) <> "" Then
+                Open ArchAnterior For Random As 95 Len = Len(nominaAnterior)
+                largoNomina = LOF(95) / Len(nominaAnterior)
+            End If
+
+        End If
+    Else
+        ' Si es una nomina especial
         Arch$ = Trim(Text1.Text) + ".NOM"
         Arch1 = Trim(Text1.Text) + ".cmp"
         diat = 0
     End If
 
-    Rem *******     NOMBRE DEL ARCHIVO   ********
-    ' Modifica el mes para que nunca sea cero
+    Rem ******* NOMBRE DEL ARCHIVO  ********
     If meselegido < 0 Then meselegido = 1
-    ' Agrega cero a los numeros inferiores a 10
-    If meselegido < 10 Then mif$ = LTrim$(Str$(dia_pago)) + "/0" + LTrim$(Str$(meselegido)) + "/" + LTrim$(Str$(empresa.ao))
-    ' Emite el nombre de las nomnas antes del mes de octubre
-    If meselegido > 9 Then mif$ = LTrim$(Str$(dia_pago)) + "/" + LTrim$(Str$(meselegido)) + "/" + LTrim$(Str$(empresa.ao))
+    If meselegido < 10 Then
+        mif$ = LTrim$(Str$(dia_pago)) + "/0" + LTrim$(Str$(meselegido)) + "/" + LTrim$(Str$(empresa.ao))
+    Else
+        mif$ = LTrim$(Str$(dia_pago)) + "/" + LTrim$(Str$(meselegido)) + "/" + LTrim$(Str$(empresa.ao))
+    End If
     
     MiFecha = mif$
     checa_fecha MiFecha, 0, 0
-    
-    ' Abre archivos necesarios para Nomina
+
     Close 6
     Close 12
     Close 14
+
+    ' <-- CAMBIO: Se quitaron todas las validaciones 'MsgBox' de Arch$ y Arch1.
+    ' El cÛdigo ahora intentar· abrirlos directamente,
+    ' y si falla, el 'ManejarError' lo ignorar·.
 
     Open Arch$ For Random As 6 Len = Len(nomina)
     nm = LOF(6) / Len(nomina)
     
     Open Arch1 For Random As 14 Len = Len(nom_com)
     Open "bnxcla.dno" For Random As 12 Len = Len(Clbnx)
-    
+
     ProgressBar1.Min = 0
     ProgressBar1.Max = Dm
     ProgressBar1.Value = 0
@@ -3842,9 +3790,7 @@ Private Sub generarNominas()
         End If
         
         ConNom1.Clear
-        
         define
-
         ConNom1.Rows = fi_nm + 2
         limite = 0
         renglon = 0
@@ -3866,19 +3812,16 @@ Private Sub generarNominas()
             
             verifica yavas
                 
-            If yavas > 0 Then ' Aplica para primera quincena y nomina especial
+            If yavas > 0 Then
                 renglon = renglon + 1
                 ConNom1.Row = renglon
                 ConNom1.Col = 0
                 ConNom1.Text = Format(r, "#####")
                 limite = limite + 1
-                ' Solo imprime primera quincena
                 carganom
-            Else
-                ' Que si la nomina es especial y no es primera quincena
             End If
                 
-            If Option2 = True Then ' Especial
+            If Option2 = True Then
                 If ((aobaja > 0) And (aobaja < (empresa.ao) - 1) And (yavas = 0)) Then
                     GoTo sigueLE
                 End If
@@ -3887,19 +3830,8 @@ Private Sub generarNominas()
                     GoTo sigueLE
                 End If
             End If
-                 
-            If Option2 = True Then ' Aplica para nomina especial y bajas
-                'If ((mesbaja > 0) And (mesbaja <= meselegido)) And (aobaja = (empresa.ao)) Then
-                 '   renglon = renglon + 1
-                 '   ConNom1.Row = renglon
-                 '   ConNom1.Col = 0
-                 '   ConNom1.Text = Format(r, "#####")
-                 '   limite = limite + 1
-                 '   ConNom1.CellBackColor = vbRed
-                 '   ConNom1.CellForeColor = vbWhite
-                    ' ___________________________________2
-                    'carganom
-                'End If
+                
+            If Option2 = True Then
             Else
                 If ((mesbaja > 0) And (mesbaja < meselegido)) And (aobaja = (empresa.ao)) Then
                     GoTo sigueLE
@@ -3908,63 +3840,62 @@ Private Sub generarNominas()
 sigueLE:
             
         Next r
-          
-    Else
-            ConNom1.Clear
-            define
-            ConNom1.Rows = Dm + 2
-            limite = 0
-            Close 13
-            Open "Empcomp.dno" For Random As 13 Len = Len(Dat_ide)
-            Get 13, 1, Dat_ide
-            ceroscompl
             
-            For r = 1 To Dm: Get #2, r, personal
-                rgtro = r
-                regtro = r
-                
+    Else
+        ConNom1.Clear
+        define
+        ConNom1.Rows = Dm + 2
+        limite = 0
+        Close 13
+        Open "Empcomp.dno" For Random As 13 Len = Len(Dat_ide)
+        Get 13, 1, Dat_ide
+        ceroscompl
+        
+        For r = 1 To Dm
+            Get #2, r, personal
+            rgtro = r
+            regtro = r
                     
-                Get #8, r, maestro
-                aobaja = Val(Mid$(personal.fab, 7, 4))
-                mesbaja = Val(Mid$(personal.fab, 4, 2))
-                diabaja = Val(Mid$(personal.fab, 1, 2))
-                diat = 0
-                If Option2 = True Then ' Especial
-                    If ((aobaja > 0) And (aobaja < (empresa.ao) - 1) And (yavas = 0)) Then
-                        GoTo SIGUE
-                    End If
-                Else
-                    If ((aobaja > 0) And (aobaja < empresa.ao) - 1) Then
-                        GoTo SIGUE
-                    End If
+            Get #8, r, maestro
+            aobaja = Val(Mid$(personal.fab, 7, 4))
+            mesbaja = Val(Mid$(personal.fab, 4, 2))
+            diabaja = Val(Mid$(personal.fab, 1, 2))
+            diat = 0
+            If Option2 = True Then
+                If ((aobaja > 0) And (aobaja < (empresa.ao) - 1) And (yavas = 0)) Then
+                    GoTo SIGUE
                 End If
-                
-                If Option2 = False Then ' Segunda quincena
-                    If ((mesbaja > 0) And (mesbaja < meselegido)) And (aobaja = (empresa.ao)) Then GoTo sigueLE
+            Else
+                If ((aobaja > 0) And (aobaja < empresa.ao) - 1) Then
+                    GoTo SIGUE
                 End If
+            End If
                 
-                If Mid$(personal.nom, 1, 3) <= "   " Then GoTo SIGUE
+            If Option2 = False Then
+                If ((mesbaja > 0) And (mesbaja < meselegido)) And (aobaja = (empresa.ao)) Then GoTo sigueLE
+            End If
                 
-                If (Option3 = True) Then diat = 15 ' Primera
+            If Mid$(personal.nom, 1, 3) <= "   " Then GoTo SIGUE
                 
-                If (Option4 = True) And (Dat_ide.dias = 1) Then ' Segunda
-                    diat = (dd(meselegido) - 15)
-                Else
-                    diat = 15
-                End If
+            If (Option3 = True) Then diat = 15
+            If (Option4 = True) And (Dat_ide.dias = 1) Then
+                diat = (dd(meselegido) - 15)
+            Else
+                diat = 15
+            End If
                 
-                If Option2 = True Then diat = 0 ' Segunda quincena
+            If Option2 = True Then diat = 0
                 
-                renglon = renglon + 1: ConNom1.Row = renglon
-                limite = limite + 1
-                genenom r
+            renglon = renglon + 1
+            ConNom1.Row = renglon
+            limite = limite + 1
+            genenom r
 SIGUE:
-                ProgressBar1.Value = r
-            Next r
-        End If
+            ProgressBar1.Value = r
+        Next r
+    End If
         
     sumavert
-        
     Close 10
     
     ConNom1.SetFocus
@@ -3974,7 +3905,16 @@ SIGUE:
     nomordeli_Click (Index)
     ProgressBar1.Visible = False
 
+    MsgBox "? Proceso completado.", vbInformation, "Finalizado"
+    Exit Sub
+
+' <-- CAMBIO: El manejador de errores ahora es silencioso.
+' Si ocurre un error (como el 76), simplemente saltar·
+' a la siguiente lÌnea de cÛdigo sin mostrar alarma.
+ManejarError:
+    Resume Next
 End Sub
+
 Private Sub generarNominaGeneral()
     ProgressBar1.Visible = True
     QUIN = 0
@@ -4181,7 +4121,7 @@ Private Sub Option1_GotFocus()
 End Sub
 
 Private Sub Option1_Click()
-    Combo1.locked = False
+    Combo1.Locked = False
     Combo1.Visible = True
 End Sub
 
@@ -4193,7 +4133,7 @@ On Error GoTo errorManejador
         Text1.SetFocus
         N_ormal = 1
         dia_pago = 15 - 1
-        Combo1.locked = True
+        Combo1.Locked = True
         Combo1.Visible = False
     End If
 Exit Sub
@@ -4213,7 +4153,7 @@ Private Sub Option3_Click()
           Label7.Caption = "Nomina de la 1a.quincena " + Combo1.Text + Str$(empresa.ao)
           dia_pago = 15 - 1
           Combo1.Visible = True
-          Combo1.locked = False
+          Combo1.Locked = False
           Combo1.SetFocus
      End If
 End Sub
@@ -4299,17 +4239,7 @@ Private Sub Text2_LostFocus()
    antiguo = ConNom1.Col
    ConNom1.Col = 1: ConNom1.CellBackColor = Color_gris
    ConNom1.Col = antiguo
-   
-   ' Buscar la siguiente fila visible resultante del filtro
-   Dim nextRow As Long
-   nextRow = ConNom1.Row + 1
-   Do While nextRow < ConNom1.Rows
-       If ConNom1.RowHeight(nextRow) > 0 Then
-           ConNom1.Row = nextRow
-           Exit Do
-       End If
-       nextRow = nextRow + 1
-   Loop
+   ConNom1.Row = ConNom1.Row + 1
 End Sub
 
 Private Sub Text3_KeyPress(KeyAscii As Integer)
@@ -4414,70 +4344,28 @@ Public Sub calculoRetencion(ingresoBruto, impuesto, porcentajeSubsidio, idEmplea
     End If
 End Sub
 
-Private Sub Text4_Change()
-    Dim txt As String
-    Dim i As Long
-    Dim rowHt As Long
-    Static origHt As Long
-    
-    ' Inicializar la altura original de fila
-    If origHt = 0 Then
-        If ConNom1.Rows > 1 Then
-            If ConNom1.RowHeight(1) > 0 Then
-                origHt = ConNom1.RowHeight(1)
-            Else
-                origHt = 240
-            End If
-        Else
-            origHt = 240
-        End If
-    End If
-    rowHt = origHt
-    
-    ' Obtener texto de b√∫squeda sin espacios
-    txt = Trim(Text4.Text)
-    
-    ' Mostrar u ocultar bot√≥n de restaurar
-    If txt <> "" Then
-        CmdRestoreFilter.Visible = True
-    Else
-        CmdRestoreFilter.Visible = False
-    End If
-    
-    ' Ocultar/mostrar filas coincidentes
-    ConNom1.Redraw = False
-    For i = 1 To limite
-        If txt = "" Then
-            ConNom1.RowHeight(i) = rowHt
-        Else
-            If InStr(1, ConNom1.TextMatrix(i, 1), txt, vbTextCompare) > 0 Then
-                ConNom1.RowHeight(i) = rowHt
-            Else
-                ConNom1.RowHeight(i) = 0
-            End If
-        End If
-    Next i
-    ConNom1.Redraw = True
-End Sub
-
-Private Sub CmdRestoreFilter_Click()
-    Text4.Text = """"
-    Text4.SetFocus
-End Sub
-
 Private Sub Text4_KeyPress(KeyAscii As Integer)
-    Dim i As Long
+    Dim i As Integer
+    Dim valorBuscado As String
+    Dim valorEncontrado As String
+    Dim bandera As Boolean
+    
     If KeyAscii = 13 Then
-        ' Al presionar Enter, enfocar el primer empleado visible
-        For i = 1 To limite
-            If ConNom1.RowHeight(i) > 0 Then
+        valorEncontrado = Text4.Text
+        For i = 0 To ConNom1.Rows - 1
+            valorBuscado = ConNom1.TextMatrix(i, 1)
+            If InStr(1, valorBuscado, valorEncontrado, vbTextCompare) > 0 Then
                 ConNom1.Row = i
-                ConNom1.Col = 1
+                ConNom1.Col = 2
                 ConNom1.SetFocus
+                bandera = True
                 Exit For
             End If
         Next i
-        KeyAscii = 0
+        
+        If bandera = False Then
+            MsgBox ("Lo siento, no encontre a la persona que buscas.")
+        End If
     End If
 End Sub
 

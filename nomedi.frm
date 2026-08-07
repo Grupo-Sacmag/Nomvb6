@@ -6,12 +6,27 @@ Begin VB.Form Form4
    ClientHeight    =   8640
    ClientLeft      =   465
    ClientTop       =   885
-   ClientWidth     =   9735
+   ClientWidth     =   12600
    Icon            =   "nomedi.frx":0000
    LinkTopic       =   "Form4"
    ScaleHeight     =   8640
-   ScaleWidth      =   9735
+   ScaleWidth      =   12600
    ShowInTaskbar   =   0   'False
+   Begin VB.CommandButton Command1 
+      Caption         =   "Limpiar"
+      Height          =   375
+      Left            =   11400
+      TabIndex        =   4
+      Top             =   120
+      Width           =   855
+   End
+   Begin VB.TextBox Text1 
+      Height          =   375
+      Left            =   7440
+      TabIndex        =   3
+      Top             =   120
+      Width           =   3855
+   End
    Begin MSFlexGridLib.MSFlexGrid dat 
       Height          =   4935
       Left            =   240
@@ -31,7 +46,7 @@ Begin VB.Form Form4
       Left            =   120
       TabIndex        =   1
       Top             =   120
-      Width           =   9375
+      Width           =   7335
    End
    Begin MSFlexGridLib.MSFlexGrid ListPer 
       Height          =   7575
@@ -132,7 +147,7 @@ Sub RecPra()
     ListPer.TextMatrix(ListPer.Row, 1) = Trim(personal.ape1) + " " + Trim(personal.ape2) + " " + Trim(personal.nom)
     ListPer.TextMatrix(ListPer.Row, 2) = Trim(personal.RFC)
     ListPer.TextMatrix(ListPer.Row, 3) = Trim(Otros_Rgtros.curp)
-    ListPer.TextMatrix(ListPer.Row, 4) = " " + Trim(personal.imss)
+    ListPer.TextMatrix(ListPer.Row, 4) = " " + Replace(Trim(personal.imss), "-", "")
     ListPer.TextMatrix(ListPer.Row, 5) = Trim(personal.fal)
     ListPer.TextMatrix(ListPer.Row, 6) = Trim(personal.fab)
     ListPer.TextMatrix(ListPer.Row, 7) = Format(personal.ingr, z1)
@@ -161,7 +176,7 @@ Sub ArchCorr()
             Otros_Rgtros.curp = ListPer.Text
             Put 3, rgtro, Otros_Rgtros
         Case 4
-            personal.imss = LTrim(ListPer.Text)
+            personal.imss = Replace(LTrim(ListPer.Text), "-", "")
             Put 1, rgtro, personal
         Case 5
             If ListPer.Text <> "" Then
@@ -234,11 +249,10 @@ salte6:
                 If yea < 1900 Then
                     MsgBox "La fecha de ingreso no es correcta, no es posible calcular el salario integrado"
                 Else
-                    antig = empresa.ao + 2 - yea
+                    antig = CalcularAntiguedad(personal.fal)
                     facto = 0
-                    toTingr = personal.ingr + personal.viat + personal.otras
                     factor antig, facto
-                    personal.integrado = toTingr * facto
+                    personal.integrado = (personal.ingr * facto) + personal.viat + personal.otras
                     If personal.integrado > (empresa.sm * 25) Then personal.integrado = (empresa.sm * 25)
                         ListPer.TextMatrix(ListPer.Row, 10) = Format(personal.integrado, z2$)
                     End If
@@ -253,11 +267,10 @@ salte6:
                 If yea < 1900 Then
                     MsgBox "La fecha de ingreso no es correcta, no es posible calcular el salario integrado"
                 Else
-                    antig = empresa.ao + 2 - yea
+                    antig = CalcularAntiguedad(personal.fal)
                     facto = 0
-                    toTingr = personal.ingr + personal.viat + personal.otras
                     factor antig, facto
-                    personal.integrado = toTingr * facto
+                    personal.integrado = (personal.ingr * facto) + personal.viat + personal.otras
                     If personal.integrado > (empresa.sm * 25) Then personal.integrado = (empresa.sm * 25)
                     ListPer.TextMatrix(ListPer.Row, 10) = Format(personal.integrado, z2$)
                 End If
@@ -273,11 +286,10 @@ salte6:
             If yea < 1900 Then
                 MsgBox "La fecha de ingreso no es correcta, no es posible calcular el salario integrado"
             Else
-                antig = empresa.ao + 2 - yea
+                antig = CalcularAntiguedad(personal.fal)
                 facto = 0
-                toTingr = personal.ingr + personal.viat + personal.otras
                 factor antig, facto
-                personal.integrado = toTingr * facto
+                personal.integrado = (personal.ingr * facto) + personal.viat + personal.otras
                 If personal.integrado > (empresa.sm * 25) Then personal.integrado = (empresa.sm * 25)
                 ListPer.TextMatrix(ListPer.Row, 10) = Format(personal.integrado, z2$)
             End If
@@ -399,29 +411,74 @@ End Sub
 Private Sub calcularIntegrado_Click()
 Dim i As Integer
 Dim idEmp As Integer
-    Open "personal.dno" For Random As 2 Len = Len(personal)
-    
-On Error GoTo saltarPersona
+Dim lAntig As Integer
+Dim dFacto As Double
+Dim cSdi As Currency
+Dim empFile As String
+Dim empRecord As Integer
+Dim fNum As Integer
+Dim file2 As Integer
+Dim dbFile As String
 
-    For i = 1 To ListPer.Rows
-        idEmp = ListPer.TextMatrix(i, 0)
-        Get #2, idEmp, personal
-        
-        antig = empresa.ao + 2 - yea
-        facto = 0
-        toTingr = personal.ingr + personal.viat + personal.otras
-        factor antig, facto
+On Error GoTo ErrHandler
+
+    ' 1. Asegurar la lectura del UMA actual
+    empFile = "empresa.dno"
+    If Dir(empFile) <> "" Then
+        fNum = FreeFile
+        Open empFile For Random As #fNum Len = Len(empresa)
+        empRecord = LOF(fNum) / Len(empresa)
+        If empRecord > 0 Then
+            Get #fNum, empRecord, empresa
+        End If
+        Close #fNum
+    End If
+
+    ' 2. Abrir archivo de personal
+    dbFile = "personal.dno"
+    If Dir(dbFile) = "" Then
+        MsgBox "No se encontr√≥ el archivo de personal.", vbCritical, "Error"
+        Exit Sub
+    End If
     
-        ListPer.TextMatrix(i, 10) = Format(toTingr * facto, z1)
-        personal.integrado = toTingr * facto
-        
-        Put 2, idEmp, personal
+    file2 = FreeFile
+    Open dbFile For Random As #file2 Len = Len(personal)
+    
+    ' 3. Procesar filas de la cuadr√≠cula
+    For i = 1 To ListPer.Rows - 1
+        If IsNumeric(ListPer.TextMatrix(i, 0)) Then
+            idEmp = Val(ListPer.TextMatrix(i, 0))
+            If idEmp > 0 Then
+                Get #file2, idEmp, personal
+                
+                lAntig = CalcularAntiguedad(personal.fal)
+                dFacto = 0
+                factor lAntig, dFacto
+                
+                cSdi = (personal.ingr + personal.viat + personal.otras) * dFacto
+                If empresa.sm > 0 Then
+                    If cSdi > (empresa.sm * 25) Then cSdi = (empresa.sm * 25)
+                End If
+                
+                personal.integrado = cSdi
+                Put #file2, idEmp, personal
+                
+                ListPer.TextMatrix(i, 10) = Format(personal.integrado, z2)
+            End If
+        End If
     Next i
     
-Exit Sub
+    Close #file2
+    MsgBox "C√°lculo de Salario Integrado completado con √©xito para todos los registros.", vbInformation, "Proceso Terminado"
+    Exit Sub
 
-saltarPersona:
+ErrHandler:
+    If file2 > 0 Then Close #file2
+    MsgBox "Error en calcularIntegrado: " & Err.Description, vbCritical, "Error"
+End Sub
 
+Private Sub Command1_Click()
+Form_Load
 End Sub
 
 Private Sub EdCopiar_Click()
@@ -569,6 +626,21 @@ Dim sSQL As String
 Dim abrEmpresa As String
     ''Conectar a base datos
 On Error Resume Next
+
+    ' Cargar detalles de la empresa activa para obtener UMA (empresa.sm) y a√±o (empresa.ao)
+    Dim empFile As String
+    Dim empRecord As Integer
+    Dim fNum As Integer
+    empFile = "empresa.dno"
+    If Dir(empFile) <> "" Then
+        fNum = FreeFile
+        Open empFile For Random As #fNum Len = Len(empresa)
+        empRecord = LOF(fNum) / Len(empresa)
+        If empRecord > 0 Then
+            Get #fNum, empRecord, empresa
+        End If
+        Close #fNum
+    End If
     
     abrEmpresa = Left(Trim(emp), 4)
   
@@ -581,6 +653,8 @@ On Error Resume Next
             abrEmpresa = "EPESA"
         Case "SUPE"
             abrEmpresa = "SUPERVISA"
+        Case "SUPT"
+            abrEmpresa = "SUPTER"
         Case "CONS"
             abrEmpresa = "CONSULTE"
         ' Agregar m·s casos seg˙n sea necesario
@@ -609,6 +683,7 @@ On Error Resume Next
     dat.Col = 3: dat.CellAlignment = 4: dat.ColWidth(3) = 2800: dat.Text = "NOMBRE"
     dat.Col = 4: dat.CellAlignment = 4: dat.ColWidth(4) = 2800: dat.Text = "APELLIDO P"
     dat.Col = 5: dat.CellAlignment = 4: dat.ColWidth(5) = 2800: dat.Text = "APELLIDO M"
+
     
     vardatarows = oRS.GetRows()
      
@@ -637,7 +712,7 @@ On Error Resume Next
    Open "PerOtre.dno" For Random As 3 Len = Len(Otros_Rgtros)
    dmper = LOF(3) / Len(Otros_Rgtros)
    Close 4
-   Open "Bnxcla.dno" For Random As 4 Len = Len(Clbnx)
+   Rem Open "Bnxcla.dno" For Random As 4 Len = Len(Clbnx)
    Close 15
    Open "deon.dno" For Random As 15 Len = Len(DEON)
    largoDeon = LOF(15) / Len(DEON)
@@ -666,7 +741,7 @@ On Error Resume Next
     Dm = LOF(2) / Len(personal)
     Open "PerOtre.dno" For Random As 3 Len = Len(Otros_Rgtros)
     dmper = LOF(3) / Len(Otros_Rgtros)
-    Open "Bnxcla.dno" For Random As 4 Len = Len(Clbnx)
+    Rem Open "Bnxcla.dno" For Random As 4 Len = Len(Clbnx)
     Open "deon.dno" For Random As 15 Len = Len(DEON)
     largoDeon = LOF(15) / Len(DEON)
             
@@ -702,11 +777,27 @@ On Error Resume Next
              If (personal.ape1 >= "A") Or (personal.ape2 >= "A") Then
                 apelativo1$ = RTrim$(personal.ape1) + " " + RTrim$(personal.ape2) + " " + RTrim$(personal.nom)
                 apelativo$ = Left(apelativo1$, 59) + String$(60 - Len(Left(apelativo1$, 59)), " ")
+                
+                ' Calcular SDI al vuelo y sincronizar si es diferente en BD
+                Dim lAntig As Integer, dFacto As Double, cSdi As Currency
+                lAntig = CalcularAntiguedad(personal.fal)
+                dFacto = 0
+                factor lAntig, dFacto
+                cSdi = (personal.ingr + personal.viat + personal.otras) * dFacto
+                If empresa.sm > 0 Then
+                    If cSdi > (empresa.sm * 25) Then cSdi = (empresa.sm * 25)
+                End If
+                
+                If personal.integrado <> cSdi Then
+                    personal.integrado = cSdi
+                    Put 2, r, personal
+                End If
+
                 ListPer.AddItem Format(r, "####0") _
                     & Chr(9) & apelativo$ _
                     & Chr(9) & RTrim(personal.RFC) _
                     & Chr(9) & RTrim(Otros_Rgtros.curp) _
-                    & Chr(9) & (" " + RTrim(personal.imss)) _
+                    & Chr(9) & (" " + Replace(RTrim(personal.imss), "-", "")) _
                     & Chr(9) & RTrim(personal.fal) _
                     & Chr(9) & RTrim(personal.fab) _
                     & Chr(9) & Format(personal.ingr, z2) _
@@ -762,7 +853,7 @@ Dim Repuse
         & Chr(9) & apelativo$ _
         & Chr(9) & RTrim(personal.RFC) _
         & Chr(9) & RTrim(Otros_Rgtros.curp) _
-        & Chr(9) & (" " + RTrim(personal.imss)) _
+        & Chr(9) & (" " + Replace(RTrim(personal.imss), "-", "")) _
         & Chr(9) & RTrim(personal.fal) _
         & Chr(9) & RTrim(personal.fab) _
         & Chr(9) & Format(personal.ingr, z2) _
@@ -884,6 +975,8 @@ Public Sub actualizarSaldos()
             abrEmpresa = "SACMAG"
         Case "CORD"
             abrEmpresa = "CORDINA"
+             Case "SUPT"
+            abrEmpresa = "SUPTER"
     End Select
 
     ' Recorrer las filas de ListPer
@@ -924,18 +1017,35 @@ Private Sub cargarEmpleadosSinFiltro()
     Dim abrEmpresa As String
         ''Conectar a base datos
     On Error Resume Next
+
+    ' Cargar detalles de la empresa activa para obtener UMA (empresa.sm) y a√±o (empresa.ao)
+    Dim empFile As String
+    Dim empRecord As Integer
+    Dim fNum As Integer
+    empFile = "empresa.dno"
+    If Dir(empFile) <> "" Then
+        fNum = FreeFile
+        Open empFile For Random As #fNum Len = Len(empresa)
+        empRecord = LOF(fNum) / Len(empresa)
+        If empRecord > 0 Then
+            Get #fNum, empRecord, empresa
+        End If
+        Close #fNum
+    End If
         
         abrEmpresa = Left(Trim(emp), 4)
       
         Select Case UCase(abrEmpresa)
             Case "SACM"
                 abrEmpresa = "SACMAG"
+            Case "GEOA"
+                abrEmpresa = "GEOAMBIENTE"
             Case "COOR"
                 abrEmpresa = "CORDINA"
             Case "EPES"
                 abrEmpresa = "EPESA"
-            Case "SUPE"
-                abrEmpresa = "SUPERVISA"
+            Case "SUPT"
+                abrEmpresa = "SUPTER"
             Case "CONS"
                 abrEmpresa = "CONSULTE"
             ' Agregar m·s casos seg˙n sea necesario
@@ -1053,11 +1163,28 @@ Private Sub cargarEmpleadosSinFiltro()
                  apelativo1$ = "": abaja = Val(Mid(personal.fab, 7, 4))
                     apelativo1$ = RTrim$(personal.ape1) + " " + RTrim$(personal.ape2) + " " + RTrim$(personal.nom)
                     apelativo$ = Left(apelativo1$, 59) + String$(60 - Len(Left(apelativo1$, 59)), " ")
+                    
+                    ' Recalculate integrated salary on-the-fly to display and sync database
+                    Dim lAntig2 As Integer, dFacto2 As Double, cSdi2 As Currency
+                    lAntig2 = CalcularAntiguedad(personal.fal)
+                    dFacto2 = 0
+                    factor lAntig2, dFacto2
+                    cSdi2 = (personal.ingr + personal.viat + personal.otras) * dFacto2
+                    If empresa.sm > 0 Then
+                        If cSdi2 > (empresa.sm * 25) Then cSdi2 = (empresa.sm * 25)
+                    End If
+                    
+                    ' Sync to database if different
+                    If personal.integrado <> cSdi2 Then
+                        personal.integrado = cSdi2
+                        Put 2, r, personal
+                    End If
+
                     ListPer.AddItem Format(r, "####0") _
                         & Chr(9) & apelativo$ _
                         & Chr(9) & RTrim(personal.RFC) _
                         & Chr(9) & RTrim(Otros_Rgtros.curp) _
-                        & Chr(9) & (" " + RTrim(personal.imss)) _
+                        & Chr(9) & (" " + Replace(RTrim(personal.imss), "-", "")) _
                         & Chr(9) & RTrim(personal.fal) _
                         & Chr(9) & RTrim(personal.fab) _
                         & Chr(9) & Format(personal.ingr, z2) _
@@ -1133,4 +1260,38 @@ End Sub
 Private Sub isrCalculo_Click()
     calcularYAsignarImpuesto
 End Sub
+
+Private Sub Text1_KeyPress(KeyAscii As Integer)
+    ' 1. Solo se activa si la tecla presionada es Enter
+    
+    
+    If KeyAscii = 13 Then
+        
+        Dim i As Long
+        Dim Filtro As String
+        Dim NombreEnGrid As String
+        
+        ' 2. Prepara el texto del filtro
+        Filtro = UCase(Trim(Text1.Text))
+        
+        ' 3. Recorre las filas de la tabla (esto es s˙per r·pido)
+        For i = 1 To ListPer.Rows - 1 ' Empieza en 1 para no tocar la cabecera
+            
+            ' Toma el nombre de la columna 1 de la fila actual
+            NombreEnGrid = UCase(ListPer.TextMatrix(i, 1))
+            
+            ' 4. Compara si el nombre CONTIENE el texto del filtro
+            If InStr(1, NombreEnGrid, Filtro) > 0 Then
+                ' Si lo contiene, se asegura de que la fila sea visible
+                ListPer.RowHeight(i) = -1 ' -1 es la altura por defecto
+            Else
+                ' Si NO lo contiene, OCULTA la fila poniendo su altura en 0
+                ListPer.RowHeight(i) = 0
+            End If
+            
+        Next i
+        
+    End If
+End Sub
+
 

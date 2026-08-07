@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{65E121D4-0C60-11D2-A9FC-0000F8754DA1}#2.0#0"; "mschrt20.ocx"
+Object = "{65E121D4-0C60-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCHRT20.OCX"
 Begin VB.Form EstadisticasPersonal 
    Caption         =   "Estadísticas"
    ClientHeight    =   9120

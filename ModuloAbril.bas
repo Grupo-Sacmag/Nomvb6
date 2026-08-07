@@ -123,7 +123,7 @@ Sub MdAbr()
     '50 51 FECHAINICIORELLABORAL
         NOMCF2.NOMCF.TextMatrix(I7, 50) = VFal
     '51 52 ANTIGUEDAD
-        NOMCF2.NOMCF.TextMatrix(I7, 51) = Year(MiFecha) - Year(MiFechaAlta)
+        NOMCF2.NOMCF.TextMatrix(I7, 51) = CalcularAntiguedad(MiFechaAlta)
     '52 53 PUESTO
         NOMCF2.NOMCF.TextMatrix(I7, 52) = "ADMINISTRACION"
     '53 54 TIPOCONTRATO

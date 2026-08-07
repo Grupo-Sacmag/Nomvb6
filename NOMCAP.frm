@@ -1,6 +1,6 @@
 VERSION 5.00
 Object = "{F9043C88-F6F2-101A-A3C9-08002B2F49FB}#1.2#0"; "comdlg32.ocx"
-Object = "{5E9E78A0-531B-11CF-91F6-C2863C385E30}#1.0#0"; "msflxgrd.ocx"
+Object = "{5E9E78A0-531B-11CF-91F6-C2863C385E30}#1.0#0"; "MSFLXGRD.OCX"
 Begin VB.Form NOMCF2 
    Caption         =   "Generación de CFDI"
    ClientHeight    =   8940
@@ -120,6 +120,10 @@ Dim infonavit As Double
 Dim impuesto As Double
 Dim imss As Double
 Dim fila As Long
+Const COL_SEG_RFC As Long = 98
+Const COL_SEG_BANDERA As Long = 290
+Const adOpenStatic As Integer = 3
+Const adLockReadOnly As Integer = 1
     
     
 Sub IniCols()
@@ -128,7 +132,7 @@ On Error GoTo ErrorHandler:
     Close 7
     Open "DatCFDI.dno" For Random As 7 Len = Len(DATcf)
         
-    cm = LOF(7) / Len(DATcf)
+    cm = 291
     NOMCF.Clear
     NOMCF.Rows = 2
     NOMCF.Cols = cm
@@ -138,11 +142,16 @@ On Error GoTo ErrorHandler:
     NOMCF.Row = 0
             
     For I_7 = 0 To cm - 1
-        Get 7, (I_7 + 1), DATcf
-        NOMCF.Col = I_7
-        NOMCF.CellAlignment = 4
-        NOMCF.ColWidth(I7) = 1200
-        NOMCF.Text = Trim(DATcf.Concepto)
+    NOMCF.Col = I_7
+    NOMCF.CellAlignment = 4
+    NOMCF.ColWidth(I_7) = 1200
+
+        If I_7 + 1 <= LOF(7) / Len(DATcf) Then
+            Get 7, (I_7 + 1), DATcf
+            NOMCF.Text = Trim(DATcf.Concepto)
+        Else
+            NOMCF.Text = ""
+        End If
     Next I_7
 
 Close 7
@@ -278,6 +287,8 @@ DENUEVO:
         MdAbr_1
     Next I7
     
+   Rem ActualizarCorreos
+    
     Get 10, 1, EmpCFDI: EmpCFDI.Folio = Folio
     Put 10, 1, EmpCFDI
     Close 7, 9, 10
@@ -296,6 +307,69 @@ DENUEVO:
 handler:
 
 End Sub
+
+
+
+Public Function ObtenerCorreo(ByVal RFC As String) As String
+    Dim oRS As ADODB.Recordset
+    Dim sSQL As String
+    Dim correo As String
+
+    On Error GoTo ErrorHandler
+
+    ' Si el RFC está vacío, se devuelve cadena vacía
+    If Trim(RFC) = "" Then
+        ObtenerCorreo = ""
+        Exit Function
+    End If
+
+    ' Construir la consulta SQL. Se usa Replace para evitar conflictos con comillas simples.
+    sSQL = "SELECT correoElectronico FROM db_a4091b_sacmag.dbo.datosSat " & _
+           "WHERE RFC = '" & Replace(Trim(RFC), "'", "''") & "'"
+
+    ' Crear y abrir el Recordset usando la conexión global "con"
+    Set oRS = New ADODB.Recordset
+    oRS.Open sSQL, con, adOpenStatic, adLockReadOnly
+
+    ' Si se encontró un registro, asigna el valor; de lo contrario, cadena vacía
+    If Not oRS.EOF Then
+        If Not IsNull(oRS.Fields("correoElectronico").Value) Then
+            correo = oRS.Fields("correoElectronico").Value
+        Else
+            correo = ""
+        End If
+    Else
+        correo = ""
+    End If
+
+    oRS.Close
+    Set oRS = Nothing
+
+    ObtenerCorreo = correo
+    Exit Function
+
+ErrorHandler:
+    ObtenerCorreo = ""
+End Function
+
+ Public Sub ActualizarCorreos()
+    Dim i As Integer
+    Dim RFC As String
+    Dim EMAIL As String
+    Dim totalFilas As Integer
+
+    ' Determina cuántas filas tiene la grid.
+    totalFilas = NOMCF2.NOMCF.Rows
+
+    ' Se asume que la primera fila es la cabecera o que los datos inician en la fila 1.
+    ' Ajusta el índice de inicio según tu control.
+    For i = 1 To totalFilas - 1
+        RFC = Trim(NOMCF2.NOMCF.TextMatrix(i, 9))
+        EMAIL = ObtenerCorreo(RFC)
+        NOMCF2.NOMCF.TextMatrix(i, 11) = Trim(EMAIL)
+    Next i
+End Sub
+
 Private Sub Llenar_FlexGrid(cn As Connection, Rs As Recordset)
     On Error GoTo ErrSub
     Screen.MousePointer = vbHourglass
@@ -406,24 +480,28 @@ Private Sub NCfEdSel_Click()
 End Sub
 
 Private Sub NCFEDSG_Click()
-Clipboard.Clear
-    NOMCF.Row = 1
-    NOMCF.Col = 98
-    NOMCF.RowSel = NOMCF.Rows - 1
-    NOMCF.ColSel = NOMCF.Cols - 1
-Dim Temporal1
+    Dim Temporal1 As String
+    Dim i As Long
+    Dim f As Long
+
     Clipboard.Clear
-    difer = NOMCF.RowSel - NOMCF.Row
-    For i = NOMCF.Row To NOMCF.RowSel
-      ' For f = ConNom1.Col To ConNom1.ColSel
-      For f = 98 To NOMCF.ColSel ' esta modificacion permite copiar todas las columnas, desde la 0
-            Temporal1 = Temporal1 + NOMCF.TextMatrix(i, f)
-            If f < NOMCF.ColSel Then
+    Temporal1 = ""
+
+    ' Copia SOLO la segunda plantilla
+    For i = 1 To NOMCF.Rows - 1
+
+        For f = COL_SEG_RFC To COL_SEG_BANDERA
+            Temporal1 = Temporal1 & NOMCF.TextMatrix(i, f)
+
+            If f < COL_SEG_BANDERA Then
                 Temporal1 = Temporal1 & Chr(9)
             End If
-      Next f
-      Temporal1 = Temporal1 & Chr(13) & Chr(10)
+        Next f
+
+        Temporal1 = Temporal1 & Chr(13) & Chr(10)
+
     Next i
+
     Clipboard.SetText Temporal1
 End Sub
 
@@ -483,6 +561,7 @@ On Error GoTo ErrorHandler:
 '**************************************************************************************************
 '**                                   Modulo CFDI                                                **
 '**************************************************************************************************
+    'Call InicializarSegundaPlantilla(I7)
     '1 2 FOLIO
         NOMCF2.NOMCF.TextMatrix(I7, 0) = Folio
     '2 3 SERIE
@@ -622,7 +701,7 @@ On Error GoTo ErrorHandler:
         VFal = Mid(Trim(personal.fal), 7, 4) + "-" + Mid(Trim(personal.fal), 4, 2) + "-" + Mid(Trim(personal.fal), 1, 2)
         NOMCF2.NOMCF.TextMatrix(I7, 50) = VFal
     '51 52 ANTIGUEDAD
-        NOMCF2.NOMCF.TextMatrix(I7, 51) = Year(MiFecha) - Year(MiFechaAlta)
+        NOMCF2.NOMCF.TextMatrix(I7, 51) = CalcularAntiguedad(MiFechaAlta)
     '52 53 PUESTO
         NOMCF2.NOMCF.TextMatrix(I7, 52) = "Administracion"
     '53 54 TIPOCONTRATO
@@ -1150,7 +1229,10 @@ On Error GoTo ErrorHandler:
     '277 OP999
         NOMCF2.NOMCF.TextMatrix(I7, 286) = Format(0, "#,##0.00")
     '277 BANDERA
-        NOMCF2.NOMCF.TextMatrix(I7, 287) = 1
+        NOMCF2.NOMCF.TextMatrix(I7, 287) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 288) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 289) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 290) = 1
 
 Exit Sub
 
@@ -1183,5 +1265,14 @@ Gestionaerror:
         End If
 End Sub
 
+Private Sub InicializarSegundaPlantilla(ByVal fila As Long)
+    Dim c As Long
+    
+    For c = COL_SEG_RFC To COL_SEG_BANDERA
+        NOMCF.TextMatrix(fila, c) = "0.00"
+    Next c
+    
+    NOMCF.TextMatrix(fila, COL_SEG_RFC) = "" 'RFC
+    NOMCF.TextMatrix(fila, COL_SEG_BANDERA) = "1" 'BANDERA
 
-
+End Sub

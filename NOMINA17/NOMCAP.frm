@@ -392,7 +392,7 @@ GoTo SALTALO
             VFal = Mid(Trim(personal.fal), 7, 4) + "-" + Mid(Trim(personal.fal), 4, 2) + "-" + Mid(Trim(personal.fal), 1, 2)
              NOMCF.TextMatrix(I8, 46) = VFal                      '47 FECHAINICIORELLABORAL
              
-             NOMCF.TextMatrix(I8, 47) = Year(MiFecha) - Year(MiFechaAlta) '48 ANTIGUEDAD
+             NOMCF.TextMatrix(I8, 47) = CalcularAntiguedad(MiFechaAlta) '48 ANTIGUEDAD
              '---------------------------------------------------------------------------------------------------------------------------------
              NOMCF.TextMatrix(I8, 48) = "01 CONTRATO DE TRABAJO POR TIEMPO INDETERMINADO"                       '49 TIPOCONTRATO"
              NOMCF.TextMatrix(I8, 49) = "No"                      '50 RECEPTOR SINDICALIZADO
@@ -939,7 +939,7 @@ Sub MdAbr_1()
         VFal = Mid(Trim(personal.fal), 7, 4) + "-" + Mid(Trim(personal.fal), 4, 2) + "-" + Mid(Trim(personal.fal), 1, 2)
         NOMCF2.NOMCF.TextMatrix(I7, 50) = VFal
     '51 52 ANTIGUEDAD
-        NOMCF2.NOMCF.TextMatrix(I7, 51) = Year(MiFecha) - Year(MiFechaAlta)
+        NOMCF2.NOMCF.TextMatrix(I7, 51) = CalcularAntiguedad(MiFechaAlta)
     '52 53 PUESTO
         NOMCF2.NOMCF.TextMatrix(I7, 52) = "Administracion"
     '53 54 TIPOCONTRATO

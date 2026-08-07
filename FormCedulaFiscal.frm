@@ -698,6 +698,8 @@ Dim abrEmpresa As String
             abrEmpresa = "SUPERVISA"
         Case "CONS"
             abrEmpresa = "CONSULTE"
+        Case "SUPT"
+            abrEmpresa = "SUPTER"
         ' Agregar más casos según sea necesario
     End Select
     

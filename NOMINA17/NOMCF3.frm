@@ -254,7 +254,7 @@ Private Sub Form_Load()
              NomCfdi.TextMatrix(I7, 48) = ""                       '49 BANCO
                VFal = Mid(Trim(personal.fal), 7, 4) + "-" + Mid(Trim(personal.fal), 4, 2) + "-" + Mid(Trim(personal.fal), 1, 2)
              NomCfdi.TextMatrix(I7, 49) = VFal                      '50 FECHAINICIORELLABORAL
-             NomCfdi.TextMatrix(I7, 50) = Year(MiFecha) - Year(MiFechaAlta) '51 ANTIGUEDAD
+             NomCfdi.TextMatrix(I7, 50) = CalcularAntiguedad(MiFechaAlta) '51 ANTIGUEDAD
              NomCfdi.TextMatrix(I7, 51) = ""                       '52 PUESTO
              NomCfdi.TextMatrix(I7, 52) = ""                       '53 TIPOCONTRATO
              NomCfdi.TextMatrix(I7, 53) = ""                       '54 TIPOJORNADA

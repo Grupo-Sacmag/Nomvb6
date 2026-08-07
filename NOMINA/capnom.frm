@@ -106,6 +106,24 @@ Begin VB.Form Form8
       Top             =   960
       Width           =   1695
    End
+   Begin VB.ComboBox ComboEspecial 
+      Appearance      =   0  'Flat
+      BeginProperty Font 
+         Name            =   "Arial"
+         Size            =   9.75
+         Charset         =   0
+         Weight          =   400
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      Height          =   360
+      Left            =   3360
+      Style           =   2  'Dropdown List
+      TabIndex        =   20
+      Top             =   960
+      Width           =   1695
+   End
    Begin VB.Frame Frame2 
       Caption         =   "Quincena:"
       BeginProperty Font 
@@ -2368,63 +2386,104 @@ Sub checar()
          Case 3
               MsgBox "El sueldo se modifica editando su archivo de personal", vbCritical, "Captura de Nomina"
               Text2.Text = valcelant
-         Case 4 To 6
-              hs_ext = personal.ingr / 8
-            If N_ormal = 0 Then
-              Select Case ruta
-                 Case 4
-                    dato_sal = dato_ent * hs_ext
-                    ConNom1.Col = ruta
-                    ConNom1.Text = Format(dato_sal, z1$)
-                 Case 5
-                    dato_sal = dato_ent * hs_ext * 2
-                    ConNom1.Col = ruta
-                    ConNom1.Text = Format(dato_sal, z1$)
-                 Case 6
-                    dato_sal = (dato_ent * hs_ext * 3)
-                    ConNom1.Col = ruta
-                    ConNom1.Text = Format(dato_sal, z1$)
-              End Select
-              Else
-              Select Case ruta
-                 Case 4 To 6
-                    dato_sal = dato_ent
-                    ConNom1.Col = ruta
-                    ConNom1.Text = Format(dato_sal, z1$)
-                 End Select
-           End If
+         Case 4 To 6 ' Horas Extras / Aguinaldo / PTU
+                 If N_ormal = 0 Then ' --- NOMINA NORMAL (Horas Extras) ---
+                    If personal.ingr <> 0 Then
+                       hs_ext = personal.ingr / 8
+                    Else
+                       hs_ext = 0
+                    End If
+                    Select Case ruta
+                       Case 4 To 6
+                         dato_sal = dato_ent * hs_ext
+                         ConNom1.Col = ruta
+                         ConNom1.Text = Format(dato_sal, z1$)
+                    End Select
+                 Else ' --- NOMINA ESPECIAL ---
+                    If ComboEspecial.ListIndex = 0 Then ' --- Aguinaldo / PTU ---
+                        Select Case ruta
+                           Case 4
+                             dato_sal = dato_ent
+                             ConNom1.Col = ruta
+                             ConNom1.Text = Format(dato_sal, z1$)
+                             
+                           Case 5
+                             If ConNom1.Col = 5 Then
+                                If dato_ent > exento Then
+                                    dato_sal = dato_ent - exento
+                                    ConNom1.TextMatrix(ConNom1.Row, 10) = Format(exento, z1$)
+                                    Text2.Text = Format(dato_sal, z1$)
+                                    ConNom1.TextMatrix(ConNom1.Row, 5) = Format(dato_sal, z1$)
+                                Else
+                                    ConNom1.TextMatrix(ConNom1.Row, 10) = Format(dato_ent, z1$)
+                                    Text2.Text = Format(0, z1$)
+                                    ConNom1.TextMatrix(ConNom1.Row, 5) = Format(0, z1$)
+                                End If
+                             End If
+                             
+                           Case 6
+                              Dim utilidadTotal As Currency
+                              Dim utilidadGravada As Currency
+                              
+                              utilidadTotal = dato_ent
+                              
+                              If utilidadTotal > exento Then
+                                  utilidadGravada = utilidadTotal - exento
+                                  ConNom1.TextMatrix(ConNom1.Row, 10) = Format(exento, z1$)
+                                  ConNom1.Col = ruta
+                                  ConNom1.Text = Format(utilidadGravada, z1$)
+                              Else
+                                  utilidadGravada = 0
+                                  ConNom1.TextMatrix(ConNom1.Row, 10) = Format(utilidadTotal, z1$)
+                                  ConNom1.Col = ruta
+                                  ConNom1.Text = Format(0, z1$)
+                              End If
+                        End Select
+                    Else ' --- Liquidaciones (Valor Directo) ---
+                        dato_sal = dato_ent
+                        ConNom1.Col = ruta
+                        ConNom1.Text = Format(dato_sal, z1$)
+                        If ruta = 5 Or ruta = 6 Then
+                            ConNom1.TextMatrix(ConNom1.Row, 10) = Format(0, z1$)
+                        End If
+                    End If
+                 End If
+         
          Case 7, 9
-              aoingr = Val(Mid$(personal.fal, 7, 4))
-              If aoingr < 1900 Then
-                  antig = 1
-                  Else
-                  antig = empresa.ao + 1 - aoingr
+              If N_ormal = 1 And ComboEspecial.ListIndex = 1 And ruta = 7 Then ' --- Liquidaciones: Indemnizaciones ---
+                  ConNom1.Col = ruta: ConNom1.Text = Format(dato_ent, z1$)
+              Else
+                  aoingr = Val(Mid$(personal.fal, 7, 4))
+                  If aoingr < 1900 Then
+                      antig = 1
+                      Else
+                      antig = empresa.ao + 2 - aoingr
+                  End If
+                  facto = 0
+                  factor antig, facto
+                  
+                  dato_sal = 0
+                  checanum 2, dato_sal
+                  Select Case ruta
+                     Case 7
+                        If dato_ent = 0 Or dato_sal = 0 Then
+                           personal.viat = 0
+                           Else
+                           personal.viat = dato_ent / dato_sal
+                        End If
+                     Case 9
+                        If dato_ent = 0 Or dato_sal = 0 Then
+                           personal.otras = 0
+                           Else
+                           personal.otras = dato_ent / dato_sal
+                        End If
+                  End Select
+                  personal.integrado = (personal.ingr + personal.viat + personal.otras) * facto
+                  If personal.integrado > (empresa.sm * 25) Then personal.integrado = (empresa.sm * 25)
+                  Put 2, regtro, personal
+                  ConNom1.Col = ruta: ConNom1.Text = Format(dato_ent, z1$)
               End If
-               facto = 0
-               factor antig, facto
-               
-               dato_sal = 0
-               checanum 2, dato_sal
-               Select Case ruta
-                  Case 7
-                     If dato_ent = 0 Or dato_sal = 0 Then
-                        personal.viat = 0
-                        Else
-                        personal.viat = dato_ent / dato_sal
-                      End If
-                  Case 9
-                     If dato_ent = 0 Or dato_sal = 0 Then
-                        personal.otras = 0
-                        Else
-                        personal.otras = dato_ent / dato_sal
-                      End If
-               End Select
-               
-               personal.integrado = (personal.ingr + personal.viat + personal.otras) * facto
-               If personal.integrado > (empresa.sm * 25) Then personal.integrado = (empresa.sm * 25)
-               MsgBox "El salario integrado en el archivo de personal fue cambiado", vbexclamacion
-               Put 2, regtro, personal
-               ConNom1.Col = ruta: ConNom1.Text = Format(dato_ent, z1$)
+         
                Case 12
                respuesta = MsgBox("Si modifica esta celda ya no se efectuara el calculo de la retencion", vbYesNo + vbExclamation + vbDefaultButton2, "Mensaje de Nomina")
                If respuesta = vbYes Then
@@ -3164,6 +3223,15 @@ Private Sub Combo1_KeyPress(KeyAscii As Integer)
 End Sub
 
 Private Sub Form_Load()
+    If Option1 = True Then
+        N_ormal = 0
+        Option3.Enabled = True
+        Option4.Enabled = True
+    ElseIf Option2 = True Then
+        N_ormal = 1
+        Option3.Enabled = False
+        Option4.Enabled = False
+    End If
     Clipboard.Clear
     Mnunomobr.Item(0).Visible = True
     Mnunomobr.Item(0).Caption = "Nomina Total"
@@ -3202,6 +3270,11 @@ Private Sub Form_Load()
      Combo1.Text = Combo1.List(0)
      meselegido = 1
      Label7.Caption = "Nomina de la 1a.quincena de" + Combo1.Text + Str$(empresa.ao)
+     ComboEspecial.Clear
+     ComboEspecial.AddItem "1. Aguinaldo / PTU"
+     ComboEspecial.AddItem "2. Liquidaciones (Compensaciones/Antigüedad/Indemnizaciones)"
+     ComboEspecial.ListIndex = 0
+     ComboEspecial.Visible = False
      Else
        Close 2
        MsgBox "No existe archivo de personal no es posible capturar la nomina"
@@ -3439,6 +3512,7 @@ Private Sub Option4_Click()
      If Option4 = True Then
         Label7.Caption = "Nomina de la 2a.quincena " + Combo1.Text + Str$(empresa.ao)
         dia_pago = dd(meselegido) - 1
+        ActualizarNombreNormal
         
         If meselegido = 12 Then
               respuesta = MsgBox("Desea hacer Calculo Anual", vbCritical + vbYesNo, "Captura Ultima Nomina")
@@ -3542,4 +3616,93 @@ Private Sub Text3_KeyPress(KeyAscii As Integer)
       ConNom1.SetFocus
    End If
    
+End Sub
+
+
+Private Sub ComboEspecial_Click()
+    ActualizarEncabezados
+    ActualizarPrefijo
+End Sub
+
+Private Sub ActualizarPrefijo()
+    If N_ormal = 1 Then
+        Dim prefix As String
+        If ComboEspecial.ListIndex = 0 Then
+            prefix = "ESP"
+        Else
+            prefix = "LIQ"
+        End If
+        Text1.Locked = False
+        Text1.Text = prefix
+        Text1.SelStart = Len(prefix)
+    End If
+End Sub
+
+Private Sub Text1_Change()
+    If N_ormal = 1 Then
+        Dim prefix As String
+        If ComboEspecial.ListIndex = 0 Then
+            prefix = "ESP"
+        Else
+            prefix = "LIQ"
+        End If
+        
+        if Len(Text1.Text) < Len(prefix) Or UCase(Left(Text1.Text, Len(prefix))) <> prefix Then
+            Dim selStart As Integer
+            selStart = Text1.SelStart
+            Text1.Text = prefix & Mid(Text1.Text, Len(prefix) + 1)
+            If selStart < Len(prefix) Then
+                Text1.SelStart = Len(prefix)
+            Else
+                Text1.SelStart = selStart
+            End If
+        End If
+    End If
+End Sub
+
+Private Sub ActualizarNombreNormal()
+    If N_ormal = 0 Then
+        Dim mes3 As String
+        Dim quinNum As String
+        Dim anioStr As String
+        
+        If Combo1.ListIndex >= 0 Then
+            mes3 = UCase(Mid$(Combo1.Text, 1, 3))
+        Else
+            mes3 = ""
+        End If
+        
+        If Option3 = True Then
+            quinNum = "1"
+        Else
+            quinNum = "2"
+        End If
+        
+        anioStr = LTrim$(Str$(empresa.ao))
+        
+        Text1.Text = mes3 & quinNum & anioStr
+        Text1.Locked = True
+    End If
+End Sub
+
+Public Sub ActualizarEncabezados()
+    On Error Resume Next
+    If N_ormal = 0 Then
+        ConNom1.TextMatrix(0, 4) = "hs.Norm."
+        ConNom1.TextMatrix(0, 5) = "hs.Dobles"
+        ConNom1.TextMatrix(0, 6) = "hs.Triples"
+        ConNom1.TextMatrix(0, 7) = "O.F."
+    Else
+        If ComboEspecial.ListIndex = 0 Then
+            ConNom1.TextMatrix(0, 4) = "hs.Norm."
+            ConNom1.TextMatrix(0, 5) = "Aguinaldo"
+            ConNom1.TextMatrix(0, 6) = "Ptu"
+            ConNom1.TextMatrix(0, 7) = "Premio punt."
+        Else
+            ConNom1.TextMatrix(0, 4) = "Premio Asist."
+            ConNom1.TextMatrix(0, 5) = "Compensac."
+            ConNom1.TextMatrix(0, 6) = "P. Antigüedad"
+            ConNom1.TextMatrix(0, 7) = "Indemnizac."
+        End If
+    End If
 End Sub

@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{5E9E78A0-531B-11CF-91F6-C2863C385E30}#1.0#0"; "msflxgrd.ocx"
+Object = "{5E9E78A0-531B-11CF-91F6-C2863C385E30}#1.0#0"; "MSFLXGRD.OCX"
 Begin VB.Form NomCf 
    Caption         =   "Captura para emitir CFDI"
    ClientHeight    =   8430
@@ -190,7 +190,7 @@ Private Sub Form_Load()
             NomCfdi.TextMatrix(I7, 48) = ""                                                     '49 BANCO
             VFal = Mid(Trim(personal.fal), 7, 4) + "-" + Mid(Trim(personal.fal), 4, 2) + "-" + Mid(Trim(personal.fal), 1, 2)
             NomCfdi.TextMatrix(I7, 49) = VFal                                                   '50 FECHAINICIORELLABORAL
-            NomCfdi.TextMatrix(I7, 50) = Year(MiFecha) - Year(MiFechaAlta)                      '51 ANTIGUEDAD
+            NomCfdi.TextMatrix(I7, 50) = CalcularAntiguedad(MiFechaAlta)                      '51 ANTIGUEDAD
             
             NomCfdi.TextMatrix(I7, 51) = ""                                                     '52 PUESTO
             NomCfdi.TextMatrix(I7, 52) = ""                                                     '53 TIPOCONTRATO
