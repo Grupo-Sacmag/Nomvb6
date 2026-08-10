@@ -645,18 +645,18 @@ On Error Resume Next
     abrEmpresa = Left(Trim(emp), 4)
   
     Select Case UCase(abrEmpresa)
-        Case "SACM"
+        Case "SACMAG DE"
             abrEmpresa = "SACMAG"
         Case "COOR"
             abrEmpresa = "CORDINA"
-        Case "EPES"
-            abrEmpresa = "EPESA"
+        'Case "EPES"
+        '    abrEmpresa = "EPESA"
         Case "SUPE"
             abrEmpresa = "SUPERVISA"
-        Case "SUPT"
-            abrEmpresa = "SUPTER"
-        Case "CONS"
-            abrEmpresa = "CONSULTE"
+        ' Case "SUPT"
+        '    abrEmpresa = "SUPTER"
+        'Case "CONS"
+        '    abrEmpresa = "CONSULTE"
         ' Agregar más casos según sea necesario
     End Select
 
