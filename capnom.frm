@@ -871,6 +871,7 @@ Dim Slinimpte As Currency, Slincam As Currency, Sabono As Integer
 Dim porc_apli As Currency, p_vacacional As Currency, Detener As Integer, Detener1 As Integer
 Dim PrincIngr As Long, PrincDesc As Long, Color_gris As Long, Nu_mero As Double, M_aximo As Long
 Public subsidioParaElEmpleo As Currency
+Dim keepFilesOpen As Boolean
 
 Private Sub Borrarblancos_Click(Index As Integer)
     Dim i As Integer
@@ -3328,7 +3329,9 @@ Sub define()
    Else
        If ComboEspecial.ListIndex = 0 Then
            ConNom1.Text = "hs.Norm."
-      
+       Else
+           ConNom1.Text = "hs.Norm."
+       End If
    End If
    
    ConNom1.Col = 5: ConNom1.CellAlignment = 4: ConNom1.ColWidth(5) = 1200
@@ -3582,12 +3585,28 @@ Private Sub FuncionImpuesto()
     rrenat = ConNom1.Row
     rcolant = ConNom1.Col
      
+    ProgressBar1.Min = 0
+    ProgressBar1.Max = ConNom1.Rows
+    ProgressBar1.Value = 0
+    ProgressBar1.Visible = True
+     
+    ' Optimizacion Op B: Abrir archivos de retencion antes del bucle
+    keepFilesOpen = True
+    If Option3.Value = True Then
+        Close 3: Open (Trim(Dir_imptos) + "Tab08Kin.ISR") For Random As #3 Len = Len(articulo)
+        Close 4: Open (Trim(Dir_imptos) + "Tab08Kin.SUB") For Random As #4 Len = Len(subsidio)
+    ElseIf Option4.Value = True Then
+        Dim mesNominaOpt As String, anioNominaOpt As String
+        mesNominaOpt = Trim(Left(Combo1.Text, 3))
+        anioNominaOpt = Right(Trim(Label7.Caption), 4)
+        Close 35: Open CStr(Trim(Form1.Dir1)) + "\" + mesNominaOpt + "1" + anioNominaOpt + ".NOM" For Random As 35 Len = Len(nomina)
+        Close 36: Open CStr(Trim(Form1.Dir1)) + "\" + mesNominaOpt + "1" + anioNominaOpt + ".cmp" For Random As 36 Len = Len(nom_com)
+        Close 3: Open (Trim(Dir_imptos) + "Tab08Mes.ISR") For Random As #3 Len = Len(articulo)
+        Close 4: Open (Trim(Dir_imptos) + "Tab08Mes.SUB") For Random As #4 Len = Len(subsidio)
+    End If
+     
     For li = 1 To ConNom1.Rows - 3
-      ProgressBar1.Min = 0
-      ProgressBar1.Max = ConNom1.Rows
-      ProgressBar1.Value = 0
-      ProgressBar1.Visible = True
-      ProgressBar1.Value = li
+        ProgressBar1.Value = li
           
         If IsNumeric(ConNom1.TextMatrix(li, 0)) Then
             regtro = ConNom1.TextMatrix(li, 0)
@@ -3607,6 +3626,12 @@ Private Sub FuncionImpuesto()
             sumah impto1, imss1
         End If
     Next li
+     
+    ' Optimizacion Op B: Cerrar archivos y restablecer flag al terminar
+    If keepFilesOpen Then
+        keepFilesOpen = False
+        Close 3: Close 4: Close 35: Close 36
+    End If
      
     ProgressBar1.Visible = False
     ConNom1.Row = rrenat
@@ -3979,6 +4004,21 @@ sigueLE:
             Get 13, 1, Dat_ide
             ceroscompl
             
+            ' Optimizacion Op B: Abrir archivos de retencion antes del bucle
+            keepFilesOpen = True
+            If Option3.Value = True Then
+                Close 3: Open (Trim(Dir_imptos) + "Tab08Kin.ISR") For Random As #3 Len = Len(articulo)
+                Close 4: Open (Trim(Dir_imptos) + "Tab08Kin.SUB") For Random As #4 Len = Len(subsidio)
+            ElseIf Option4.Value = True Then
+                Dim mesNominaOpt As String, anioNominaOpt As String
+                mesNominaOpt = Trim(Left(Combo1.Text, 3))
+                anioNominaOpt = Right(Trim(Label7.Caption), 4)
+                Close 35: Open CStr(Trim(Form1.Dir1)) + "\" + mesNominaOpt + "1" + anioNominaOpt + ".NOM" For Random As 35 Len = Len(nomina)
+                Close 36: Open CStr(Trim(Form1.Dir1)) + "\" + mesNominaOpt + "1" + anioNominaOpt + ".cmp" For Random As 36 Len = Len(nom_com)
+                Close 3: Open (Trim(Dir_imptos) + "Tab08Mes.ISR") For Random As #3 Len = Len(articulo)
+                Close 4: Open (Trim(Dir_imptos) + "Tab08Mes.SUB") For Random As #4 Len = Len(subsidio)
+            End If
+            
             For r = 1 To Dm: Get #2, r, personal
                 rgtro = r
                 regtro = r
@@ -4021,6 +4061,12 @@ sigueLE:
 SIGUE:
                 ProgressBar1.Value = r
             Next r
+            
+            ' Optimizacion Op B: Cerrar archivos y restablecer flag
+            If keepFilesOpen Then
+                keepFilesOpen = False
+                Close 3: Close 4: Close 35: Close 36
+            End If
         End If
         
     sumavert
@@ -4163,6 +4209,21 @@ sigueLE:
             Get 13, 1, Dat_ide
             ceroscompl
             
+            ' Optimizacion Op B: Abrir archivos de retencion antes del bucle
+            keepFilesOpen = True
+            If Option3.Value = True Then
+                Close 3: Open (Trim(Dir_imptos) + "Tab08Kin.ISR") For Random As #3 Len = Len(articulo)
+                Close 4: Open (Trim(Dir_imptos) + "Tab08Kin.SUB") For Random As #4 Len = Len(subsidio)
+            ElseIf Option4.Value = True Then
+                Dim mesNominaOpt2 As String, anioNominaOpt2 As String
+                mesNominaOpt2 = Trim(Left(Combo1.Text, 3))
+                anioNominaOpt2 = Right(Trim(Label7.Caption), 4)
+                Close 35: Open CStr(Trim(Form1.Dir1)) + "\" + mesNominaOpt2 + "1" + anioNominaOpt2 + ".NOM" For Random As 35 Len = Len(nomina)
+                Close 36: Open CStr(Trim(Form1.Dir1)) + "\" + mesNominaOpt2 + "1" + anioNominaOpt2 + ".cmp" For Random As 36 Len = Len(nom_com)
+                Close 3: Open (Trim(Dir_imptos) + "Tab08Mes.ISR") For Random As #3 Len = Len(articulo)
+                Close 4: Open (Trim(Dir_imptos) + "Tab08Mes.SUB") For Random As #4 Len = Len(subsidio)
+            End If
+            
             For r = 1 To Dm: Get #2, r, personal
                 rgtro = r
                 regtro = r
@@ -4187,6 +4248,12 @@ sigueLE:
 SIGUE:
                 ProgressBar1.Value = r
             Next r
+            
+            ' Optimizacion Op B: Cerrar archivos y restablecer flag
+            If keepFilesOpen Then
+                keepFilesOpen = False
+                Close 3: Close 4: Close 35: Close 36
+            End If
         End If
         Close 10
         ConNom1.SetFocus
@@ -4408,8 +4475,12 @@ Public Sub calculoRetencion(ingresoBruto, impuesto, porcentajeSubsidio, idEmplea
     
     If Form8.Option3.Value = True Then
         ' Abre los archivos de tarifas
-        Close 3: Open (Trim(Dir_imptos) + "Tab08Kin.ISR") For Random As #3 Len = Len(articulo): largoArticulo = LOF(3) / Len(articulo)
-        Close 4: Open (Trim(Dir_imptos) + "Tab08Kin.SUB") For Random As #4 Len = Len(subsidio): largoSubsidio = LOF(4) / Len(subsidio)
+        If Not keepFilesOpen Then
+            Close 3: Open (Trim(Dir_imptos) + "Tab08Kin.ISR") For Random As #3 Len = Len(articulo)
+            Close 4: Open (Trim(Dir_imptos) + "Tab08Kin.SUB") For Random As #4 Len = Len(subsidio)
+        End If
+        largoArticulo = LOF(3) / Len(articulo)
+        largoSubsidio = LOF(4) / Len(subsidio)
                 For i = 1 To largoArticulo
             Get 4, 1, subsidio
     
@@ -4458,8 +4529,10 @@ Public Sub calculoRetencion(ingresoBruto, impuesto, porcentajeSubsidio, idEmplea
         mesNomina = Trim(Left(Combo1.Text, 3))
         AñoNomina = Right(Trim(Label7.Caption), 4)
         
-        Close 35: Open CStr(Trim(Form1.Dir1)) + "\" + mesNomina + "1" + AñoNomina + ".NOM" For Random As 35 Len = Len(nomina)
-        Close 36: Open CStr(Trim(Form1.Dir1)) + "\" + mesNomina + "1" + AñoNomina + ".cmp" For Random As 36 Len = Len(nom_com)
+        If Not keepFilesOpen Then
+            Close 35: Open CStr(Trim(Form1.Dir1)) + "\" + mesNomina + "1" + AñoNomina + ".NOM" For Random As 35 Len = Len(nomina)
+            Close 36: Open CStr(Trim(Form1.Dir1)) + "\" + mesNomina + "1" + AñoNomina + ".cmp" For Random As 36 Len = Len(nom_com)
+        End If
         
         Get 35, regtro, nomina: Get 36, regtro, nom_com
         
@@ -4470,8 +4543,12 @@ Public Sub calculoRetencion(ingresoBruto, impuesto, porcentajeSubsidio, idEmplea
         diasTrabajados = ConNom1.TextMatrix(ConNom1.Row, 2)
         
         ' Tarifa mensual
-        Close 3: Open (Trim(Dir_imptos) + "Tab08Mes.ISR") For Random As #3 Len = Len(articulo): largoArticulo = LOF(3) / Len(articulo)
-        Close 4: Open (Trim(Dir_imptos) + "Tab08Mes.SUB") For Random As #4 Len = Len(subsidio): largoSubsidio = LOF(4) / Len(subsidio)
+        If Not keepFilesOpen Then
+            Close 3: Open (Trim(Dir_imptos) + "Tab08Mes.ISR") For Random As #3 Len = Len(articulo)
+            Close 4: Open (Trim(Dir_imptos) + "Tab08Mes.SUB") For Random As #4 Len = Len(subsidio)
+        End If
+        largoArticulo = LOF(3) / Len(articulo)
+        largoSubsidio = LOF(4) / Len(subsidio)
          
         ingresoMensual = ingresoBruto + IngresosAnteriores
         

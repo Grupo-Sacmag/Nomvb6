@@ -305,6 +305,9 @@ DENUEVO:
     
     I8 = 0
        
+    ' Optimizacion: Desactivar redibujado de la cuadricula durante la carga
+    NOMCF2.NOMCF.Redraw = False
+    
     For I7 = 1 To Form8.ConNom1.Rows - 3
         Folio = Folio + 1
         If IsNumeric(Form8.ConNom1.TextMatrix(I7, 0)) Then
@@ -332,7 +335,8 @@ DENUEVO:
     Loop
     
 handler:
-
+    ' Optimizacion: Reestablecer redibujado al terminar la carga
+    NOMCF2.NOMCF.Redraw = True
 End Sub
 
 
