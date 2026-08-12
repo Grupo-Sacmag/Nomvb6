@@ -109,7 +109,7 @@ PCpCfdi.Clear: PCpCfdi.Rows = 200: PCpCfdi.Cols = 9: PCpCfdi.FixedCols = 0
 End Sub
 
 Private Sub ArCfAbr_Click()
-   Dim EmpNum As Long, Nombre As String, Cadena1
+   Dim EmpNum As Long, nombre As String, Cadena1
    PCpCfdi.Rows = 1
     Close 1, 2
     
@@ -120,8 +120,8 @@ Private Sub ArCfAbr_Click()
     For i = 1 To cm: Get 2, i, personal: Get 1, i, Empleado_1
     
     If IsNumeric(Empleado_1.Cpostal) Then
-           Nombre = (Trim(personal.nom) + " " + Trim(personal.ape1) + " " + Trim(personal.ape2))
-           Cadena1 = Format(i, "####0") & Chr(9) & Nombre & Chr(9) & Empleado_1.Direccion _
+           nombre = (Trim(personal.nom) + " " + Trim(personal.ape1) + " " + Trim(personal.ape2))
+           Cadena1 = Format(i, "####0") & Chr(9) & nombre & Chr(9) & Empleado_1.Direccion _
                      & Chr(9) & Empleado_1.Colonia & Chr(9) & Empleado_1.Ciudad _
                      & Chr(9) & Empleado_1.Estado & Chr(9) & Empleado_1.Delegacion _
                      & Chr(9) & Empleado_1.Cpostal & Chr(9) & Empleado_1.correo
@@ -323,7 +323,7 @@ Private Sub Form_Load()
     
     abrEmpresa = Left(Trim(emp), 4)
   
-    If (UCase(abrEmpresa) = "SACM") Then
+    If (UCase(abrEmpresa) = "SACMAG DE") Then
         abrEmpresa = "SACMAG"
     End If
     If (UCase(abrEmpresa) = "SUPT") Then
@@ -440,13 +440,13 @@ Private Sub pcpcfdi_KeyDown(KeyCode As Integer, Shift As Integer)
     Select Case KeyCode
             Case vbKeyDelete
                
-               For Q = PCpCfdi.Row To PCpCfdi.RowSel
+               For q = PCpCfdi.Row To PCpCfdi.RowSel
                  
                  For W = PCpCfdi.Col To PCpCfdi.ColSel
                     
-                    PCpCfdi.TextMatrix(Q, W) = ""
+                    PCpCfdi.TextMatrix(q, W) = ""
                  Next W
-               Next Q
+               Next q
                
                 LTXT.Text = PCpCfdi.Text
             Case vbKeyF2

@@ -78,7 +78,7 @@ Begin VB.Form Form8
       Height          =   360
       Left            =   7800
       TabIndex        =   13
-      Top             =   1200
+      Top             =   1080
       Width           =   1815
    End
    Begin VB.TextBox Text2 
@@ -157,6 +157,25 @@ Begin VB.Form Form8
       TabIndex        =   6
       Top             =   1200
       Width           =   2295
+   End
+   Begin VB.ComboBox ComboEspecial 
+      Appearance      =   0  'Flat
+      BeginProperty Font 
+         Name            =   "Arial"
+         Size            =   9.75
+         Charset         =   0
+         Weight          =   400
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      Height          =   360
+      Left            =   3360
+      Style           =   2  'Dropdown List
+      TabIndex        =   19
+      Top             =   1200
+      Visible         =   0   'False
+      Width           =   2280
    End
    Begin VB.Frame Frame2 
       Caption         =   "Quincena:"
@@ -929,6 +948,12 @@ Private Sub Form_Load()
         miMesesito = Month(Date)
         Combo1.ListIndex = miMesesito - 1
         Label7.Caption = "Nomina de la 1a.quincena de" + Combo1.Text + Str$(empresa.ao)
+        
+        ComboEspecial.Clear
+        ComboEspecial.AddItem "1. Aguinaldo / PTU"
+        ComboEspecial.AddItem "2. Liquidaciones (Compensaciones/Antig" & Chr(252) & "edad/Indemnizaciones)"
+        ComboEspecial.ListIndex = 0
+        ComboEspecial.Visible = False
     Else
         Close 2
         MsgBox "No existe archivo de personal no es posible capturar la nomina"
@@ -984,8 +1009,8 @@ Private Sub nomcap_ini_Click(Index As Integer)
     
     ' 3. Redirigir si estÃ¡ bloqueado
     If locked Then
-        MsgBox "El archivo de esta nÃ³mina ya fue creado anteriormente y no puede ser modificado por reglas de negocio." & vbCrLf & _
-               "Se abrirÃ¡ en modo de sÃ³lo lectura en el Visualizador.", vbInformation, "NÃ³mina Cerrada"
+        MsgBox "El archivo de esta nómina ya fue creado anteriormente y no puede ser modificado por reglas de negocio." & vbCrLf & _
+               "Se abrirá en modo de sólo lectura en el Visualizador.", vbInformation, "Nómina Cerrada"
         Form8.Hide
         Load FormViewer
         FormViewer.Show
@@ -2773,75 +2798,91 @@ Rem On Error GoTo manejador
                     ConNom1.Text = Format(dato_sal, z1$)
               End Select
             Else
-              Select Case ruta
-                 Case 4
-                    dato_sal = dato_ent
-                    ConNom1.Col = ruta
-                    ConNom1.Text = Format(dato_sal, z1$)
-                 Case 5
-                    If N_ormal = 1 And ConNom1.Col = 5 Then
-                        If dato_ent > exento Then
-                            dato_sal = dato_ent - exento
-                            ConNom1.TextMatrix(ConNom1.Row, 10) = Format(exento, z1)
-                            Text2.Text = dato_sal
-                            ConNom1.TextMatrix(ConNom1.Row, 5) = Format(dato_sal, z1)
-                        Else
-                            ConNom1.TextMatrix(ConNom1.Row, 10) = Format(dato_ent, z1)
-                            Text2.Text = 0
-                            ConNom1.TextMatrix(ConNom1.Row, 5) = Format(0, z1)
+              If ComboEspecial.ListIndex = 0 Then
+                  Select Case ruta
+                     Case 4
+                        dato_sal = dato_ent
+                        ConNom1.Col = ruta
+                        ConNom1.Text = Format(dato_sal, z1$)
+                     Case 5
+                        If N_ormal = 1 And ConNom1.Col = 5 Then
+                            If dato_ent > exento Then
+                                dato_sal = dato_ent - exento
+                                ConNom1.TextMatrix(ConNom1.Row, 10) = Format(exento, z1)
+                                Text2.Text = dato_sal
+                                ConNom1.TextMatrix(ConNom1.Row, 5) = Format(dato_sal, z1)
+                            Else
+                                ConNom1.TextMatrix(ConNom1.Row, 10) = Format(dato_ent, z1)
+                                Text2.Text = 0
+                                ConNom1.TextMatrix(ConNom1.Row, 5) = Format(0, z1)
+                            End If
+                         End If
+                     Case 6
+                        Dim utilidad As Currency
+                        
+                        dato_sal = dato_ent
+                        ConNom1.Col = ruta
+                        ConNom1.Text = Format(dato_sal, z1$)
+                        
+                        utilidad = ConNom1.TextMatrix(ConNom1.Row, 6)
+                        utilidad = utilidad - exento
+                        ConNom1.TextMatrix(ConNom1.Row, 6) = Format(utilidad, z1)
+                        ConNom1.TextMatrix(ConNom1.Row, 10) = Format(exento, z1)
+                        
+                        If utilidad < 0 Then
+                            ConNom1.TextMatrix(ConNom1.Row, 6) = Format(0.01, z1)
+                            ConNom1.TextMatrix(ConNom1.Row, 10) = Format(dato_sal, z1)
                         End If
-                     End If
-                 Case 6
-                    Dim utilidad As Currency
-                    
-                    dato_sal = dato_ent
-                    ConNom1.Col = ruta
-                    ConNom1.Text = Format(dato_sal, z1$)
-                    
-                    utilidad = ConNom1.TextMatrix(ConNom1.Row, 6)
-                    utilidad = utilidad - exento
-                    ConNom1.TextMatrix(ConNom1.Row, 6) = Format(utilidad, z1)
-                    ConNom1.TextMatrix(ConNom1.Row, 10) = Format(exento, z1)
-                    
-                    If utilidad < 0 Then
-                        ConNom1.TextMatrix(ConNom1.Row, 6) = Format(0.01, z1)
-                        ConNom1.TextMatrix(ConNom1.Row, 10) = Format(dato_sal, z1)
-                    End If
-                 End Select
+                  End Select
+              Else
+                  ' Liquidaciones (Valor Directo) sin exenciones en captura manual
+                  dato_sal = dato_ent
+                  ConNom1.Col = ruta
+                  ConNom1.Text = Format(dato_sal, z1$)
+                  If ruta = 5 Or ruta = 6 Then
+                      ConNom1.TextMatrix(ConNom1.Row, 10) = Format(0, z1)
+                  End If
+              End If
            End If
          
          Case 7, 9
-              aoingr = Val(Mid$(personal.fal, 7, 4))
-              If aoingr < 1900 Then
-                  antig = 1
-                  Else
-                  antig = CalcularAntiguedad(personal.fal)
+              If N_ormal = 1 And ComboEspecial.ListIndex = 1 And ruta = 7 Then
+                  ' Liquidaciones: IndemnizaciÃ³n directa en columna 7
+                  ConNom1.Col = ruta
+                  ConNom1.Text = Format(dato_ent, z1$)
+              Else
+                  aoingr = Val(Mid$(personal.fal, 7, 4))
+                  If aoingr < 1900 Then
+                      antig = 1
+                      Else
+                      antig = CalcularAntiguedad(personal.fal)
+                  End If
+                  facto = 0
+                  factor antig, facto
+                  
+                  dato_sal = 0
+                  checanum 2, dato_sal
+                  Select Case ruta
+                     Case 7
+                        If dato_ent = 0 Or dato_sal = 0 Then
+                           personal.viat = 0
+                           Else
+                           personal.viat = dato_ent / dato_sal
+                         End If
+                     Case 9
+                        If dato_ent = 0 Or dato_sal = 0 Then
+                           personal.otras = 0
+                           Else
+                           personal.otras = dato_ent / dato_sal
+                         End If
+                  End Select
+                  
+                  personal.integrado = (personal.ingr * facto) + personal.viat + personal.otras
+                  If personal.integrado > (empresa.sm * 25) Then personal.integrado = (empresa.sm * 25)
+                  MsgBox "El salario integrado en el archivo de personal fue cambiado", vbexclamacion
+                  Put 2, regtro, personal
+                  ConNom1.Col = ruta: ConNom1.Text = Format(dato_ent, z1$)
               End If
-               facto = 0
-               factor antig, facto
-               
-               dato_sal = 0
-               checanum 2, dato_sal
-               Select Case ruta
-                  Case 7
-                     If dato_ent = 0 Or dato_sal = 0 Then
-                        personal.viat = 0
-                        Else
-                        personal.viat = dato_ent / dato_sal
-                      End If
-                  Case 9
-                     If dato_ent = 0 Or dato_sal = 0 Then
-                        personal.otras = 0
-                        Else
-                        personal.otras = dato_ent / dato_sal
-                      End If
-               End Select
-               
-               personal.integrado = (personal.ingr * facto) + personal.viat + personal.otras
-               If personal.integrado > (empresa.sm * 25) Then personal.integrado = (empresa.sm * 25)
-               MsgBox "El salario integrado en el archivo de personal fue cambiado", vbexclamacion
-               Put 2, regtro, personal
-               ConNom1.Col = ruta: ConNom1.Text = Format(dato_ent, z1$)
                Case 12
                respuesta = MsgBox("Si modifica esta celda ya no se efectuara el calculo de la retencion", vbYesNo + vbExclamation + vbDefaultButton2, "Mensaje de Nomina")
                If respuesta = vbYes Then
@@ -3281,28 +3322,47 @@ Sub define()
    ConNom1.Col = 1: ConNom1.CellAlignment = 4: ConNom1.ColWidth(1) = 3500: ConNom1.Text = "Nombre"
    ConNom1.Col = 2: ConNom1.CellAlignment = 4: ConNom1.ColWidth(2) = 1200: ConNom1.Text = "dias T."
    ConNom1.Col = 3: ConNom1.CellAlignment = 4: ConNom1.ColWidth(3) = 1200: ConNom1.Text = "Sueldo"
-   ConNom1.Col = 4: ConNom1.CellAlignment = 4: ConNom1.ColWidth(4) = 1200: ConNom1.Text = "hs.Norm."
+   ConNom1.Col = 4: ConNom1.CellAlignment = 4: ConNom1.ColWidth(4) = 1200
+   If N_ormal = 0 Then
+       ConNom1.Text = "hs.Norm."
+   Else
+       If ComboEspecial.ListIndex = 0 Then
+           ConNom1.Text = "hs.Norm."
+      
+   End If
+   
    ConNom1.Col = 5: ConNom1.CellAlignment = 4: ConNom1.ColWidth(5) = 1200
-    
-    If N_ormal = 0 Then
-        ConNom1.Text = "hs.Dobles"
-    Else
-        ConNom1.Text = "Aguinaldo"
-    End If
-    
-    ConNom1.Col = 6: ConNom1.CellAlignment = 4: ConNom1.ColWidth(6) = 1200
-    
-    If N_ormal = 0 Then
-        ConNom1.Text = "hs.Triples"
-    Else
-        ConNom1.Text = "Ptu"
-    End If
-    
-    If N_ormal = 0 Then
-        ConNom1.Col = 7: ConNom1.CellAlignment = 4: ConNom1.ColWidth(7) = 1200: ConNom1.Text = "O.F."
-    Else
-        ConNom1.Col = 7: ConNom1.CellAlignment = 4: ConNom1.ColWidth(7) = 1200: ConNom1.Text = "Premio punt."
-    End If
+   If N_ormal = 0 Then
+       ConNom1.Text = "hs.Dobles"
+   Else
+       If ComboEspecial.ListIndex = 0 Then
+           ConNom1.Text = "Aguinaldo"
+       Else
+           ConNom1.Text = "Compensac."
+       End If
+   End If
+   
+   ConNom1.Col = 6: ConNom1.CellAlignment = 4: ConNom1.ColWidth(6) = 1200
+   If N_ormal = 0 Then
+       ConNom1.Text = "hs.Triples"
+   Else
+       If ComboEspecial.ListIndex = 0 Then
+           ConNom1.Text = "Ptu"
+       Else
+           ConNom1.Text = "P. Antig" & Chr(252) & "edad"
+       End If
+   End If
+   
+   ConNom1.Col = 7: ConNom1.CellAlignment = 4: ConNom1.ColWidth(7) = 1200
+   If N_ormal = 0 Then
+       ConNom1.Text = "O.F."
+   Else
+       If ComboEspecial.ListIndex = 0 Then
+           ConNom1.Text = "Bono"
+       Else
+           ConNom1.Text = "Indemnizac."
+       End If
+   End If
    
     ConNom1.Col = 8: ConNom1.CellAlignment = 4: ConNom1.ColWidth(8) = 1200: ConNom1.Text = "P.Vacac."
     ConNom1.Col = 9: ConNom1.CellAlignment = 4: ConNom1.ColWidth(9) = 1200: ConNom1.Text = "Otras"
@@ -4183,6 +4243,7 @@ End Sub
 Private Sub Option1_Click()
     Combo1.locked = False
     Combo1.Visible = True
+    ComboEspecial.Visible = False
 End Sub
 
 Private Sub Option2_Click()
@@ -4190,11 +4251,15 @@ On Error GoTo errorManejador
     If Option2 = True Then
         Option3 = False
         Option4 = False
-        Text1.SetFocus
         N_ormal = 1
         dia_pago = 15 - 1
         Combo1.locked = True
         Combo1.Visible = False
+        
+        ComboEspecial.Visible = True
+        ActualizarPrefijo
+        ActualizarEncabezados
+        Text1.SetFocus
     End If
 Exit Sub
 
@@ -4214,6 +4279,7 @@ Private Sub Option3_Click()
           dia_pago = 15 - 1
           Combo1.Visible = True
           Combo1.locked = False
+          ComboEspecial.Visible = False
           Combo1.SetFocus
      End If
 End Sub
@@ -4233,6 +4299,7 @@ Private Sub Option4_Click()
               End If
          End If
         Combo1.Visible = True
+        ComboEspecial.Visible = False
         Combo1.SetFocus
      End If
 End Sub
@@ -4241,6 +4308,14 @@ Private Sub Text1_KeyPress(KeyAscii As Integer)
   If KeyAscii = 13 Then
       Text1.Text = UCase(Text1.Text)
       If Len(Text1.Text) > 1 Then
+          If N_ormal = 1 Then
+              If UCase(Left(Text1.Text, 3)) = "LIQ" Then
+                  ComboEspecial.ListIndex = 1
+              ElseIf UCase(Left(Text1.Text, 3)) = "ESP" Then
+                  ComboEspecial.ListIndex = 0
+              End If
+              ActualizarEncabezados
+          End If
           Label7.Caption = Text1.Text + " " + Str$(empresa.ao)
           Option1 = False
           Rem Option2 = False
@@ -4478,6 +4553,69 @@ Private Sub Text4_KeyPress(KeyAscii As Integer)
             End If
         Next i
         KeyAscii = 0
+    End If
+End Sub
+
+Private Sub ComboEspecial_Click()
+    ActualizarEncabezados
+    ActualizarPrefijo
+End Sub
+
+Private Sub ActualizarPrefijo()
+    If N_ormal = 1 Then
+        Dim prefix As String
+        If ComboEspecial.ListIndex = 0 Then
+            prefix = "ESP"
+        Else
+            prefix = "LIQ"
+        End If
+        Text1.locked = False
+        Text1.Text = prefix
+        Text1.selStart = Len(prefix)
+    End If
+End Sub
+
+Public Sub ActualizarEncabezados()
+    On Error Resume Next
+    If N_ormal = 0 Then
+        ConNom1.TextMatrix(0, 4) = "hs.Norm."
+        ConNom1.TextMatrix(0, 5) = "hs.Dobles"
+        ConNom1.TextMatrix(0, 6) = "hs.Triples"
+        ConNom1.TextMatrix(0, 7) = "O.F."
+    Else
+        If ComboEspecial.ListIndex = 0 Then
+            ConNom1.TextMatrix(0, 4) = "hs.Norm."
+            ConNom1.TextMatrix(0, 5) = "Aguinaldo"
+            ConNom1.TextMatrix(0, 6) = "Ptu"
+            ConNom1.TextMatrix(0, 7) = "Bono"
+        Else
+            ConNom1.TextMatrix(0, 4) = "hs.Norm"
+            ConNom1.TextMatrix(0, 5) = "Compensac."
+            ConNom1.TextMatrix(0, 6) = "P. Antig" & Chr(252) & "edad"
+            ConNom1.TextMatrix(0, 7) = "Indemnizac."
+        End If
+    End If
+End Sub
+
+Private Sub Text1_Change()
+    If N_ormal = 1 Then
+        Dim prefix As String
+        If ComboEspecial.ListIndex = 0 Then
+            prefix = "ESP"
+        Else
+            prefix = "LIQ"
+        End If
+        
+        If Len(Text1.Text) < Len(prefix) Or UCase(Left(Text1.Text, Len(prefix))) <> prefix Then
+            Dim selStart As Integer
+            selStart = Text1.selStart
+            Text1.Text = prefix & Mid(Text1.Text, Len(prefix) + 1)
+            If selStart < Len(prefix) Then
+                Text1.selStart = Len(prefix)
+            Else
+                Text1.selStart = selStart
+            End If
+        End If
     End If
 End Sub
 
