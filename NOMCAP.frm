@@ -120,62 +120,46 @@ Dim infonavit As Double
 Dim impuesto As Double
 Dim imss As Double
 Dim fila As Long
+Const COL_SEG_RFC As Long = 98
+Const COL_SEG_BANDERA As Long = 290
 Const adOpenStatic As Integer = 3
 Const adLockReadOnly As Integer = 1
-Const TOTAL_COLUMNAS As Long = 296
-Const COL_2DA_RFC As Long = 98
-Const COL_2DA_BANDERA As Long = 295   ' GP
+    
     
 Sub IniCols()
-On Error GoTo ErrorHandler
-
-    Dim I_7 As Long
-    Dim cm As Long
-
-    cm = 296   ' 288 + 8 columnas nuevas
-
-    'NOMCF.Clear
-    'NOMCF.FixedCols = 0
-    'NOMCF.FixedRows = 1
-    NOMCF.Cols = cm
-
-    If Form8.ConNom1.Rows < 2 Then
-        NOMCF.Rows = 2
-    Else
-        NOMCF.Rows = Form8.ConNom1.Rows
-    End If
-
-    NOMCF.Row = 0
-
+On Error GoTo ErrorHandler:
+    Dim I_7 As Integer
+    Close 7
     Open "DatCFDI.dno" For Random As 7 Len = Len(DATcf)
-
+        
+    cm = 291
+    NOMCF.Clear
+    NOMCF.Rows = 2
+    NOMCF.Cols = cm
+    NOMCF.FixedCols = 0
+    NOMCF.FixedRows = 1
+    NOMCF.Rows = Form8.ConNom1.Rows
+    NOMCF.Row = 0
+            
     For I_7 = 0 To cm - 1
-        NOMCF.Col = I_7
-        NOMCF.CellAlignment = 4
-        NOMCF.ColWidth(I_7) = 1200
+    NOMCF.Col = I_7
+    NOMCF.CellAlignment = 4
+    NOMCF.ColWidth(I_7) = 1200
 
-        If (I_7 + 1) <= LOF(7) / Len(DATcf) Then
+        If I_7 + 1 <= LOF(7) / Len(DATcf) Then
             Get 7, (I_7 + 1), DATcf
             NOMCF.Text = Trim(DATcf.Concepto)
         Else
-            NOMCF.Text = ""   ' columnas nuevas sin encabezado
+            NOMCF.Text = ""
         End If
     Next I_7
 
-    Close 7
-    
-        With NOMCF2.NOMCF
-            If .Cols < cm Then
-                .Cols = cm
-            End If
-        End With
-
-    
-    Exit Sub
-
+Close 7
+Exit Sub
 ErrorHandler:
-    Close 7
-    MsgBox "Aún no capturas una nómina.", vbExclamation
+    
+    MsgBox ("Aun no capturas una nomina!")
+
 End Sub
 
 Private Sub EdFij_Click()
@@ -235,17 +219,6 @@ Private Sub ReleaseObjects(o_Excel As Object, o_Libro As Object, o_Hoja As Objec
     If Not o_Excel Is Nothing Then Set o_Excel = Nothing
     If Not o_Libro Is Nothing Then Set o_Libro = Nothing
     If Not o_Hoja Is Nothing Then Set o_Hoja = Nothing
-End Sub
-Private Sub InicializarGridCFDI()
-
-    Const TOTAL_COLUMNAS As Long = 296   ' MISMAS columnas que la plantilla nueva
-
-    With NOMCF2.NOMCF
-        If .Cols < TOTAL_COLUMNAS Then
-            .Cols = TOTAL_COLUMNAS
-        End If
-    End With
-
 End Sub
 
 Private Sub Form_Load()
@@ -507,23 +480,26 @@ Private Sub NCfEdSel_Click()
 End Sub
 
 Private Sub NCFEDSG_Click()
-
-Debug.Print COL_2DA_RFC, COL_2DA_BANDERA
-
-    Dim i As Long, c As Long
     Dim Temporal1 As String
+    Dim i As Long
+    Dim f As Long
 
     Clipboard.Clear
     Temporal1 = ""
 
-    For i = 1 To NOMCF2.NOMCF.Rows - 1
-        For c = COL_2DA_RFC To COL_2DA_BANDERA
-            Temporal1 = Temporal1 & NOMCF2.NOMCF.TextMatrix(i, c)
-            If c < COL_2DA_BANDERA Then
-                Temporal1 = Temporal1 & Chr(9) ' TAB
+    ' Copia SOLO la segunda plantilla
+    For i = 1 To NOMCF.Rows - 1
+
+        For f = COL_SEG_RFC To COL_SEG_BANDERA
+            Temporal1 = Temporal1 & NOMCF.TextMatrix(i, f)
+
+            If f < COL_SEG_BANDERA Then
+                Temporal1 = Temporal1 & Chr(9)
             End If
-        Next c
-        Temporal1 = Temporal1 & vbCrLf
+        Next f
+
+        Temporal1 = Temporal1 & Chr(13) & Chr(10)
+
     Next i
 
     Clipboard.SetText Temporal1
@@ -554,11 +530,11 @@ End Sub
 Private Sub NomCf_KeyDown(KeyCode As Integer, Shift As Integer)
     Select Case KeyCode
             Case vbKeyDelete
-               For q = NOMCF.Row To NOMCF.RowSel
+               For Q = NOMCF.Row To NOMCF.RowSel
                  For W = NOMCF.Col To NOMCF.ColSel
-                    NOMCF.TextMatrix(q, W) = ""
+                    NOMCF.TextMatrix(Q, W) = ""
                  Next W
-               Next q
+               Next Q
                 LTXT1.Text = NOMCF.Text
             Case vbKeyF2
                 If NOMCF.Text <> "" Then valcelant = NOMCF.Text
@@ -581,12 +557,11 @@ Private Sub NomCf_LeaveCell()
 End Sub
 
 Sub MdAbr_1()
-Call InicializarGridCFDI
 On Error GoTo ErrorHandler:
 '**************************************************************************************************
 '**                                   Modulo CFDI                                                **
 '**************************************************************************************************
-    
+    'Call InicializarSegundaPlantilla(I7)
     '1 2 FOLIO
         NOMCF2.NOMCF.TextMatrix(I7, 0) = Folio
     '2 3 SERIE
@@ -726,7 +701,7 @@ On Error GoTo ErrorHandler:
         VFal = Mid(Trim(personal.fal), 7, 4) + "-" + Mid(Trim(personal.fal), 4, 2) + "-" + Mid(Trim(personal.fal), 1, 2)
         NOMCF2.NOMCF.TextMatrix(I7, 50) = VFal
     '51 52 ANTIGUEDAD
-        NOMCF2.NOMCF.TextMatrix(I7, 51) = Year(MiFecha) - Year(MiFechaAlta)
+        NOMCF2.NOMCF.TextMatrix(I7, 51) = CalcularAntiguedad(MiFechaAlta)
     '52 53 PUESTO
         NOMCF2.NOMCF.TextMatrix(I7, 52) = "Administracion"
     '53 54 TIPOCONTRATO
@@ -773,13 +748,13 @@ On Error GoTo ErrorHandler:
         NOMCF2.NOMCF.TextMatrix(I7, 68) = Format(0, "#,##0.00")
     '69 70 P014DINCAC
         NOMCF2.NOMCF.TextMatrix(I7, 69) = Format(0, "#,##0.00")
-    '70 71 P054G   *** NUEVA ***
+    '70 71 DIASDOM
         NOMCF2.NOMCF.TextMatrix(I7, 70) = Format(0, "#,##0.00")
-    '71 72 P054E   *** NUEVA ***
+    '71 72 DIASSHE
         NOMCF2.NOMCF.TextMatrix(I7, 71) = Format(0, "#,##0.00")
-    '72 73 P055G   *** NUEVA ***
+    '72 73 HORASDOBLES
         NOMCF2.NOMCF.TextMatrix(I7, 72) = Format(0, "#,##0.00")
-    '73 74 P055E   *** NUEVA ***
+    '73 74 DIASHETRIPLES
         NOMCF2.NOMCF.TextMatrix(I7, 73) = Format(0, "#,##0.00")
     '74 75 HORASTRIPLES
         NOMCF2.NOMCF.TextMatrix(I7, 74) = Format(0, "#,##0.00")
@@ -1003,282 +978,261 @@ On Error GoTo ErrorHandler:
         NOMCF2.NOMCF.TextMatrix(I7, 161) = Format(0, "#,##0.00")
     '162 P051E
         NOMCF2.NOMCF.TextMatrix(I7, 162) = Format(0, "#,##0.00")
-        
-    '==== NUEVAS COLUMNAS ANTES DE DEDUCCIONES (PLANTILLA NUEVA) ====
-    '163 NUEVA_ANTES_D001_1
+    '163 P052G
         NOMCF2.NOMCF.TextMatrix(I7, 163) = Format(0, "#,##0.00")
-    '164 NUEVA_ANTES_D001_2
+    '164 P052E
         NOMCF2.NOMCF.TextMatrix(I7, 164) = Format(0, "#,##0.00")
-    '165 NUEVA_ANTES_D001_3
+    '165 P053G
         NOMCF2.NOMCF.TextMatrix(I7, 165) = Format(0, "#,##0.00")
-    '166 NUEVA_ANTES_D001_4
+    '166 P053E
         NOMCF2.NOMCF.TextMatrix(I7, 166) = Format(0, "#,##0.00")
-    'Columnas Con ceros (NUEVAS)
-        NOMCF2.NOMCF.TextMatrix(I7, 167) = Format(0, "#,##0.00")
-        NOMCF2.NOMCF.TextMatrix(I7, 168) = Format(0, "#,##0.00")
-        NOMCF2.NOMCF.TextMatrix(I7, 169) = Format(0, "#,##0.00")
-        NOMCF2.NOMCF.TextMatrix(I7, 170) = Format(0, "#,##0.00")
-        
     '*************************DEDUCCIONES******************************************************
     '167 D001
-        NOMCF2.NOMCF.TextMatrix(I7, 171) = Format(ims14, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 167) = Format(ims14, "#,##0.00")
     '168 D002
-        NOMCF2.NOMCF.TextMatrix(I7, 172) = Format(isr12, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 168) = Format(isr12, "#,##0.00")
     '169 D003
-        NOMCF2.NOMCF.TextMatrix(I7, 173) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 169) = Format(0, "#,##0.00")
     '170 D004
-         NOMCF2.NOMCF.TextMatrix(I7, 174) = Format(pre15, "#,##0.00")
+         NOMCF2.NOMCF.TextMatrix(I7, 170) = Format(pre15, "#,##0.00")
     '171 D005
-        NOMCF2.NOMCF.TextMatrix(I7, 175) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 171) = Format(0, "#,##0.00")
     '172 D006R
-        NOMCF2.NOMCF.TextMatrix(I7, 176) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 172) = Format(0, "#,##0.00")
     '173 D006I
-        NOMCF2.NOMCF.TextMatrix(I7, 177) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 173) = Format(0, "#,##0.00")
     '174 D006M
-        NOMCF2.NOMCF.TextMatrix(I7, 178) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 174) = Format(0, "#,##0.00")
     '175 D006C
-        NOMCF2.NOMCF.TextMatrix(I7, 179) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 175) = Format(0, "#,##0.00")
     '176 D007
-        NOMCF2.NOMCF.TextMatrix(I7, 180) = Format(pea17, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 176) = Format(pea17, "#,##0.00")
     '177 D008
-        NOMCF2.NOMCF.TextMatrix(I7, 181) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 177) = Format(0, "#,##0.00")
     '178 D009
-        NOMCF2.NOMCF.TextMatrix(I7, 182) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 178) = Format(0, "#,##0.00")
     '179 D010
-        NOMCF2.NOMCF.TextMatrix(I7, 183) = Format(ifv18, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 179) = Format(ifv18, "#,##0.00")
     '180 D011
-        NOMCF2.NOMCF.TextMatrix(I7, 184) = Format(fon16, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 180) = Format(fon16, "#,##0.00")
     
     '178 D012
-        NOMCF2.NOMCF.TextMatrix(I7, 185) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 181) = Format(0, "#,##0.00")
     '178 D013
-        NOMCF2.NOMCF.TextMatrix(I7, 186) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 182) = Format(0, "#,##0.00")
     '178 D014
-        NOMCF2.NOMCF.TextMatrix(I7, 187) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 183) = Format(0, "#,##0.00")
     '178 D015
-        NOMCF2.NOMCF.TextMatrix(I7, 188) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 184) = Format(0, "#,##0.00")
     '178 D016
-        NOMCF2.NOMCF.TextMatrix(I7, 189) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 185) = Format(0, "#,##0.00")
     '178 D017
-        NOMCF2.NOMCF.TextMatrix(I7, 190) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 186) = Format(0, "#,##0.00")
     '178 D018
-        NOMCF2.NOMCF.TextMatrix(I7, 191) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 187) = Format(0, "#,##0.00")
     '178 D019
-        NOMCF2.NOMCF.TextMatrix(I7, 192) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 188) = Format(0, "#,##0.00")
     '178 D020
-        NOMCF2.NOMCF.TextMatrix(I7, 193) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 189) = Format(0, "#,##0.00")
     '178 D021
-        NOMCF2.NOMCF.TextMatrix(I7, 194) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 190) = Format(0, "#,##0.00")
     '178 D022
-        NOMCF2.NOMCF.TextMatrix(I7, 195) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 191) = Format(0, "#,##0.00")
     '178 D023
-        NOMCF2.NOMCF.TextMatrix(I7, 196) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 192) = Format(0, "#,##0.00")
     '178 D024
-        NOMCF2.NOMCF.TextMatrix(I7, 197) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 193) = Format(0, "#,##0.00")
     '178 D025
-        NOMCF2.NOMCF.TextMatrix(I7, 198) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 194) = Format(0, "#,##0.00")
     '178 D026
-        NOMCF2.NOMCF.TextMatrix(I7, 199) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 195) = Format(0, "#,##0.00")
     '178 D027
-        NOMCF2.NOMCF.TextMatrix(I7, 200) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 196) = Format(0, "#,##0.00")
     '178 D028
-        NOMCF2.NOMCF.TextMatrix(I7, 201) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 197) = Format(0, "#,##0.00")
     '178 D029
-        NOMCF2.NOMCF.TextMatrix(I7, 202) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 198) = Format(0, "#,##0.00")
     '178 D030
-        NOMCF2.NOMCF.TextMatrix(I7, 203) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 199) = Format(0, "#,##0.00")
     '178 D031
-        NOMCF2.NOMCF.TextMatrix(I7, 204) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 200) = Format(0, "#,##0.00")
     '178 D032
-        NOMCF2.NOMCF.TextMatrix(I7, 205) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 201) = Format(0, "#,##0.00")
     '178 D033
-        NOMCF2.NOMCF.TextMatrix(I7, 206) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 202) = Format(0, "#,##0.00")
     '178 D034
-        NOMCF2.NOMCF.TextMatrix(I7, 207) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 203) = Format(0, "#,##0.00")
     '178 D035
-        NOMCF2.NOMCF.TextMatrix(I7, 208) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 204) = Format(0, "#,##0.00")
     '178 D036
-        NOMCF2.NOMCF.TextMatrix(I7, 209) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 205) = Format(0, "#,##0.00")
     '178 D037
-        NOMCF2.NOMCF.TextMatrix(I7, 210) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 206) = Format(0, "#,##0.00")
     '178 D038
-        NOMCF2.NOMCF.TextMatrix(I7, 211) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 207) = Format(0, "#,##0.00")
     '178 D039
-        NOMCF2.NOMCF.TextMatrix(I7, 212) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 208) = Format(0, "#,##0.00")
     '178 D040
-        NOMCF2.NOMCF.TextMatrix(I7, 213) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 209) = Format(0, "#,##0.00")
     '178 D041
-        NOMCF2.NOMCF.TextMatrix(I7, 214) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 210) = Format(0, "#,##0.00")
     '178 D042
-        NOMCF2.NOMCF.TextMatrix(I7, 215) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 211) = Format(0, "#,##0.00")
     '178 D043
-        NOMCF2.NOMCF.TextMatrix(I7, 216) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 212) = Format(0, "#,##0.00")
     '178 D044
-        NOMCF2.NOMCF.TextMatrix(I7, 217) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 213) = Format(0, "#,##0.00")
     '178 D045
-        NOMCF2.NOMCF.TextMatrix(I7, 218) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 214) = Format(0, "#,##0.00")
     '178 D046
-        NOMCF2.NOMCF.TextMatrix(I7, 219) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 215) = Format(0, "#,##0.00")
     '178 D047
-        NOMCF2.NOMCF.TextMatrix(I7, 220) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 216) = Format(0, "#,##0.00")
     '178 D048
-        NOMCF2.NOMCF.TextMatrix(I7, 221) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 217) = Format(0, "#,##0.00")
     '178 D049
-        NOMCF2.NOMCF.TextMatrix(I7, 222) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 218) = Format(0, "#,##0.00")
     '178 D050
-        NOMCF2.NOMCF.TextMatrix(I7, 223) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 219) = Format(0, "#,##0.00")
     '178 D051
-        NOMCF2.NOMCF.TextMatrix(I7, 224) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 220) = Format(0, "#,##0.00")
     '178 D052
-        NOMCF2.NOMCF.TextMatrix(I7, 225) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 221) = Format(0, "#,##0.00")
     '178 D053
-        NOMCF2.NOMCF.TextMatrix(I7, 226) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 222) = Format(0, "#,##0.00")
     '178 D054
-        NOMCF2.NOMCF.TextMatrix(I7, 227) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 223) = Format(0, "#,##0.00")
     '178 D055
-        NOMCF2.NOMCF.TextMatrix(I7, 228) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 224) = Format(0, "#,##0.00")
     '178 D056
-        NOMCF2.NOMCF.TextMatrix(I7, 229) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 225) = Format(0, "#,##0.00")
     '178 D057
-        NOMCF2.NOMCF.TextMatrix(I7, 230) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 226) = Format(0, "#,##0.00")
     '178 D058
-        NOMCF2.NOMCF.TextMatrix(I7, 231) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 227) = Format(0, "#,##0.00")
     '178 D059
-        NOMCF2.NOMCF.TextMatrix(I7, 232) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 228) = Format(0, "#,##0.00")
     '178 D060
-        NOMCF2.NOMCF.TextMatrix(I7, 233) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 229) = Format(0, "#,##0.00")
     '178 D061
-        NOMCF2.NOMCF.TextMatrix(I7, 234) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 230) = Format(0, "#,##0.00")
     '178 D062
-        NOMCF2.NOMCF.TextMatrix(I7, 235) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 231) = Format(0, "#,##0.00")
     '178 D063
-        NOMCF2.NOMCF.TextMatrix(I7, 236) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 232) = Format(0, "#,##0.00")
     '178 D064
-        NOMCF2.NOMCF.TextMatrix(I7, 237) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 233) = Format(0, "#,##0.00")
     '178 D065
-        NOMCF2.NOMCF.TextMatrix(I7, 238) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 234) = Format(0, "#,##0.00")
     '178 D066
-        NOMCF2.NOMCF.TextMatrix(I7, 239) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 235) = Format(0, "#,##0.00")
     '178 D067
-        NOMCF2.NOMCF.TextMatrix(I7, 240) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 236) = Format(0, "#,##0.00")
     '178 D068
-        NOMCF2.NOMCF.TextMatrix(I7, 241) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 237) = Format(0, "#,##0.00")
     '178 D069
-        NOMCF2.NOMCF.TextMatrix(I7, 242) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 238) = Format(0, "#,##0.00")
     '178 D070
-        NOMCF2.NOMCF.TextMatrix(I7, 243) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 239) = Format(0, "#,##0.00")
     '178 D071
-        NOMCF2.NOMCF.TextMatrix(I7, 244) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 240) = Format(0, "#,##0.00")
     '178 D072
-        NOMCF2.NOMCF.TextMatrix(I7, 245) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 241) = Format(0, "#,##0.00")
     '178 D073
-        NOMCF2.NOMCF.TextMatrix(I7, 246) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 242) = Format(0, "#,##0.00")
     '178 D074
-        NOMCF2.NOMCF.TextMatrix(I7, 247) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 243) = Format(0, "#,##0.00")
     '178 D075
-        NOMCF2.NOMCF.TextMatrix(I7, 248) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 244) = Format(0, "#,##0.00")
     '178 D076
-        NOMCF2.NOMCF.TextMatrix(I7, 249) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 245) = Format(0, "#,##0.00")
     '178 D077
-        NOMCF2.NOMCF.TextMatrix(I7, 250) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 246) = Format(0, "#,##0.00")
     '178 D078
-        NOMCF2.NOMCF.TextMatrix(I7, 251) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 247) = Format(0, "#,##0.00")
     '178 D079
-        NOMCF2.NOMCF.TextMatrix(I7, 252) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 248) = Format(0, "#,##0.00")
     '178 D080
-        NOMCF2.NOMCF.TextMatrix(I7, 253) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 249) = Format(0, "#,##0.00")
     '178 D081
-        NOMCF2.NOMCF.TextMatrix(I7, 254) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 250) = Format(0, "#,##0.00")
     '178 D082
-        NOMCF2.NOMCF.TextMatrix(I7, 255) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 251) = Format(0, "#,##0.00")
     '178 D083
-        NOMCF2.NOMCF.TextMatrix(I7, 256) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 252) = Format(0, "#,##0.00")
     '178 D084
-        NOMCF2.NOMCF.TextMatrix(I7, 257) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 253) = Format(0, "#,##0.00")
     '178 D085
-        NOMCF2.NOMCF.TextMatrix(I7, 258) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 254) = Format(0, "#,##0.00")
     '178 D086
-        NOMCF2.NOMCF.TextMatrix(I7, 259) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 255) = Format(0, "#,##0.00")
     '178 D087
-        NOMCF2.NOMCF.TextMatrix(I7, 260) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 256) = Format(0, "#,##0.00")
     '178 D088
-        NOMCF2.NOMCF.TextMatrix(I7, 261) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 257) = Format(0, "#,##0.00")
     '178 D089
-        NOMCF2.NOMCF.TextMatrix(I7, 262) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 258) = Format(0, "#,##0.00")
     '178 D090
-        NOMCF2.NOMCF.TextMatrix(I7, 263) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 259) = Format(0, "#,##0.00")
     '178 D091
-        NOMCF2.NOMCF.TextMatrix(I7, 264) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 260) = Format(0, "#,##0.00")
     '178 D092
-        NOMCF2.NOMCF.TextMatrix(I7, 265) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 261) = Format(0, "#,##0.00")
     '178 D093
-        NOMCF2.NOMCF.TextMatrix(I7, 266) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 262) = Format(0, "#,##0.00")
     '178 D094
-        NOMCF2.NOMCF.TextMatrix(I7, 267) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 263) = Format(0, "#,##0.00")
     '178 D095
-        NOMCF2.NOMCF.TextMatrix(I7, 268) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 264) = Format(0, "#,##0.00")
     '178 D096
-        NOMCF2.NOMCF.TextMatrix(I7, 269) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 265) = Format(0, "#,##0.00")
     '178 D097
-        NOMCF2.NOMCF.TextMatrix(I7, 270) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 266) = Format(0, "#,##0.00")
     '178 D098
-        NOMCF2.NOMCF.TextMatrix(I7, 271) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 267) = Format(0, "#,##0.00")
     '178 D099
-        NOMCF2.NOMCF.TextMatrix(I7, 272) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 268) = Format(0, "#,##0.00")
     '178 D100
-        NOMCF2.NOMCF.TextMatrix(I7, 273) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 269) = Format(0, "#,##0.00")
     '178 D101
-        NOMCF2.NOMCF.TextMatrix(I7, 274) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 270) = Format(0, "#,##0.00")
     '178 D102
-        NOMCF2.NOMCF.TextMatrix(I7, 275) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 271) = Format(0, "#,##0.00")
     '178 D103
-        NOMCF2.NOMCF.TextMatrix(I7, 276) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 272) = Format(0, "#,##0.00")
     '178 D104
-        NOMCF2.NOMCF.TextMatrix(I7, 277) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 273) = Format(0, "#,##0.00")
     '178 D105
-        NOMCF2.NOMCF.TextMatrix(I7, 278) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 274) = Format(0, "#,##0.00")
     '178 D106
-        NOMCF2.NOMCF.TextMatrix(I7, 279) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 275) = Format(0, "#,##0.00")
     '178 D107
+        NOMCF2.NOMCF.TextMatrix(I7, 276) = Format(0, "#,##0.00")
+    '277 OP001
+        NOMCF2.NOMCF.TextMatrix(I7, 277) = Format(0, "#,##0.00")
+    '278 OP002
+        NOMCF2.NOMCF.TextMatrix(I7, 278) = Format(sub13, "#,##0.00")
+    '277 OP003
+        NOMCF2.NOMCF.TextMatrix(I7, 279) = Format(0, "#,##0.00")
+    '277 OP004
         NOMCF2.NOMCF.TextMatrix(I7, 280) = Format(0, "#,##0.00")
-
-    '179 D108   *** NUEVA ***
+    '277 OP005
         NOMCF2.NOMCF.TextMatrix(I7, 281) = Format(0, "#,##0.00")
-    '180 D109   *** NUEVA ***
+    '277 OP006
         NOMCF2.NOMCF.TextMatrix(I7, 282) = Format(0, "#,##0.00")
-    '181 D110   *** NUEVA ***
+    '277 OP007
         NOMCF2.NOMCF.TextMatrix(I7, 283) = Format(0, "#,##0.00")
-    '182 D111   *** NUEVA ***
+    '277 OP008
         NOMCF2.NOMCF.TextMatrix(I7, 284) = Format(0, "#,##0.00")
-    '183 OP001
+    '277 OP009
         NOMCF2.NOMCF.TextMatrix(I7, 285) = Format(0, "#,##0.00")
-    '184 OP002
-        NOMCF2.NOMCF.TextMatrix(I7, 286) = Format(sub13, "#,##0.00")
-    '185 OP003
+    '277 OP999
+        NOMCF2.NOMCF.TextMatrix(I7, 286) = Format(0, "#,##0.00")
+    '277 BANDERA
         NOMCF2.NOMCF.TextMatrix(I7, 287) = Format(0, "#,##0.00")
-    '186 OP004
         NOMCF2.NOMCF.TextMatrix(I7, 288) = Format(0, "#,##0.00")
-    '187 OP005
         NOMCF2.NOMCF.TextMatrix(I7, 289) = Format(0, "#,##0.00")
-    '188 OP006
-        NOMCF2.NOMCF.TextMatrix(I7, 290) = Format(0, "#,##0.00")
-    '189 OP007
-        NOMCF2.NOMCF.TextMatrix(I7, 291) = Format(0, "#,##0.00")
-    '190 OP008
-        NOMCF2.NOMCF.TextMatrix(I7, 292) = Format(0, "#,##0.00")
-    '191 OP009
-        NOMCF2.NOMCF.TextMatrix(I7, 293) = Format(0, "#,##0.00")
-    '192 OP999
-        NOMCF2.NOMCF.TextMatrix(I7, 294) = Format(0, "#,##0.00")
-    '193 BANDERA
-        NOMCF2.NOMCF.TextMatrix(I7, 295) = 1
-        
-        '--- BLINDAJE FINAL P054 / P055 ---
-        NOMCF2.NOMCF.TextMatrix(I7, 70) = Format(0, "#,##0.00")
-        NOMCF2.NOMCF.TextMatrix(I7, 71) = Format(0, "#,##0.00")
-        NOMCF2.NOMCF.TextMatrix(I7, 72) = Format(0, "#,##0.00")
-        NOMCF2.NOMCF.TextMatrix(I7, 73) = Format(0, "#,##0.00")
-
+        NOMCF2.NOMCF.TextMatrix(I7, 290) = 1
 
 Exit Sub
 
@@ -1289,6 +1243,7 @@ ErrorHandler:
         Else
             MsgBox ("Ups!, Parece que algo paso. Revisa los datos de: " & vbCrLf & vbCrLf & Nombrey)
         End If
+    
 End Sub
 
 
@@ -1310,3 +1265,14 @@ Gestionaerror:
         End If
 End Sub
 
+Private Sub InicializarSegundaPlantilla(ByVal fila As Long)
+    Dim c As Long
+    
+    For c = COL_SEG_RFC To COL_SEG_BANDERA
+        NOMCF.TextMatrix(fila, c) = "0.00"
+    Next c
+    
+    NOMCF.TextMatrix(fila, COL_SEG_RFC) = "" 'RFC
+    NOMCF.TextMatrix(fila, COL_SEG_BANDERA) = "1" 'BANDERA
+
+End Sub

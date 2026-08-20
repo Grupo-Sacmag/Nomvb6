@@ -1,17 +1,32 @@
 VERSION 5.00
-Object = "{F9043C88-F6F2-101A-A3C9-08002B2F49FB}#1.2#0"; "ComDlg32.OCX"
 Object = "{5E9E78A0-531B-11CF-91F6-C2863C385E30}#1.0#0"; "MSFLXGRD.OCX"
 Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
 Begin VB.Form FormViewer 
    Caption         =   "Visualizador de Nomina Histórica"
-   ClientHeight    =   8200
+   ClientHeight    =   8220
    ClientLeft      =   60
-   ClientTop       =   345
-   ClientWidth     =   12000
+   ClientTop       =   645
+   ClientWidth     =   17490
    LinkTopic       =   "FormViewer"
-   ScaleHeight     =   8200
-   ScaleWidth      =   12000
+   ScaleHeight     =   8220
+   ScaleWidth      =   17490
    StartUpPosition =   1  'CenterOwner
+   Begin VB.CommandButton CmdLimpiarFiltro 
+      Caption         =   "Limpiar"
+      Height          =   375
+      Left            =   16320
+      TabIndex        =   8
+      Top             =   120
+      Width           =   1000
+   End
+   Begin VB.TextBox TxtBuscar 
+      Height          =   315
+      Left            =   13200
+      TabIndex        =   6
+      Text            =   "Text1"
+      Top             =   120
+      Width           =   3000
+   End
    Begin VB.CommandButton CmdCopyAll 
       Caption         =   "Copiar Todo"
       Height          =   375
@@ -36,13 +51,39 @@ Begin VB.Form FormViewer
       Top             =   120
       Width           =   1695
    End
+   Begin MSFlexGridLib.MSFlexGrid ConNom1 
+      Height          =   7200
+      Left            =   120
+      TabIndex        =   0
+      Top             =   600
+      Width           =   17265
+      _ExtentX        =   30454
+      _ExtentY        =   12700
+      _Version        =   393216
+      AllowUserResizing=   3
+   End
+   Begin MSComctlLib.ProgressBar ProgressBar1 
+      Height          =   255
+      Left            =   120
+      TabIndex        =   5
+      Top             =   7845
+      Visible         =   0   'False
+      Width           =   17265
+      _ExtentX        =   30454
+      _ExtentY        =   450
+      _Version        =   393216
+      Appearance      =   1
+   End
+   Begin VB.Label Label1 
+      Caption         =   "Buscar:"
+      Height          =   255
+      Left            =   12480
+      TabIndex        =   7
+      Top             =   240
+      Width           =   495
+   End
    Begin VB.Label LblFile 
       Caption         =   "Archivo:"
-      Height          =   255
-      Left            =   5640
-      TabIndex        =   4
-      Top             =   180
-      Width           =   6200
       BeginProperty Font 
          Name            =   "Arial"
          Size            =   9
@@ -52,30 +93,47 @@ Begin VB.Form FormViewer
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-   End
-   Begin MSFlexGridLib.MSFlexGrid ConNom1 
-      Height          =   7200
-      Left            =   120
-      TabIndex        =   0
-      Top             =   600
-      Width           =   11760
-      _ExtentX        =   20743
-      _ExtentY        =   12700
-      _Version        =   393216
-      FixedRows       =   1
-      AllowUserResizing=   3
-   End
-   Begin MSComctlLib.ProgressBar ProgressBar1 
       Height          =   255
-      Left            =   120
-      TabIndex        =   5
-      Top             =   7850
-      Visible         =   0   'False
-      Width           =   11760
-      _ExtentX        =   20743
-      _ExtentY        =   450
-      _Version        =   393216
-      Appearance      =   1
+      Left            =   5640
+      TabIndex        =   4
+      Top             =   180
+      Width           =   6195
+   End
+   Begin VB.Menu mnuOrdenar 
+      Caption         =   "Ordenar"
+      Begin VB.Menu mnuOrdenarID 
+         Caption         =   "Por ID"
+         Begin VB.Menu mnuIDDesc 
+            Caption         =   "Mayor a Menor"
+         End
+         Begin VB.Menu mnuIDAsc 
+            Caption         =   "Menor a Mayor"
+         End
+      End
+      Begin VB.Menu mnuOrdenarNombre 
+         Caption         =   "Por Nombre"
+         Begin VB.Menu mnuNombreAsc 
+            Caption         =   "A - Z"
+         End
+         Begin VB.Menu mnuNombreDesc 
+            Caption         =   "Z - A"
+         End
+      End
+   End
+   Begin VB.Menu mnuExcel 
+      Caption         =   "Excel"
+      Begin VB.Menu mnuExportarExcel 
+         Caption         =   "Exportar a Excel"
+      End
+   End
+   Begin VB.Menu mnuPortapapeles 
+      Caption         =   "Portapapeles"
+      Begin VB.Menu mnuCopiarTodo 
+         Caption         =   "Copiar todo"
+      End
+      Begin VB.Menu mnuCopiarSeleccion 
+         Caption         =   "Copiar selección"
+      End
    End
 End
 Attribute VB_Name = "FormViewer"
@@ -92,10 +150,51 @@ Dim nm As Long
 Dim fi_nm As Long
 Dim limite As Long
 Dim renglon As Long
+Private Const FILA_INICIO_DATOS As Long = 1
+Private Const COL_BUSQUEDA As Long = 1
+
+Private ordenAscendente As Boolean
+Private textoFiltro As String
+
+Private Const COL_ID As Long = 0
+Private Const COL_NOMBRE As Long = 1
+
+Private Sub CmdLimpiarFiltro_Click()
+
+    Dim i As Long
+
+    TxtBuscar.Text = ""
+    textoFiltro = ""
+
+    For i = FILA_INICIO_DATOS To limite
+
+        If Trim$(ConNom1.TextMatrix(i, COL_NOMBRE)) <> "" Then
+            ConNom1.RowHeight(i) = -1
+        Else
+            ConNom1.RowHeight(i) = 0
+        End If
+
+    Next i
+
+    If limite + 1 < ConNom1.Rows Then
+        ConNom1.RowHeight(limite + 1) = -1
+    End If
+
+    ConNom1.Row = 1
+    ConNom1.Col = 0
+
+End Sub
 
 Private Sub Form_Load()
-    ' Asegurar que z1$ esté definido
+
     If z1$ = "" Then z1$ = "###,###,##0.00"
+
+    TxtBuscar.Text = ""
+    textoFiltro = ""
+
+    ConNom1.SelectionMode = flexSelectionByRange
+    ConNom1.AllowUserResizing = flexResizeColumns
+
 End Sub
 
 Public Sub LoadPayroll(ByVal fName As String)
@@ -166,28 +265,45 @@ Public Sub LoadPayroll(ByVal fName As String)
         Dim r As Long
         Dim yavas As Integer
         
-        For r = 1 To fi_nm
+                For r = 1 To fi_nm
+
             ProgressBar1.Value = r
+
             Get #6, r, nomina
             Get #2, r, personal
             Get #8, r, maestro
             Get #14, r, nom_com
-            
+
             yavas = 0
             verifica yavas
-            
+
             If yavas > 0 Then
+
                 renglon = renglon + 1
+
                 ConNom1.Row = renglon
                 ConNom1.Col = 0
+
                 ConNom1.Text = Format(r, "#####")
+
                 limite = limite + 1
                 regtro = r
+
                 carganom
+
             End If
+
         Next r
-        
+
+        ' Elimina registros que no tienen información válida
         eliminacion
+
+        ' IMPORTANTE:
+        ' Ajustar el número de filas al número REAL de empleados.
+        ' +1 para encabezado
+        ' +1 para fila de totales
+        ConNom1.Rows = limite + 2
+
         sumavert
     Else
         MsgBox "El archivo de nomina está vacío o no contiene registros.", vbInformation, "Visor de Nomina"
@@ -389,18 +505,30 @@ Sub verifica(yavas)
     If nomina.telefono <> 0 Then yavas = 1
     If nomina.otraded <> 0 Then yavas = 1
 End Sub
-
 Sub eliminacion()
+
     Dim re As Long
-    re = 0
-    Do Until re = (limite)
-        re = re + 1
-        If (Trim(ConNom1.TextMatrix(re, 11)) = "") Then
+
+    re = 1
+
+    Do While re <= limite
+
+        ' Si no tiene total de ingresos, se considera
+        ' un registro sin información de nómina.
+        If Trim$(ConNom1.TextMatrix(re, 11)) = "" Then
+
             ConNom1.RemoveItem re
-            re = re - 1
+
             limite = limite - 1
+
+        Else
+
+            re = re + 1
+
         End If
+
     Loop
+
 End Sub
 
 Sub sumavert()
@@ -447,36 +575,61 @@ Sub sumavert()
 End Sub
 
 Private Sub CmdCopyAll_Click()
-    On Error GoTo CopyAllError
-    Dim r As Long, c As Long
+ On Error GoTo CopyAllError
+
+    Dim r As Long
+    Dim c As Long
     Dim txt As String
-    
-    For r = 0 To ConNom1.Rows - 1
-        Dim rowTxt As String
-        rowTxt = ""
+    Dim filaTexto As String
+
+    txt = ""
+
+    For r = 0 To limite + 1
+
+        filaTexto = ""
+
         For c = 0 To ConNom1.Cols - 1
-            If c > 0 Then rowTxt = rowTxt & vbTab
-            rowTxt = rowTxt & ConNom1.TextMatrix(r, c)
+
+            If c > 0 Then
+                filaTexto = filaTexto & vbTab
+            End If
+
+            filaTexto = filaTexto & ConNom1.TextMatrix(r, c)
+
         Next c
-        If r > 0 Then txt = txt & vbCrLf
-        txt = txt & rowTxt
+
+        If r > 0 Then
+            txt = txt & vbCrLf
+        End If
+
+        txt = txt & filaTexto
+
     Next r
-    
+
     Clipboard.Clear
-    Clipboard.SetText txt
-    MsgBox "Se copió toda la información de la nómina al portapapeles. Ya puedes pegarla en Excel con Ctrl+V.", vbInformation, "Copiar Todo"
+    Clipboard.SetText txt, vbCFText
+
     Exit Sub
+
 CopyAllError:
-    MsgBox "Error al copiar: " & Err.Description, vbCritical, "Error"
+
+    MsgBox "Error al copiar: " & Err.Description, _
+           vbCritical, "Copiar información"
 End Sub
 
 Private Sub CmdCopySel_Click()
-    On Error GoTo CopySelError
-    Dim rStart As Long, rEnd As Long
-    Dim cStart As Long, cEnd As Long
-    Dim r As Long, c As Long
+ On Error GoTo CopySelError
+
+    Dim rStart As Long
+    Dim rEnd As Long
+    Dim cStart As Long
+    Dim cEnd As Long
+    Dim r As Long
+    Dim c As Long
+
     Dim txt As String
-    
+    Dim filaTexto As String
+
     If ConNom1.Row < ConNom1.RowSel Then
         rStart = ConNom1.Row
         rEnd = ConNom1.RowSel
@@ -484,7 +637,7 @@ Private Sub CmdCopySel_Click()
         rStart = ConNom1.RowSel
         rEnd = ConNom1.Row
     End If
-    
+
     If ConNom1.Col < ConNom1.ColSel Then
         cStart = ConNom1.Col
         cEnd = ConNom1.ColSel
@@ -492,24 +645,51 @@ Private Sub CmdCopySel_Click()
         cStart = ConNom1.ColSel
         cEnd = ConNom1.Col
     End If
-    
+
+    ' Nunca copiar la fila de totales si se seleccionó junto con ella
+    If rEnd > limite Then
+        rEnd = limite
+    End If
+
+    If rStart < 1 Then
+        rStart = 1
+    End If
+
+    If rStart > rEnd Then Exit Sub
+
+    txt = ""
+
     For r = rStart To rEnd
-        Dim rowTxt As String
-        rowTxt = ""
+
+        filaTexto = ""
+
         For c = cStart To cEnd
-            If c > cStart Then rowTxt = rowTxt & vbTab
-            rowTxt = rowTxt & ConNom1.TextMatrix(r, c)
+
+            If c > cStart Then
+                filaTexto = filaTexto & vbTab
+            End If
+
+            filaTexto = filaTexto & ConNom1.TextMatrix(r, c)
+
         Next c
-        If r > rStart Then txt = txt & vbCrLf
-        txt = txt & rowTxt
+
+        If r > rStart Then
+            txt = txt & vbCrLf
+        End If
+
+        txt = txt & filaTexto
+
     Next r
-    
+
     Clipboard.Clear
-    Clipboard.SetText txt
-    MsgBox "Se copió el rango seleccionado al portapapeles. Ya puedes pegarlo en Excel con Ctrl+V.", vbInformation, "Copiar Selección"
+    Clipboard.SetText txt, vbCFText
+
     Exit Sub
+
 CopySelError:
-    MsgBox "Error al copiar selección: " & Err.Description, vbCritical, "Error"
+
+    MsgBox "Error al copiar selección: " & Err.Description, _
+           vbCritical, "Copiar selección"
 End Sub
 
 Private Sub CmdExit_Click()
@@ -522,17 +702,318 @@ Private Sub Form_Unload(Cancel As Integer)
 End Sub
 
 Private Sub Form_Resize()
+
     On Error Resume Next
-    If Me.WindowState <> vbMinimized Then
-        If Me.ScaleWidth > 240 Then
-            ConNom1.Width = Me.ScaleWidth - 240
-            ProgressBar1.Width = Me.ScaleWidth - 240
-        End If
-        If Me.ScaleHeight > 1000 Then
-            ConNom1.Height = Me.ScaleHeight - 1000
-        End If
-        If Me.ScaleHeight > 350 Then
-            ProgressBar1.Top = Me.ScaleHeight - 350
-        End If
+
+    If Me.WindowState = vbMinimized Then Exit Sub
+
+    If Me.ScaleWidth > 240 Then
+
+        ConNom1.Width = Me.ScaleWidth - 240
+        ProgressBar1.Width = Me.ScaleWidth - 240
+
     End If
+
+    If Me.ScaleHeight > 1500 Then
+
+        ConNom1.Height = Me.ScaleHeight - 1500
+
+    End If
+
+    If Me.ScaleHeight > 350 Then
+
+        ProgressBar1.Top = Me.ScaleHeight - 350
+
+    End If
+
 End Sub
+
+Private Sub mnuCopiarSeleccion_Click()
+    CmdCopySel_Click
+End Sub
+
+Private Sub mnuCopiarTodo_Click()
+    CmdCopyAll_Click
+End Sub
+
+Private Sub mnuExportarExcel_Click()
+    ExportarNominaExcel
+End Sub
+
+Private Sub ExportarNominaExcel()
+
+    On Error GoTo ErrorExcel
+
+    Dim objXL As Object
+    Dim wbXL As Object
+    Dim wsXL As Object
+
+    Dim r As Long
+    Dim c As Long
+
+    Set objXL = CreateObject("Excel.Application")
+
+    If objXL Is Nothing Then
+
+        MsgBox "Necesitas tener instalado Microsoft Excel.", _
+               vbExclamation, "Exportar a Excel"
+
+        Exit Sub
+
+    End If
+
+    Set wbXL = objXL.Workbooks.Add
+    Set wsXL = wbXL.Worksheets(1)
+
+    objXL.Visible = True
+
+    '------------------------------------------
+    ' ENCABEZADOS
+    '------------------------------------------
+
+    For c = 0 To ConNom1.Cols - 1
+
+        If ConNom1.ColWidth(c) > 0 Then
+
+            wsXL.Cells(1, c + 1).Value = _
+                ConNom1.TextMatrix(0, c)
+
+        End If
+
+    Next c
+
+    '------------------------------------------
+    ' DATOS
+    '------------------------------------------
+
+    For r = 1 To limite
+
+        For c = 0 To ConNom1.Cols - 1
+
+            If ConNom1.ColWidth(c) > 0 Then
+
+                wsXL.Cells(r + 1, c + 1).Value = _
+                    ConNom1.TextMatrix(r, c)
+
+            End If
+
+        Next c
+
+    Next r
+
+    '------------------------------------------
+    ' FILA DE TOTALES
+    '------------------------------------------
+
+    For c = 0 To ConNom1.Cols - 1
+
+        If ConNom1.ColWidth(c) > 0 Then
+
+            wsXL.Cells(limite + 2, c + 1).Value = _
+                ConNom1.TextMatrix(limite + 1, c)
+
+        End If
+
+    Next c
+
+    '------------------------------------------
+    ' FORMATO
+    '------------------------------------------
+
+    With wsXL.Range( _
+        wsXL.Cells(1, 1), _
+        wsXL.Cells(1, ConNom1.Cols))
+
+        .Font.Bold = True
+
+    End With
+
+    With wsXL.Range( _
+        wsXL.Cells(limite + 2, 1), _
+        wsXL.Cells(limite + 2, ConNom1.Cols))
+
+        .Font.Bold = True
+
+    End With
+
+    wsXL.Columns.AutoFit
+
+    wsXL.Activate
+
+    Set wsXL = Nothing
+    Set wbXL = Nothing
+    Set objXL = Nothing
+
+    Exit Sub
+
+ErrorExcel:
+
+    On Error Resume Next
+
+    If Not objXL Is Nothing Then
+        objXL.Visible = True
+    End If
+
+    MsgBox "No fue posible exportar la nómina a Excel." & vbCrLf & _
+           "Error: " & Err.Description, _
+           vbCritical, "Exportar a Excel"
+
+End Sub
+
+Private Sub mnuIDAsc_Click()
+
+    Dim filaActual As Long
+    Dim colActual As Long
+
+    If limite <= 1 Then Exit Sub
+
+    filaActual = ConNom1.Row
+    colActual = ConNom1.Col
+
+    ConNom1.Redraw = False
+
+    ConNom1.Row = FILA_INICIO_DATOS
+    ConNom1.RowSel = limite
+
+    ConNom1.Col = COL_ID
+    ConNom1.ColSel = COL_ID
+
+    ' 3 = Numeric Ascending
+    ConNom1.Sort = 3
+
+    ConNom1.Row = filaActual
+    ConNom1.Col = colActual
+
+    ConNom1.Redraw = True
+End Sub
+
+Private Sub mnuIDDesc_Click()
+    Dim filaActual As Long
+    Dim colActual As Long
+
+    If limite <= 1 Then Exit Sub
+
+    filaActual = ConNom1.Row
+    colActual = ConNom1.Col
+
+    ConNom1.Redraw = False
+
+    ConNom1.Row = FILA_INICIO_DATOS
+    ConNom1.RowSel = limite
+
+    ConNom1.Col = COL_ID
+    ConNom1.ColSel = COL_ID
+
+    ' 4 = Numeric Descending
+    ConNom1.Sort = 4
+
+    ConNom1.Row = filaActual
+    ConNom1.Col = colActual
+
+    ConNom1.Redraw = True
+End Sub
+
+Private Sub mnuNombreAsc_Click()
+    Dim filaActual As Long
+    Dim colActual As Long
+
+    If limite <= 1 Then Exit Sub
+
+    filaActual = ConNom1.Row
+    colActual = ConNom1.Col
+
+    ConNom1.Redraw = False
+
+    ConNom1.Row = FILA_INICIO_DATOS
+    ConNom1.RowSel = limite
+
+    ConNom1.Col = COL_NOMBRE
+    ConNom1.ColSel = COL_NOMBRE
+
+    ' 5 = String Ascending
+    ConNom1.Sort = 5
+
+    ConNom1.Row = filaActual
+    ConNom1.Col = colActual
+
+    ConNom1.Redraw = True
+End Sub
+
+Private Sub mnuNombreDesc_Click()
+    Dim filaActual As Long
+    Dim colActual As Long
+
+    If limite <= 1 Then Exit Sub
+
+    filaActual = ConNom1.Row
+    colActual = ConNom1.Col
+
+    ConNom1.Redraw = False
+
+    ConNom1.Row = FILA_INICIO_DATOS
+    ConNom1.RowSel = limite
+
+    ConNom1.Col = COL_NOMBRE
+    ConNom1.ColSel = COL_NOMBRE
+
+    ' 6 = String Descending
+    ConNom1.Sort = 6
+
+    ConNom1.Row = filaActual
+    ConNom1.Col = colActual
+
+    ConNom1.Redraw = True
+End Sub
+
+Private Sub TxtBuscar_Change()
+
+    Dim i As Long
+    Dim filtro As String
+    Dim nombre As String
+
+    filtro = UCase$(Trim$(TxtBuscar.Text))
+    textoFiltro = filtro
+
+    For i = FILA_INICIO_DATOS To limite
+
+        nombre = Trim$(ConNom1.TextMatrix(i, COL_NOMBRE))
+
+        ' Registro sin nombre: ocultarlo siempre
+        If nombre = "" Then
+
+            ConNom1.RowHeight(i) = 0
+
+        ElseIf filtro = "" Then
+
+            ConNom1.RowHeight(i) = -1
+
+        ElseIf InStr(1, UCase$(nombre), filtro, vbTextCompare) > 0 Then
+
+            ConNom1.RowHeight(i) = -1
+
+        Else
+
+            ConNom1.RowHeight(i) = 0
+
+        End If
+
+    Next i
+
+    ' Mantener visible la fila de totales
+    If limite + 1 < ConNom1.Rows Then
+        ConNom1.RowHeight(limite + 1) = -1
+    End If
+
+End Sub
+
+Private Sub ConNom1_KeyDown(KeyCode As Integer, Shift As Integer)
+
+    If KeyCode = vbKeyC And (Shift And vbCtrlMask) <> 0 Then
+
+        CmdCopySel_Click
+        KeyCode = 0
+
+    End If
+
+End Sub
+

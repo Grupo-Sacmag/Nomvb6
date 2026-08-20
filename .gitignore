@@ -27,3 +27,5 @@ MSSCCPRJ.SCC
 # Archivos temporales o de prueba que a veces se crean
 *.tmp
 *.~??
+
+*.zip
