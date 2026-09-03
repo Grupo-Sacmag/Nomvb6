@@ -1,5 +1,4 @@
 VERSION 5.00
-Object = "{65E121D4-0C60-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCHRT20.OCX"
 Begin VB.Form EstadisticasPersonal 
    Caption         =   "Estadísticas"
    ClientHeight    =   9120
@@ -10,10 +9,11 @@ Begin VB.Form EstadisticasPersonal
    ScaleHeight     =   9120
    ScaleWidth      =   13725
    StartUpPosition =   3  'Windows Default
-   Begin MSChart20Lib.MSChart MSChart1 
+   Begin VB.PictureBox MSChart1 
       Height          =   8895
       Left            =   120
-      OleObjectBlob   =   "EstadisticasPersonal.frx":0000
+      ScaleHeight     =   8835
+      ScaleWidth      =   13395
       TabIndex        =   0
       Top             =   120
       Width           =   13455
@@ -64,3 +64,4 @@ Private Sub Form_Load()
     Close #3
 End Sub
 
+' comentario

@@ -83,3 +83,5 @@ End Sub
 Private Sub Form_Resize()
     CapturaDatos.Height = (700 * Tot_Dat) + 3000
 End Sub
+
+' comentario

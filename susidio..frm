@@ -229,7 +229,7 @@ Select Case a_opago
         End Select
             
 End Select
-em = LOF(4) / Len(subsidio)
+EM = LOF(4) / Len(subsidio)
 ConNom1.ColWidth(0) = 330
 ConNom1.Col = 0
 ConNom1.Row = 0
@@ -251,8 +251,8 @@ ConNom1.Col = 4
 ConNom1.CellAlignment = 4
 ConNom1.Text = "%/excedente"
 ConNom1.ColWidth(4) = 1500
-If em > 0 Then
-    For r = 1 To em: Get #4, r, subsidio
+If EM > 0 Then
+    For r = 1 To EM: Get #4, r, subsidio
       ConNom1.Col = 0
       ConNom1.Row = r
       ConNom1.Text = r
@@ -329,15 +329,15 @@ Private Sub subimp_Click(Index As Integer)
     Printer.Print
     
     For r = 1 To 14
-      For l = 1 To 4
-         If ConNom1.TextMatrix(r, l) <> "" Then
-                bala = ConNom1.TextMatrix(r, l)
+      For L = 1 To 4
+         If ConNom1.TextMatrix(r, L) <> "" Then
+                bala = ConNom1.TextMatrix(r, L)
                 valor$ = Format(bala, "##,###,##0.00"): uso$ = "##,###,##0.00"
                 pone = 0: colocar pone, valor$, uso$
-                Printer.CurrentX = (2500 + (1200 * l)) + pone
+                Printer.CurrentX = (2500 + (1200 * L)) + pone
                 Printer.Print valor$;
          End If
-      Next l
+      Next L
       Printer.Print
     Next r
     Printer.EndDoc
@@ -373,4 +373,4 @@ Private Sub Text1_KeyPress(KeyAscii As Integer)
 End Sub
 
 
-
+' comentario

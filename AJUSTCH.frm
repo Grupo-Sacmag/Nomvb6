@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{5E9E78A0-531B-11CF-91F6-C2863C385E30}#1.0#0"; "msflxgrd.ocx"
+Object = "{5E9E78A0-531B-11CF-91F6-C2863C385E30}#1.0#0"; "MSFLXGRD.OCX"
 Begin VB.Form AJTECH 
    Caption         =   "Ajuste en MILIMETROS  impresión de cheques"
    ClientHeight    =   4710
@@ -208,3 +208,4 @@ Private Sub Form_Load()
     AJTE.GridColor = vbRed
 End Sub
 
+' comentario

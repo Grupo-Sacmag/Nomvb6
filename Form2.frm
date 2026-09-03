@@ -933,3 +933,4 @@ Private Function IsValidCURP(ByVal curp As String) As Boolean
     IsValidCURP = regex.Test(curp)
 End Function
 
+' comentario

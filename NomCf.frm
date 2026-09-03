@@ -310,13 +310,13 @@ Private Sub NomCfdi_KeyDown(KeyCode As Integer, Shift As Integer)
     Select Case KeyCode
             Case vbKeyDelete
                
-               For Q = NomCfdi.Row To NomCfdi.RowSel
+               For q = NomCfdi.Row To NomCfdi.RowSel
                  
                  For W = NomCfdi.Col To NomCfdi.ColSel
                     
-                    NomCfdi.TextMatrix(Q, W) = ""
+                    NomCfdi.TextMatrix(q, W) = ""
                  Next W
-               Next Q
+               Next q
                
                 LTXT.Text = NomCfdi.Text
             Case vbKeyF2
@@ -341,3 +341,4 @@ Private Sub NomCfdi_LeaveCell()
 End Sub
 
 
+' comentario

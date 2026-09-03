@@ -76,3 +76,5 @@ Private Sub texto_KeyPress(KeyAscii As Integer)
         Unload Entrada
     End If
 End Sub
+
+' comentario

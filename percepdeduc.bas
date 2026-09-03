@@ -244,3 +244,5 @@ t_extded = t_ded - isr12
 
 
 End Sub
+
+' comentario

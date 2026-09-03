@@ -2,14 +2,14 @@ VERSION 5.00
 Object = "{5E9E78A0-531B-11CF-91F6-C2863C385E30}#1.0#0"; "MSFLXGRD.OCX"
 Begin VB.Form Form5 
    Caption         =   "TABLA ARTICULO 80"
-   ClientHeight    =   5484
-   ClientLeft      =   1776
-   ClientTop       =   2712
-   ClientWidth     =   7236
+   ClientHeight    =   5475
+   ClientLeft      =   1770
+   ClientTop       =   2715
+   ClientWidth     =   7245
    LinkTopic       =   "Form5"
    MaxButton       =   0   'False
-   ScaleHeight     =   5484
-   ScaleWidth      =   7236
+   ScaleHeight     =   5475
+   ScaleWidth      =   7245
    Begin VB.TextBox Text1 
       Appearance      =   0  'Flat
       Height          =   375
@@ -24,8 +24,8 @@ Begin VB.Form Form5
       TabIndex        =   0
       Top             =   960
       Width           =   6735
-      _ExtentX        =   11875
-      _ExtentY        =   5313
+      _ExtentX        =   11880
+      _ExtentY        =   5318
       _Version        =   393216
       Rows            =   15
       Cols            =   5
@@ -94,31 +94,31 @@ Dim mensaje, titulo, valorpred, mivalor, temporal
 Private Sub ArGuard_Click()
     yavas = 0
     For i = 1 To 14:
-       ConNom1.Row = i
-       ConNom1.Col = 1
-       If Val(ConNom1.Text) > 0 Then
-             articulo.liminf = ConNom1.Text
+       connom1.Row = i
+       connom1.Col = 1
+       If Val(connom1.Text) > 0 Then
+             articulo.liminf = connom1.Text
              yavas = 1
              Else
              articulo.liminf = 0
        End If
-       ConNom1.Col = 2
-       If Val(ConNom1.Text) > 0 Then
-            articulo.limsup = ConNom1.Text
+       connom1.Col = 2
+       If Val(connom1.Text) > 0 Then
+            articulo.limsup = connom1.Text
             yavas = 1
             Else
             articulo.liminf = 0
        End If
-       ConNom1.Col = 3
-       If Val(ConNom1.Text) > 0 Then
-            articulo.cuotaf = ConNom1.Text
+       connom1.Col = 3
+       If Val(connom1.Text) > 0 Then
+            articulo.cuotaf = connom1.Text
             yavas = 1
             Else
             articulo.cuotaf = 0
        End If
-       ConNom1.Col = 4
-       If Val(ConNom1.Text) > 0 Then
-            articulo.porcsl = ConNom1.Text
+       connom1.Col = 4
+       If Val(connom1.Text) > 0 Then
+            articulo.porcsl = connom1.Text
             yavas = 1
             Else
             articulo.porcsl = 0
@@ -136,12 +136,12 @@ Private Sub EdCop_Click()
        Dim Temporal1
  Clipboard.Clear
    
-   difer = ConNom1.RowSel - ConNom1.Row
-   For i = ConNom1.Row To ConNom1.RowSel
+   difer = connom1.RowSel - connom1.Row
+   For i = connom1.Row To connom1.RowSel
       
-      For f = ConNom1.Col To ConNom1.ColSel
-            Temporal1 = Temporal1 + ConNom1.TextMatrix(i, f)
-            If f < ConNom1.ColSel Then
+      For f = connom1.Col To connom1.ColSel
+            Temporal1 = Temporal1 + connom1.TextMatrix(i, f)
+            If f < connom1.ColSel Then
                 Temporal1 = Temporal1 & Chr(9)
             End If
       Next f
@@ -157,8 +157,8 @@ Private Sub EdPg_Click()
   Temporal1 = ""
   temporal = Clipboard.GetText(vbCFText)
 
-  RetornoCarro = ConNom1.Col
-  InicioCopia = ConNom1.Row: DeAqui = InicioCopia
+  RetornoCarro = connom1.Col
+  InicioCopia = connom1.Row: DeAqui = InicioCopia
   InIPGr = InicioCopia: InIPGc = RetornoCarro
 If temporal <> "" Then
   Clipboard.Clear
@@ -167,27 +167,27 @@ For i = 1 To Len(temporal)
     Select Case Mid(temporal, i, 1)
           Case Chr(9)
           Rem LTXT.Text = Mid(TemPOraL, DeAqui, (i - DeAqui))
-          Temporal1 = Temporal1 + ConNom1.TextMatrix(ConNom1.Row, ConNom1.Col) & Chr(9)
-          ConNom1.Text = Mid(temporal, DeAqui, (i - DeAqui))
-          ConNom1.Col = ConNom1.Col + 1
+          Temporal1 = Temporal1 + connom1.TextMatrix(connom1.Row, connom1.Col) & Chr(9)
+          connom1.Text = Mid(temporal, DeAqui, (i - DeAqui))
+          connom1.Col = connom1.Col + 1
           DeAqui = i + 1
           Case Chr(13)
-          Temporal1 = Temporal1 + ConNom1.TextMatrix(ConNom1.Row, ConNom1.Col) & Chr(13)
+          Temporal1 = Temporal1 + connom1.TextMatrix(connom1.Row, connom1.Col) & Chr(13)
           Rem LTXT.Text = Mid(TemPOraL, DeAqui, (i - DeAqui))
-          ConNom1.Text = Mid(temporal, DeAqui, (i - DeAqui))
-          If (ConNom1.Rows - 1) <= ConNom1.Row Then ConNom1.Rows = ConNom1.Rows + 100:
-          ConNom1.Row = ConNom1.Row + 1: ConNom1.TopRow = 1
+          connom1.Text = Mid(temporal, DeAqui, (i - DeAqui))
+          If (connom1.Rows - 1) <= connom1.Row Then connom1.Rows = connom1.Rows + 100:
+          connom1.Row = connom1.Row + 1: connom1.TopRow = 1
           DeAqui = i + 1
           Case Chr(10)
           Temporal1 = Temporal1 & Chr(10)
-          ConNom1.Col = RetornoCarro
+          connom1.Col = RetornoCarro
           DeAqui = i + 1
           Case Else
           Rem nada
     End Select
  Next i
  Rem CONNOM1.Row = InicioCopia:
- ConNom1.Col = RetornoCarro
+ connom1.Col = RetornoCarro
 End If
  
  Clipboard.Clear
@@ -196,10 +196,10 @@ End If
 End Sub
 
 Private Sub EdTd_Click()
-    ConNom1.Row = 1
-    ConNom1.Col = 1
-    ConNom1.ColSel = ConNom1.Cols - 1
-    ConNom1.RowSel = ConNom1.Rows - 1
+    connom1.Row = 1
+    connom1.Col = 1
+    connom1.ColSel = connom1.Cols - 1
+    connom1.RowSel = connom1.Rows - 1
 End Sub
 
 Private Sub Form_Load()
@@ -238,61 +238,61 @@ If ta_r = 0 Then
     ta_r = 0
 End If
 Dem = LOF(3) / Len(articulo)
-ConNom1.ColWidth(0) = 330
-ConNom1.Col = 0
-ConNom1.Row = 0
-ConNom1.Text = "#"
-ConNom1.CellAlignment = 4
-ConNom1.Col = 1
-ConNom1.CellAlignment = 4
-ConNom1.Text = "Lim.Inferior"
-ConNom1.ColWidth(1) = 1500
-ConNom1.Col = 2
-ConNom1.CellAlignment = 4
-ConNom1.Text = "Lim.Superior"
-ConNom1.ColWidth(2) = 1500
-ConNom1.Col = 3
-ConNom1.CellAlignment = 4
-ConNom1.Text = "Cuota Fija"
-ConNom1.ColWidth(3) = 1500
-ConNom1.Col = 4
-ConNom1.CellAlignment = 4
-ConNom1.Text = "%/excedente"
-ConNom1.ColWidth(4) = 1500
+connom1.ColWidth(0) = 330
+connom1.Col = 0
+connom1.Row = 0
+connom1.Text = "#"
+connom1.CellAlignment = 4
+connom1.Col = 1
+connom1.CellAlignment = 4
+connom1.Text = "Lim.Inferior"
+connom1.ColWidth(1) = 1500
+connom1.Col = 2
+connom1.CellAlignment = 4
+connom1.Text = "Lim.Superior"
+connom1.ColWidth(2) = 1500
+connom1.Col = 3
+connom1.CellAlignment = 4
+connom1.Text = "Cuota Fija"
+connom1.ColWidth(3) = 1500
+connom1.Col = 4
+connom1.CellAlignment = 4
+connom1.Text = "%/excedente"
+connom1.ColWidth(4) = 1500
 If Dem > 0 Then
     For r = 1 To Dem: Get #3, r, articulo
-      ConNom1.Col = 0
-      ConNom1.Row = r
-      ConNom1.Text = r
-      ConNom1.Col = 1
-      ConNom1.CellAlignment = 7
-      ConNom1.Text = Format(articulo.liminf, "###,##0.00")
-      ConNom1.Col = 2
-      ConNom1.CellAlignment = 7
-      ConNom1.Text = Format(articulo.limsup, "###,##0.00")
-      ConNom1.Col = 3
-      ConNom1.CellAlignment = 7
-      ConNom1.Text = Format(articulo.cuotaf, "###,##0.00")
-      ConNom1.Col = 4
-      ConNom1.CellAlignment = 7
-      ConNom1.Text = Format(articulo.porcsl, "###,##0.00")
+      connom1.Col = 0
+      connom1.Row = r
+      connom1.Text = r
+      connom1.Col = 1
+      connom1.CellAlignment = 7
+      connom1.Text = Format(articulo.liminf, "###,##0.00")
+      connom1.Col = 2
+      connom1.CellAlignment = 7
+      connom1.Text = Format(articulo.limsup, "###,##0.00")
+      connom1.Col = 3
+      connom1.CellAlignment = 7
+      connom1.Text = Format(articulo.cuotaf, "###,##0.00")
+      connom1.Col = 4
+      connom1.CellAlignment = 7
+      connom1.Text = Format(articulo.porcsl, "###,##0.00")
     Next r
       Else
         For r = 1 To 14
-           ConNom1.Col = 0
-           ConNom1.Row = r
-           ConNom1.Text = r
+           connom1.Col = 0
+           connom1.Row = r
+           connom1.Text = r
         Next r
     End If
-     ConNom1.Row = 1
-     ConNom1.Col = 1
-     ConNom1.Appearance = flex3D
+     connom1.Row = 1
+     connom1.Col = 1
+     connom1.Appearance = flex3D
      
 End Sub
 
 Private Sub Form_Resize()
-   Me.Width = ConNom1.Width + 400
-   Me.Height = ConNom1.Height + 2200
+   Me.Width = connom1.Width + 400
+   Me.Height = connom1.Height + 2200
 End Sub
 
 
@@ -305,8 +305,8 @@ Private Sub indsaltar_Click(Index As Integer)
 End Sub
 
 Private Sub ConNom1_EnterCell()
-    If ConNom1.Col > 0 And ConNom1.Row > 0 Then
-        ConNom1.CellBackColor = &H80FF80
+    If connom1.Col > 0 And connom1.Row > 0 Then
+        connom1.CellBackColor = &H80FF80
     End If
 End Sub
 Private Sub ConNom1_KeyPress(KeyAscii As Integer)
@@ -315,13 +315,13 @@ Private Sub ConNom1_KeyPress(KeyAscii As Integer)
 End Sub
 
 Private Sub ConNom1_LeaveCell()
-   If ConNom1.Col > 0 And ConNom1.Row > 0 Then
-        ConNom1.CellBackColor = vbWhite
+   If connom1.Col > 0 And connom1.Row > 0 Then
+        connom1.CellBackColor = vbWhite
    End If
 End Sub
 
 Private Sub ConNom1_RowColChange()
-   Text1.Text = ConNom1.Text
+   Text1.Text = connom1.Text
    
 End Sub
 
@@ -348,8 +348,8 @@ Private Sub tarimp_Click(Index As Integer)
     
     For r = 1 To 14
       For L = 1 To 4
-         If ConNom1.TextMatrix(r, L) <> "" Then
-                bala = ConNom1.TextMatrix(r, L)
+         If connom1.TextMatrix(r, L) <> "" Then
+                bala = connom1.TextMatrix(r, L)
                 valor$ = Format(bala, "##,###,##0.00"): uso$ = "##,###,##0.00"
                 pone = 0: colocar pone, valor$, uso$
                 Printer.CurrentX = (2500 + (1200 * L)) + pone
@@ -362,7 +362,7 @@ Private Sub tarimp_Click(Index As Integer)
 End Sub
 
 Private Sub Text1_Change()
-    ConNom1.Text = Text1.Text
+    connom1.Text = Text1.Text
   
 End Sub
 
@@ -374,15 +374,15 @@ End Sub
 Private Sub Text1_KeyPress(KeyAscii As Integer)
    Select Case KeyAscii
        Case 13
-         ConNom1.Text = Format(Val(ConNom1.Text), "###,##0.00")
-         ConNom1.SetFocus
+         connom1.Text = Format(Val(connom1.Text), "###,##0.00")
+         connom1.SetFocus
        Case 27
-         ConNom1.Text = mientras$
-         ConNom1.Text = ""
-         ConNom1.SetFocus
+         connom1.Text = mientras$
+         connom1.Text = ""
+         connom1.SetFocus
          
          
    End Select
 End Sub
 
-
+' comentario

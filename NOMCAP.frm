@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{F9043C88-F6F2-101A-A3C9-08002B2F49FB}#1.2#0"; "comdlg32.ocx"
+Object = "{F9043C88-F6F2-101A-A3C9-08002B2F49FB}#1.2#0"; "ComDlg32.OCX"
 Object = "{5E9E78A0-531B-11CF-91F6-C2863C385E30}#1.0#0"; "MSFLXGRD.OCX"
 Begin VB.Form NOMCF2 
    Caption         =   "Generación de CFDI"
@@ -238,12 +238,39 @@ Private Sub ReleaseObjects(o_Excel As Object, o_Libro As Object, o_Hoja As Objec
 End Sub
 Private Sub InicializarGridCFDI()
 
-    Const TOTAL_COLUMNAS As Long = 296   ' MISMAS columnas que la plantilla nueva
+    Const TOTAL_COLUMNAS As Long = 296
+    Dim totalFilas As Long
 
+    totalFilas = Form8.ConNom1.Rows
+
+    If totalFilas < 2 Then
+        totalFilas = 2
+    End If
+
+    'Grid utilizado realmente por MdAbr_1
     With NOMCF2.NOMCF
-        If .Cols < TOTAL_COLUMNAS Then
+
+        If .Cols <> TOTAL_COLUMNAS Then
             .Cols = TOTAL_COLUMNAS
         End If
+
+        If .Rows < totalFilas Then
+            .Rows = totalFilas
+        End If
+
+    End With
+
+    'Mantener también sincronizado el grid de este formulario
+    With NOMCF
+
+        If .Cols <> TOTAL_COLUMNAS Then
+            .Cols = TOTAL_COLUMNAS
+        End If
+
+        If .Rows < totalFilas Then
+            .Rows = totalFilas
+        End If
+
     End With
 
 End Sub
@@ -581,8 +608,11 @@ Private Sub NomCf_LeaveCell()
 End Sub
 
 Sub MdAbr_1()
-Call InicializarGridCFDI
-On Error GoTo ErrorHandler:
+
+On Error GoTo ErrorHandler
+
+    Call InicializarGridCFDI
+
 '**************************************************************************************************
 '**                                   Modulo CFDI                                                **
 '**************************************************************************************************
@@ -1284,11 +1314,19 @@ Exit Sub
 
 ErrorHandler:
 
-        If Form8.ConNom1.TextMatrix(1, 1) = "" Then 'Pregunta si la celda de nombre esta vacia
-            Exit Sub
-        Else
-            MsgBox ("Ups!, Parece que algo paso. Revisa los datos de: " & vbCrLf & vbCrLf & Nombrey)
-        End If
+    'No mostrar errores al usuario final.
+    'Solamente se registra en la ventana Immediate de VB6
+    'para poder diagnosticarlo durante desarrollo.
+    Debug.Print "Error en MdAbr_1"
+    Debug.Print "Empleado: " & Nombrey
+    Debug.Print "Numero empleado: " & NumerodePersonal
+    Debug.Print "Fila: " & I7
+    Debug.Print "Error: " & Err.Number
+    Debug.Print "Descripcion: " & Err.Description
+
+    Err.Clear
+    Exit Sub
+
 End Sub
 
 

@@ -20,7 +20,7 @@ Type DAT_OS
 End Type
 
 Type oper_aciones
-    CTA As String * 6
+    cta As String * 6
     descr As String * 30
     fe As String * 2
     impte As String * 16
@@ -40,7 +40,7 @@ End Type
 
 Type tra_cta
        num As Integer
-       Nombre As String * 32
+       nombre As String * 32
        donde As Integer
        inicia As Integer
        termina As Integer
@@ -49,7 +49,7 @@ Type tra_cta
 
 Type tra_Scta
        num As Integer
-       Nombre As String * 32
+       nombre As String * 32
        donde As Integer
        refer As Integer
        Clave As String * 1
@@ -60,7 +60,7 @@ Type tra_Scta
      ubi As Integer
      renglon As Long
      texto As String
-     poliza As Integer
+     Poliza As Integer
      Impresion As Integer
      TipoCap As Integer
      redaccion As String * 32
@@ -126,3 +126,4 @@ Type Al
  Public EM As Integer, qm As Integer, Mes As Integer
  Public m_m As Integer, dia As Integer
 
+' comentario

@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{5E9E78A0-531B-11CF-91F6-C2863C385E30}#1.0#0"; "msflxgrd.ocx"
+Object = "{5E9E78A0-531B-11CF-91F6-C2863C385E30}#1.0#0"; "MSFLXGRD.OCX"
 Begin VB.Form NOMCF3 
    Caption         =   "Generar CFDI"
    ClientHeight    =   4995
@@ -321,13 +321,13 @@ Private Sub NomCfdi_KeyDown(KeyCode As Integer, Shift As Integer)
     Select Case KeyCode
             Case vbKeyDelete
                
-               For Q = NomCfdi.Row To NomCfdi.RowSel
+               For q = NomCfdi.Row To NomCfdi.RowSel
                  
                  For W = NomCfdi.Col To NomCfdi.ColSel
                     
-                    NomCfdi.TextMatrix(Q, W) = ""
+                    NomCfdi.TextMatrix(q, W) = ""
                  Next W
-               Next Q
+               Next q
                
                 LTXT.Text = NomCfdi.Text
             Case vbKeyF2
@@ -351,5 +351,5 @@ Private Sub NomCfdi_LeaveCell()
   End If
 End Sub
 
-
+' comentario
 

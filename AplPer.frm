@@ -3,8 +3,8 @@ Object = "{5E9E78A0-531B-11CF-91F6-C2863C385E30}#1.0#0"; "MSFLXGRD.OCX"
 Begin VB.Form Aplper 
    Caption         =   "Aplicación proyectos"
    ClientHeight    =   6390
-   ClientLeft      =   165
-   ClientTop       =   855
+   ClientLeft      =   225
+   ClientTop       =   870
    ClientWidth     =   4275
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
@@ -321,5 +321,5 @@ Sub buscaobra()
    End If
 End Sub
 
-
+' comentario
 

@@ -159,3 +159,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+' comentario
+Private Sub Label7_Click()
+
+End Sub

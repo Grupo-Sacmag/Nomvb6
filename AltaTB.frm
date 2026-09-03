@@ -50,3 +50,5 @@ Rem Open "bnxcla.dno" For Random As 12 Len = Len(Clbnx)
    Ex.TextMatrix(li, 1) = RTrim$(personal.ape1) + " " + RTrim$(personal.ape2) + " " + RTrim$(personal.nom)
    Next
 End Sub
+
+' comentario

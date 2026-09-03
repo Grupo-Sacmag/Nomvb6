@@ -72,8 +72,8 @@ Attribute VB_Exposed = False
 
 Private Sub ArGdr1_Click()
    yavas = 0
-    For I = 1 To 14
-       connom1.Row = I
+    For i = 1 To 14
+       connom1.Row = i
        connom1.Col = 1
        If Val(connom1.Text) > 0 Then
              credito.crede = connom1.Text
@@ -98,10 +98,10 @@ Private Sub ArGdr1_Click()
             subsidio.cuotafs = 0
        End If
        If yavas > 0 Then
-             Put #5, I, credito: yavas = 0
-             Else: I = 14
+             Put #5, i, credito: yavas = 0
+             Else: i = 14
        End If
-     Next I
+     Next i
 End Sub
 
 Private Sub creimp_Click(Index As Integer)
@@ -123,15 +123,15 @@ Private Sub creimp_Click(Index As Integer)
     Printer.Print
     Printer.Print
     For r = 1 To 14
-      For l = 1 To 3
-         If connom1.TextMatrix(r, l) <> "" Then
-                bala = connom1.TextMatrix(r, l)
+      For L = 1 To 3
+         If connom1.TextMatrix(r, L) <> "" Then
+                bala = connom1.TextMatrix(r, L)
                 valor$ = Format(bala, "##,###,##0.00"): uso$ = "##,###,##0.00"
                 pone = 0: colocar pone, valor$, uso$
-                Printer.CurrentX = (2500 + (1200 * l)) + pone
+                Printer.CurrentX = (2500 + (1200 * L)) + pone
                 Printer.Print valor$;
          End If
-      Next l
+      Next L
       Printer.Print
     Next r
     Printer.EndDoc
@@ -254,4 +254,4 @@ Private Sub Text1_KeyPress(KeyAscii As Integer)
    End Select
 End Sub
 
-
+' comentario

@@ -155,3 +155,5 @@ Dim nI, nPos, nAcum, nCurVal, nNextVal As Integer
 
     cRound = cRet
 End Function
+
+' comentario

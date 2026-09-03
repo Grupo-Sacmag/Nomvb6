@@ -195,7 +195,7 @@ End Type
        Rep_Rfc As String * 25
        Rep_Curp As String * 25
        suc As String * 4
-       CTA As String * 12
+       cta As String * 12
        dias As Integer
        clte As String * 12
   End Type
@@ -204,7 +204,7 @@ End Type
      ubi As Integer
      renglon As Long
      texto As String
-     poliza As Integer
+     Poliza As Integer
      Impresion As Integer
  End Type
  Type refo
@@ -260,6 +260,44 @@ End Type
  Public dir_obras As String, baseanual As Currency, cal_anual As Integer, baseor As Currency
  Public obra(22) As Currency, porcentaje(22) As Currency, Base_anual1 As Currency, Psub_Extra As Currency
  Public estadoDelaConexion
+ 
+Public Function EsEmpresaLocal(ByVal nombreEmpresa As String) As Boolean
+
+    ' =========================================================
+    ' 1. EMPRESA GENERADA LOCALMENTE
+    '
+    ' Si existe el archivo bandera, esta empresa NO debe
+    ' consultar ni modificar la BD remota.
+    ' =========================================================
+
+    If Dir$("empresa_local.flag") <> "" Then
+        EsEmpresaLocal = True
+        Exit Function
+    End If
+
+
+    ' =========================================================
+    ' 2. REGLAS LEGACY QUE YA EXISTÍAN
+    ' =========================================================
+
+    If InStr(1, UCase$(Trim$(nombreEmpresa)), "JRI") > 0 Then
+        EsEmpresaLocal = True
+        Exit Function
+    End If
+
+    If UCase$(Trim$(nombreEmpresa)) = "SUPTER MONTEREY" Then
+        EsEmpresaLocal = True
+        Exit Function
+    End If
+
+
+    ' =========================================================
+    ' 3. RESTO DE EMPRESAS
+    ' =========================================================
+
+    EsEmpresaLocal = False
+
+End Function
  
 Sub veridir()
     On Error GoTo corrdire
@@ -766,7 +804,7 @@ Sub factor(antig, facto) 'vacaciones 2023
         Case 31 To 35
             vac = 1.0769
         Case 36 To 40
-            vac = 1.0923    
+            vac = 1.0923
         Case Else
             vac = 1.1077
       End Select
@@ -871,7 +909,7 @@ Else
 
 
 Public Function CalcularAntiguedad(ByVal fechaAlta As String) As Integer
-    On Error GoTo error_handler
+    On Error GoTo Error_Handler
     
     Dim dIngr As Integer, mIngr As Integer, yIngr As Integer
     Dim dCalc As Integer, mCalc As Integer, yCalc As Integer
@@ -902,7 +940,7 @@ Public Function CalcularAntiguedad(ByVal fechaAlta As String) As Integer
             dCalc = 30
         End If
     End If
-    On Error GoTo error_handler
+    On Error GoTo Error_Handler
     
     ' Si no esta cargada la pantalla o no hay seleccion valida, tomar fecha de la PC
     If mCalc <= 0 Or dCalc <= 0 Then
@@ -936,11 +974,11 @@ Public Function CalcularAntiguedad(ByVal fechaAlta As String) As Integer
     Open "c:\Users\david.albino\Desktop\debug_antiguedad.txt" For Append As fNum
     Print #fNum, "FechaAlta=" & fechaAlta & " dCalc=" & dCalc & " mCalc=" & mCalc & " yCalc=" & yCalc & " antig=" & antig
     Close fNum
-    On Error GoTo error_handler
+    On Error GoTo Error_Handler
     
     Exit Function
 
-error_handler:
+Error_Handler:
     ' En caso de cualquier error imprevisto, regresar calculo basico por ano
     Dim yea As Integer
     yea = Val(Mid$(fechaAlta, 7, 4))
@@ -952,3 +990,5 @@ error_handler:
         CalcularAntiguedad = 1
     End If
 End Function
+
+' comentario

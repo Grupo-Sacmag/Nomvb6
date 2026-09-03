@@ -1,29 +1,60 @@
-# Archivos de espacio de trabajo de VB6 (Ventanas abiertas, etc.)
+# =========================================================
+# Visual Basic 6
+# =========================================================
+
+# Archivos temporales / usuario
 *.vbw
-
-# Archivos de caché e información de controles de VB6
-*.oca
-*.dca
+*.vbg.user
+*.scc
 *.tmp
+*.temp
+*.bak
+*.old
+*.log
 
-# Archivos compilados e intermedios
-*.obj
+# Archivos generados durante compilación
 *.exe
 *.dll
 *.ocx
-*.cab
+*.pdb
+*.ilk
+*.exp
+*.lib
+*.obj
 
-# Archivos generados por el Package & Deployment Wizard / Empaquetado
-Support/
-*.PDM
-*.SCC
-MSSCCPRJ.SCC
+# Directorios de compilación
+bin/
+obj/
+Debug/
+Release/
 
-# Archivos de ayuda y estado temporales de compilación
-*.GID
-*.HLP.log
-*.log
+# =========================================================
+# Visual Studio / editores modernos
+# =========================================================
 
-# Archivos temporales o de prueba que a veces se crean
-*.tmp
-*.~??
+.vs/
+.vscode/
+.idea/
+
+# =========================================================
+# Windows
+# =========================================================
+
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# =========================================================
+# Archivos de sistema / temporales
+# =========================================================
+
+*.swp
+*.swo
+*~
+
+# =========================================================
+# Archivos comprimidos
+# =========================================================
+.zip
+.rar

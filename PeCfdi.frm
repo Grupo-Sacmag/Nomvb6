@@ -159,6 +159,13 @@ Private Sub ArCfSale_Click()
    Unload PeCfdi
 End Sub
 Private Sub DB_Click()
+
+    If EsEmpresaLocal(emp) Then
+        MsgBox "Esta empresa trabaja de forma local, no hay sincronización con el SAT remoto.", vbInformation
+        Exit Sub
+    End If
+
+    On Error GoTo ErrHandler
     On Error GoTo ErrHandler
 
     Dim oRS As ADODB.Recordset
@@ -317,13 +324,16 @@ Private Sub Form_Load()
     Dim sSQL
     Dim abrEmpresa
     Col_Def
-    
-    ''Conectar a base datos
     On Error GoTo Error
-    
+
+    If EsEmpresaLocal(emp) Then
+        PeCfdi.Caption = "Datos complementarios de Personal" & " - " & "Modo local (sin conexión remota)"
+        Exit Sub
+    End If
+
     abrEmpresa = Left(Trim(emp), 4)
-  
-    If (UCase(abrEmpresa) = "SACMAG DE") Then
+
+    If (UCase(abrEmpresa) = "SACM") Then
         abrEmpresa = "SACMAG"
     End If
     If (UCase(abrEmpresa) = "SUPT") Then
@@ -338,24 +348,17 @@ Private Sub Form_Load()
     If (UCase(abrEmpresa) = "SUPE") Then
         abrEmpresa = "SUPERVISA"
     End If
-    
+
     sSQL = "SELECT idNomina, nombre, apellidoP, apellidoM, nombreDeVialidad, nombreColonia, nombreLocalidad, entidadFederativa, nombreMunicipio, cp , correoElectronico " & _
              "FROM datosSat where empresa = '" & abrEmpresa & "'"
-  
-  ' Create and Open the Recordset object.
-    
+
     Set oRS = New ADODB.Recordset
     oRS.CursorLocation = adUseClient
     oRS.Open sSQL, con, adOpenStatic, adLockBatchOptimistic, adCmdText
-                
+
     oRS.MoveFirst
-      
-    'Agrega las filas necesarias en el FlexGRid
-    
+
     dat.Rows = oRS.RecordCount + 1
-    
-    'Agrega las columnas necesarias
-    
     dat.Cols = oRS.Fields.Count
     dat.Row = 0: dat.Col = 0
     dat.Col = 0: dat.CellAlignment = 4: dat.ColWidth(0) = 2800: dat.Text = "ID NÓMINA"
@@ -370,8 +373,8 @@ Private Sub Form_Load()
     dat.Col = 9: dat.CellAlignment = 4: dat.ColWidth(9) = 2800: dat.Text = "CÓDIGO POSTAL"
     dat.Col = 10: dat.CellAlignment = 4: dat.ColWidth(10) = 2800: dat.Text = "CORREO"
     vardatarows = oRS.GetRows()
-     
-     For i = 1 To dat.Rows - 1
+
+    For i = 1 To dat.Rows - 1
         For h = 0 To dat.Cols - 1
             If (IsNull(vardatarows(h, i - 1))) Then
                 dat.TextMatrix(i, h) = "N/A"
@@ -379,10 +382,9 @@ Private Sub Form_Load()
                 dat.TextMatrix(i, h) = Trim(vardatarows(h, i - 1))
             End If
         Next h
-     Next i
+    Next i
     oRS.MarshalOptions = adMarshalModifiedOnly
-    
-    ' Disconnect the Recordset.
+
     Set oRS.ActiveConnection = Nothing
     oRS.Close
     Set oRS = Nothing
@@ -390,7 +392,7 @@ Private Sub Form_Load()
     Open "personal.dno" For Random As 2 Len = Len(personal)
     Dm = LOF(2) / Len(personal)
     Open "Perscfdi.dno" For Random As 1 Len = Len(Empleado_1)
-   
+
     For i = 1 To dat.Rows - 1
         idNomina = dat.TextMatrix(i, 0)
         Get 1, CInt(idNomina), Empleado_1
@@ -402,18 +404,14 @@ Private Sub Form_Load()
         Empleado_1.Cpostal = UCase(Trim(dat.TextMatrix(i, 9)))
         Empleado_1.correo = UCase(Trim(dat.TextMatrix(i, 10)))
         Put 1, idNomina, Empleado_1
-    
     Next i
-    
+
     PeCfdi.Caption = "Datos complementarios de Personal" & " - " & "Estas conectado"
-    
+
     Close 1, 2
-    
     Exit Sub
 Error:
-MsgBox ("Ocurrió un error:" + Err.Description)
-   
-    
+    MsgBox ("Ocurrió un error:" + Err.Description)
 End Sub
 
 
@@ -468,3 +466,4 @@ Private Sub pcpcfdi_LeaveCell()
    PCpCfdi.CellBackColor = vbWhite
 End Sub
 
+' comentario
