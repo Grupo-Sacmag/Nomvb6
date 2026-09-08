@@ -1319,7 +1319,11 @@ Sub TituloCompl()
 End Sub
 
 Private Sub Capcf_Click()
-   NOMCF2.Show
+
+    OrigenCFDI = 0
+
+    NOMCF2.Show
+
 End Sub
 
 Private Sub CapDetImp_Click()
@@ -1425,8 +1429,13 @@ Private Sub capturaGeneral_Click()
     generarNominaGeneral
 End Sub
 
+
 Private Sub CFDI2_Click()
-  NOMCF2.Show
+
+    OrigenCFDI = 0
+
+    NOMCF2.Show
+
 End Sub
 
 Private Sub cheajte_Click(Index As Integer)

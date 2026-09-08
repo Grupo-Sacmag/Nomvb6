@@ -126,6 +126,9 @@ Begin VB.Form FormViewer
          Caption         =   "Exportar a Excel"
       End
    End
+   Begin VB.Menu mnuCFDI 
+      Caption         =   "CFDI"
+   End
    Begin VB.Menu mnuPortapapeles 
       Caption         =   "Portapapeles"
       Begin VB.Menu mnuCopiarTodo 
@@ -1263,6 +1266,35 @@ Private Sub Form_Resize()
 
 End Sub
 
+Private Sub mnuCFDI_Click()
+
+    On Error GoTo ErrorCFDI
+
+    'Indicar que NOMCF2 debe utilizar FormViewer.ConNom1
+    OrigenCFDI = 1
+
+    'Volver a abrir los archivos que FormViewer cerró
+    AbrirArchivosParaCFDI
+
+    'NOMCF2 necesita ejecutarse como modal
+    NOMCF2.Show vbModal
+
+    'Cuando NOMCF2 termine, cerrar los archivos del proceso CFDI
+    CerrarArchivosCFDI
+
+    Exit Sub
+
+ErrorCFDI:
+
+    CerrarArchivosCFDI
+
+    MsgBox "Error al generar el CFDI." & vbCrLf & _
+           "Error: " & Err.Number & vbCrLf & _
+           Err.Description, _
+           vbCritical, "CFDI"
+
+End Sub
+
 Private Sub mnuCopiarSeleccion_Click()
     CmdCopySel_Click
 End Sub
@@ -1582,3 +1614,75 @@ Private Sub CerrarArchivosVisor()
 End Sub
 
 ' comentario
+
+Private Sub AbrirArchivosParaCFDI()
+
+    Dim rutaCFDI As String
+
+    On Error GoTo ErrorAbrir
+
+    'La ruta de la nómina se obtiene a partir de Arch
+    rutaCFDI = Left$(Arch, InStrRev(Arch, "\"))
+
+    'Por seguridad, cerrar primero estos números de archivo
+    On Error Resume Next
+    Close #2
+    Close #6
+    Close #8
+    Close #12
+    Close #14
+    On Error GoTo ErrorAbrir
+
+    '========================================================
+    ' ARCHIVOS QUE NECESITA EL PROCESO CFDI
+    '========================================================
+
+    'Personal
+    Open rutaCFDI & "personal.dno" _
+        For Random As #2 _
+        Len = Len(personal)
+
+    'Nómina que está visualizando FormViewer
+    Open Arch _
+        For Random As #6 _
+        Len = Len(nomina)
+
+    'Maestro
+    Open rutaCFDI & "maestro.dno" _
+        For Random As #8 _
+        Len = Len(maestro)
+
+    'Bnxcla
+    Open rutaCFDI & "bnxcla.dno" _
+        For Random As #12 _
+        Len = Len(Clbnx)
+
+    'Complemento .cmp de la nómina
+    Open Arch1 _
+        For Random As #14 _
+        Len = Len(nom_com)
+
+    Exit Sub
+
+ErrorAbrir:
+
+    MsgBox "No se pudieron abrir los archivos necesarios para generar el CFDI." & vbCrLf & _
+           "Error: " & Err.Number & vbCrLf & _
+           Err.Description, _
+           vbCritical, "CFDI"
+
+End Sub
+Private Sub CerrarArchivosCFDI()
+
+    On Error Resume Next
+
+    Close #2
+    Close #6
+    Close #8
+    Close #12
+    Close #14
+
+    On Error GoTo 0
+
+End Sub
+
