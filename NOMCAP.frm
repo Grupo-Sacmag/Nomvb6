@@ -371,7 +371,7 @@ Debug.Print "Filas Grid -> "; GridOrigen.Rows
 On Error GoTo 0
 
 
-    For I7 = 1 To GridOrigen.Rows - 3
+    For I7 = FILA_INICIO_DATOS To UltimaFilaCFDI
         Folio = Folio + 1
     
         If IsNumeric(GridOrigen.TextMatrix(I7, 0)) Then

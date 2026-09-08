@@ -1065,46 +1065,78 @@ Sub eliminacion()
 End Sub
 
 Sub sumavert()
+
     Dim Vw As Integer
     Dim late As Integer
     Dim li As Long
     Dim ii As Integer
     Dim sumv(20) As Currency
-    
+
     ProgressBar1.Min = 0
-    ProgressBar1.Max = ConNom1.Rows
+    ProgressBar1.Max = limite
     ProgressBar1.Value = 0
     ProgressBar1.Visible = True
-    
+
     Vw = 0
+
     For late = 3 To 20
         sumv(late) = 0
     Next late
-        
-    For li = 1 To limite
+
+    '========================================================
+    ' SUMAR ÚNICAMENTE LOS EMPLEADOS
+    '========================================================
+    For li = FILA_INICIO_DATOS To limite
+
         Vw = Vw + 1
         ProgressBar1.Value = li
+
         For late = 3 To 20
+
             ii = late
-            If ConNom1.TextMatrix(li, ii) <> "" Then
-                sumv(late) = sumv(late) + CCur(ConNom1.TextMatrix(li, ii))
+
+            If Trim$(ConNom1.TextMatrix(li, ii)) <> "" Then
+
+                If IsNumeric(ConNom1.TextMatrix(li, ii)) Then
+                    sumv(late) = sumv(late) + _
+                                 CCur(ConNom1.TextMatrix(li, ii))
+                End If
+
             End If
+
         Next late
+
     Next li
-    
+
+    '========================================================
+    ' FILA DE TOTALES
+    '========================================================
+
     li = limite + 1
-    ConNom1.TextMatrix(li, 1) = "Empleados... " + Str(Vw) + " S u m a s ....."
-    
+
+    'Limpiar la fila antes de escribir nuevamente los totales
+    For ii = 0 To ConNom1.Cols - 1
+        ConNom1.TextMatrix(li, ii) = ""
+    Next ii
+
+    ConNom1.TextMatrix(li, 1) = _
+        "Empleados... " & Str$(Vw) & " S u m a s ....."
+
     For late = 3 To 20
+
         ii = late
+
         If sumv(late) <> 0 Then
-            ConNom1.TextMatrix(li, ii) = Format(sumv(late), z1$)
+            ConNom1.TextMatrix(li, ii) = _
+                Format$(sumv(late), z1$)
         Else
             ConNom1.TextMatrix(li, ii) = ""
         End If
+
     Next late
-    
+
     ProgressBar1.Visible = False
+
 End Sub
 
 Private Sub CmdCopyAll_Click()
@@ -1270,16 +1302,16 @@ Private Sub mnuCFDI_Click()
 
     On Error GoTo ErrorCFDI
 
-    'Indicar que NOMCF2 debe utilizar FormViewer.ConNom1
     OrigenCFDI = 1
 
-    'Volver a abrir los archivos que FormViewer cerró
+    'La última fila válida es la última fila de empleados.
+    'La fila siguiente contiene los totales.
+    UltimaFilaCFDI = limite
+
     AbrirArchivosParaCFDI
 
-    'NOMCF2 necesita ejecutarse como modal
     NOMCF2.Show vbModal
 
-    'Cuando NOMCF2 termine, cerrar los archivos del proceso CFDI
     CerrarArchivosCFDI
 
     Exit Sub
@@ -1429,107 +1461,26 @@ End Sub
 
 Private Sub mnuIDAsc_Click()
 
-    Dim filaActual As Long
-    Dim colActual As Long
-
-    If limite <= 1 Then Exit Sub
-
-    filaActual = ConNom1.Row
-    colActual = ConNom1.Col
-
-    ConNom1.Redraw = False
-
-    ConNom1.Row = FILA_INICIO_DATOS
-    ConNom1.RowSel = limite
-
-    ConNom1.Col = COL_ID
-    ConNom1.ColSel = COL_ID
-
-    ' 3 = Numeric Ascending
-    ConNom1.Sort = 3
-
-    ConNom1.Row = filaActual
-    ConNom1.Col = colActual
-
-    ConNom1.Redraw = True
+    OrdenarConNom1 COL_ID, 3
+    
 End Sub
 
 Private Sub mnuIDDesc_Click()
-    Dim filaActual As Long
-    Dim colActual As Long
 
-    If limite <= 1 Then Exit Sub
+    OrdenarConNom1 COL_ID, 4
 
-    filaActual = ConNom1.Row
-    colActual = ConNom1.Col
-
-    ConNom1.Redraw = False
-
-    ConNom1.Row = FILA_INICIO_DATOS
-    ConNom1.RowSel = limite
-
-    ConNom1.Col = COL_ID
-    ConNom1.ColSel = COL_ID
-
-    ' 4 = Numeric Descending
-    ConNom1.Sort = 4
-
-    ConNom1.Row = filaActual
-    ConNom1.Col = colActual
-
-    ConNom1.Redraw = True
 End Sub
 
 Private Sub mnuNombreAsc_Click()
-    Dim filaActual As Long
-    Dim colActual As Long
-
-    If limite <= 1 Then Exit Sub
-
-    filaActual = ConNom1.Row
-    colActual = ConNom1.Col
-
-    ConNom1.Redraw = False
-
-    ConNom1.Row = FILA_INICIO_DATOS
-    ConNom1.RowSel = limite
-
-    ConNom1.Col = COL_NOMBRE
-    ConNom1.ColSel = COL_NOMBRE
-
-    ' 5 = String Ascending
-    ConNom1.Sort = 5
-
-    ConNom1.Row = filaActual
-    ConNom1.Col = colActual
-
-    ConNom1.Redraw = True
+    
+    OrdenarConNom1 COL_NOMBRE, 5
+    
 End Sub
 
 Private Sub mnuNombreDesc_Click()
-    Dim filaActual As Long
-    Dim colActual As Long
 
-    If limite <= 1 Then Exit Sub
+     OrdenarConNom1 COL_NOMBRE, 6
 
-    filaActual = ConNom1.Row
-    colActual = ConNom1.Col
-
-    ConNom1.Redraw = False
-
-    ConNom1.Row = FILA_INICIO_DATOS
-    ConNom1.RowSel = limite
-
-    ConNom1.Col = COL_NOMBRE
-    ConNom1.ColSel = COL_NOMBRE
-
-    ' 6 = String Descending
-    ConNom1.Sort = 6
-
-    ConNom1.Row = filaActual
-    ConNom1.Col = colActual
-
-    ConNom1.Redraw = True
 End Sub
 
 Private Sub TxtBuscar_Change()
@@ -1683,6 +1634,89 @@ Private Sub CerrarArchivosCFDI()
     Close #14
 
     On Error GoTo 0
+
+End Sub
+
+Private Sub OrdenarConNom1(ByVal columna As Long, ByVal tipoOrden As Integer)
+
+    Dim filaActual As Long
+    Dim colActual As Long
+    Dim filasOriginales As Long
+
+    On Error GoTo ErrorOrden
+
+    If limite <= FILA_INICIO_DATOS Then Exit Sub
+
+    filaActual = ConNom1.Row
+    colActual = ConNom1.Col
+
+    'Guardar cantidad original de filas
+    filasOriginales = ConNom1.Rows
+
+    ConNom1.Redraw = False
+
+    '========================================================
+    ' QUITAR TEMPORALMENTE LA FILA DE TOTALES
+    '========================================================
+
+    'La fila de totales está en limite + 1
+    ConNom1.Rows = limite + 1
+
+    '========================================================
+    ' ORDENAR SOLAMENTE LOS EMPLEADOS
+    '========================================================
+
+    ConNom1.Row = FILA_INICIO_DATOS
+    ConNom1.RowSel = limite
+
+    ConNom1.Col = columna
+    ConNom1.ColSel = columna
+
+    ConNom1.Sort = tipoOrden
+
+    '========================================================
+    ' VOLVER A CREAR LA FILA DE TOTALES
+    '========================================================
+
+    ConNom1.Rows = limite + 2
+
+    'Recalcular los totales y volver a colocar la fila
+    sumavert
+
+    'Restaurar posición
+    If filaActual < ConNom1.Rows Then
+        ConNom1.Row = filaActual
+    Else
+        ConNom1.Row = ConNom1.Rows - 1
+    End If
+
+    If colActual < ConNom1.Cols Then
+        ConNom1.Col = colActual
+    Else
+        ConNom1.Col = 0
+    End If
+
+    ConNom1.Redraw = True
+
+    Exit Sub
+
+ErrorOrden:
+
+    'Intentar recuperar la fila de totales
+    On Error Resume Next
+
+    If ConNom1.Rows < limite + 2 Then
+        ConNom1.Rows = limite + 2
+    End If
+
+    sumavert
+
+    ConNom1.Redraw = True
+
+    MsgBox "Error al ordenar la nómina." & vbCrLf & _
+           "Error: " & Err.Number & vbCrLf & _
+           Err.Description, _
+           vbExclamation, "Ordenamiento"
 
 End Sub
 

@@ -32,6 +32,7 @@ Public t_oded As Currency 'total otras deducciones
 Public ptu_1 As Currency, ptu_2 As Currency, ptu_3 As Currency
 Public I7 As Long
 Public OrigenCFDI As Integer
+Public UltimaFilaCFDI As Long
 
 Sub reng()
 
