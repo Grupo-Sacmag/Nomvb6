@@ -422,15 +422,19 @@ Public Sub Form_Load()
     Open "PerOtre.dno" For Random As 3 Len = Len(Otros_Rgtros): largoOtros = LOF(3) / Len(personal)
     Open "maestro.dno" For Random As 8 Len = Len(maestro): largoMaestro = LOF(8) / Len(maestro)
     
+    ' NUEVO: limpiar todos los campos SIEMPRE, sin importar si el form ya estaba cargado
+    Text1.Text = "": Text2.Text = "": Text3.Text = "": Text4.Text = ""
+    Text5.Text = "": Text6.Text = "": Text7.Text = "": Text8.Text = ""
+    Text9.Text = "": Text10.Text = 0: Text11.Text = 0: Text12.Text = ""
+    Text13.Text = "": Text14.Text = "": Text15.Text = ""
+    
     If largoPersonal <= 0 Then
         MsgBox ("Achis, no hay personal. Intenta con otra carpeta!")
         Get 2, 1, personal
     Else
         Get 2, largoPersonal, personal
-    
         Text16.Text = (largoPersonal + 1)
         LabelAnterior.Caption = ("ID anterior:  " & largoPersonal)
-        
     End If
 End Sub
 
@@ -898,7 +902,7 @@ On Error GoTo manejador
     Put 8, registro, maestro
      
     MsgBox "Se guardó con éxito."
-    
+    Unload Me
     limpiarCampos
     Exit Sub
     

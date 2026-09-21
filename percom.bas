@@ -260,6 +260,8 @@ End Type
  Public dir_obras As String, baseanual As Currency, cal_anual As Integer, baseor As Currency
  Public obra(22) As Currency, porcentaje(22) As Currency, Base_anual1 As Currency, Psub_Extra As Currency
  Public estadoDelaConexion
+ Public G_NombreArchivoNomina As String  ' Almacena ej: "LIQ012024.NOM"
+Public G_TipoNominaProcess As String    ' "ORD", "ESP" o "LIQ"
  
 Public Function EsEmpresaLocal(ByVal nombreEmpresa As String) As Boolean
 

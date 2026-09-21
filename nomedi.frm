@@ -159,10 +159,11 @@ End Sub
 
 Sub ArchCorr()
   Close 1, 3
+  rgtro = ListPer.TextMatrix(ListPer.Row, 0)   ' <-- mover esta línea PRIMERO
+
   Open "personal.dno" For Random As 1 Len = Len(personal)
   Get 1, rgtro, personal
-  
-  rgtro = ListPer.TextMatrix(ListPer.Row, 0)
+
   Open "PerOtre.dno" For Random As 3 Len = Len(Otros_Rgtros)
   Get 3, rgtro, Otros_Rgtros
   
@@ -618,7 +619,6 @@ Private Sub EdSup_Click()
  ListPer.FixedCols = 0
  ListPer.FixedRows = 0
 End Sub
-
 
 Private Sub Form_Load()
 Dim oRS As New ADODB.Recordset

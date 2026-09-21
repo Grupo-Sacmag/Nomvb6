@@ -125,32 +125,7 @@ Const adLockReadOnly As Integer = 1
 Const TOTAL_COLUMNAS As Long = 296
 Const COL_2DA_RFC As Long = 98
 Const COL_2DA_BANDERA As Long = 295   ' GP
-Private Function GridOrigenCFDI() As Object
-
-    If OrigenCFDI = 1 Then
-        Set GridOrigenCFDI = FormViewer.ConNom1
-    Else
-        Set GridOrigenCFDI = Form8.ConNom1
-    End If
-
-End Function
-
-
-Private Function FilasOrigenCFDI() As Long
-
-    Dim grd As Object
-
-    Set grd = GridOrigenCFDI()
-
-    If grd Is Nothing Then
-        FilasOrigenCFDI = 0
-    Else
-        FilasOrigenCFDI = grd.Rows
-    End If
-
-    Set grd = Nothing
-
-End Function
+    
 Sub IniCols()
 On Error GoTo ErrorHandler
 
@@ -164,10 +139,10 @@ On Error GoTo ErrorHandler
     'NOMCF.FixedRows = 1
     NOMCF.Cols = cm
 
-    If FilasOrigenCFDI() < 2 Then
+    If Form8.ConNom1.Rows < 2 Then
         NOMCF.Rows = 2
     Else
-        NOMCF.Rows = FilasOrigenCFDI()
+        NOMCF.Rows = Form8.ConNom1.Rows
     End If
 
     NOMCF.Row = 0
@@ -266,7 +241,7 @@ Private Sub InicializarGridCFDI()
     Const TOTAL_COLUMNAS As Long = 296
     Dim totalFilas As Long
 
-    totalFilas = FilasOrigenCFDI()
+    totalFilas = Form8.ConNom1.Rows
 
     If totalFilas < 2 Then
         totalFilas = 2
@@ -299,23 +274,20 @@ Private Sub InicializarGridCFDI()
     End With
 
 End Sub
+
 Private Sub Form_Load()
 
-    Dim GridOrigen As Object
-
-    Set GridOrigen = GridOrigenCFDI()
-
     IniCols
-
+    
     Close 10
     Close 7
-
+    
     Open "EMP_CFDI.DNO" For Random As 10 Len = Len(EmpCFDI)
     Open "Perscfdi.dno" For Random As 7 Len = Len(Empleado_1)
     Open "PerOtre.dno" For Random As 9 Len = Len(Otros_Rgtros)
-
+    
     Get 10, 1, EmpCFDI
-
+    
     Folio = InputBox("Dame el numero de Folio Anterior", "CFDI NOMINA", EmpCFDI.Folio)
     serie = InputBox("Dame la serie", "CFDI NOMINA", EmpCFDI.serie)
     ConNomina = InputBox("Numero de nomina consecutivo ", "CFDI NOMINA", (EmpCFDI.Consecutivo + 1))
@@ -359,25 +331,12 @@ DENUEVO:
     Dim x9 As Long
     
     I8 = 0
-
-Debug.Print "=== ESTADO ARCHIVOS CFDI ==="
-Debug.Print "#2  -> "; EstadoArchivo(2)
-Debug.Print "#7  -> "; EstadoArchivo(7)
-Debug.Print "#9  -> "; EstadoArchivo(9)
-Debug.Print "#10 -> "; EstadoArchivo(10)
-Debug.Print "#14 -> "; EstadoArchivo(14)
-Debug.Print "Filas Grid -> "; GridOrigen.Rows
-
-On Error GoTo 0
-
-
-    For I7 = FILA_INICIO_DATOS To UltimaFilaCFDI
+       
+    For I7 = 1 To Form8.ConNom1.Rows - 3
         Folio = Folio + 1
-    
-        If IsNumeric(GridOrigen.TextMatrix(I7, 0)) Then
-            NumerodePersonal = GridOrigen.TextMatrix(I7, 0)
+        If IsNumeric(Form8.ConNom1.TextMatrix(I7, 0)) Then
+            NumerodePersonal = Form8.ConNom1.TextMatrix(I7, 0)
         End If
-    
         reng
         MdAbr_1
     Next I7
@@ -652,10 +611,6 @@ Sub MdAbr_1()
 
 On Error GoTo ErrorHandler
 
-    Dim GridOrigen As Object
-
-    Set GridOrigen = GridOrigenCFDI()
-
     Call InicializarGridCFDI
 
 '**************************************************************************************************
@@ -666,13 +621,6 @@ On Error GoTo ErrorHandler
         NOMCF2.NOMCF.TextMatrix(I7, 0) = Folio
     '2 3 SERIE
         NOMCF2.NOMCF.TextMatrix(I7, 1) = serie:
-        
-        Debug.Print "MdAbr_1 -> Empleado: "; NumerodePersonal
-        Debug.Print "Archivo #2: "; EstadoArchivo(2)
-        Debug.Print "Archivo #7: "; EstadoArchivo(7)
-        Debug.Print "Archivo #9: "; EstadoArchivo(9)
-        Debug.Print "Archivo #14: "; EstadoArchivo(14)
-        
     '3 4 NOMBRE
         Get 2, NumerodePersonal, personal:
         MiFechaAlta = Trim(personal.fal)
@@ -725,7 +673,21 @@ On Error GoTo ErrorHandler
      NOMCF2.NOMCF.TextMatrix(I7, 23) = Format(t_per - sub13, "#,##0.00")
     
     '25 26 TOTALSEPARACIONINDEMNIZACION
-        NOMCF2.NOMCF.TextMatrix(I7, 24) = Format(0, "#,##0.00")
+    If g_TipoNominaActiva = tnLiquidacionFiniquito Then
+    
+        NOMCF2.NOMCF.TextMatrix(I7, 24) = _
+            Format( _
+                Val(Form8.ConNom1.TextMatrix(I7, 4)) + _
+                Val(Form8.ConNom1.TextMatrix(I7, 5)) + _
+                Val(Form8.ConNom1.TextMatrix(I7, 6)), _
+                "#,##0.00")
+    
+    Else
+    
+        NOMCF2.NOMCF.TextMatrix(I7, 24) = _
+            Format(0, "#,##0.00")
+    
+    End If
     '26 27 TOTALJUBILACIONPENSIONRETIRO
         NOMCF2.NOMCF.TextMatrix(I7, 25) = Format(0, "#,##0.00")
     '27 28 TOTALOTRASDEDUCCIONES
@@ -760,8 +722,8 @@ On Error GoTo ErrorHandler
         '-*********************************************************************
         
     '37 38 NUMCTAPAG
-        'NOMCF2.NOMCF.TextMatrix(I7, 37) = CStr(GridOrigen.TextMatrix.TextMatrix(I7, 24))
-        NOMCF2.NOMCF.TextMatrix(I7, 37) = Right(Trim(GridOrigen.TextMatrix(I7, 24)), 4)
+        'NOMCF2.NOMCF.TextMatrix(I7, 37) = CStr(Form8.ConNom1.TextMatrix(I7, 24))
+        NOMCF2.NOMCF.TextMatrix(I7, 37) = Right(Trim(Form8.ConNom1.TextMatrix(I7, 24)), 4)
     '38 39 REGISTROPATRONAL
         NOMCF2.NOMCF.TextMatrix(I7, 38) = Reg_Patr
     '39 40 NUMEMPLEADO
@@ -796,7 +758,7 @@ On Error GoTo ErrorHandler
        If N_ormal = 1 Then
         NOMCF2.NOMCF.TextMatrix(I7, 46) = 1
         Else
-        NOMCF2.NOMCF.TextMatrix(I7, 46) = GridOrigen.TextMatrix(I7, 2)
+        NOMCF2.NOMCF.TextMatrix(I7, 46) = Form8.ConNom1.TextMatrix(I7, 2)
        End If
     '47 48 DEPARTAMENTO
         NOMCF2.NOMCF.TextMatrix(I7, 47) = "ADMINISTRACION"
@@ -920,14 +882,14 @@ On Error GoTo ErrorHandler
     '99 100 P002G
     '100 101 P002E
         If N_ormal = 1 Then
-            If IsNumeric(GridOrigen.TextMatrix(I7, 5)) Then
-                NOMCF2.NOMCF.TextMatrix(I7, 100) = Format(GridOrigen.TextMatrix(I7, 5), "###0.00"):  Rem 64 P002 GGratificación Anual (Aguinaldo)
-            If IsNumeric(GridOrigen.TextMatrix(I7, 6)) Then
+            If IsNumeric(Form8.ConNom1.TextMatrix(I7, 5)) Then
+                NOMCF2.NOMCF.TextMatrix(I7, 100) = Format(Form8.ConNom1.TextMatrix(I7, 5), "###0.00"):  Rem 64 P002 GGratificación Anual (Aguinaldo)
+            If IsNumeric(Form8.ConNom1.TextMatrix(I7, 6)) Then
                 NOMCF2.NOMCF.TextMatrix(I7, 101) = Format(0, "###0.00")
                 Else
-                NOMCF2.NOMCF.TextMatrix(I7, 101) = Format(GridOrigen.TextMatrix(I7, 10), "###0.00"): Rem 65 P002 GGratificación Anual (Aguinaldo exento)
+                NOMCF2.NOMCF.TextMatrix(I7, 101) = Format(Form8.ConNom1.TextMatrix(I7, 10), "###0.00"): Rem 65 P002 GGratificación Anual (Aguinaldo exento)
            End If
-            ElseIf GridOrigen.TextMatrix(I7, 5) = "" Then
+            ElseIf Form8.ConNom1.TextMatrix(I7, 5) = "" Then
                 NOMCF2.NOMCF.TextMatrix(I7, 100) = Format(0, "#,##0.00")
                 NOMCF2.NOMCF.TextMatrix(I7, 101) = Format(0, "#,##0.00")
             End If
@@ -942,10 +904,10 @@ On Error GoTo ErrorHandler
     Rem **************** MODIFICADO CON EL PARCHE DEL 6/6/17 *************************************
     If N_ormal = 1 Then
          
-        If IsNumeric(GridOrigen.TextMatrix(I7, 6)) Then
+        If IsNumeric(Form8.ConNom1.TextMatrix(I7, 6)) Then
             NOMCF2.NOMCF.TextMatrix(I7, 102) = Format(ptu_1, "###0.00"):          Rem 66 P003E PTU
             NOMCF2.NOMCF.TextMatrix(I7, 103) = Format(ptu_2, "###0.00"):          Rem 67 P003G PTU
-        ElseIf GridOrigen.TextMatrix(I7, 6) = "" Then
+        ElseIf Form8.ConNom1.TextMatrix(I7, 6) = "" Then
             NOMCF2.NOMCF.TextMatrix(I7, 102) = Format(0, "#,##0.00")
             NOMCF2.NOMCF.TextMatrix(I7, 103) = Format(0, "#,##0.00")
         End If
@@ -970,13 +932,29 @@ On Error GoTo ErrorHandler
         NOMCF2.NOMCF.TextMatrix(I7, 110) = Format(0, "#,##0.00")
     '111 P010G PREMIO DE PUNTUALIDAD
     
-    If N_ormal = 1 Then
-        If IsNumeric(GridOrigen.TextMatrix(I7, 7)) Then
-            NOMCF2.NOMCF.TextMatrix(I7, 104) = Format(GridOrigen.TextMatrix.TextMatrix(I7, 7) + GridOrigen.TextMatrix.TextMatrix(I7, 10), "###0.00"):           Rem 74 P003GPREMIO DE PUNTUALIDAD
+    '==================================================
+    ' BONOS
+    '==================================================
+    
+    If g_TipoNominaActiva = tnBonoPremio Then
+    
+        If IsNumeric(Form8.ConNom1.TextMatrix(I7, 7)) Then
+    
+            NOMCF2.NOMCF.TextMatrix(I7, 104) = _
+                Format(Val(Form8.ConNom1.TextMatrix(I7, 7)), "#,##0.00")
+    
+        Else
+    
+            NOMCF2.NOMCF.TextMatrix(I7, 104) = _
+                Format(0, "#,##0.00")
+    
         End If
-        
+    
     Else
-        NOMCF2.NOMCF.TextMatrix(I7, 104) = Format(0, "#,##0.00")
+    
+        NOMCF2.NOMCF.TextMatrix(I7, 104) = _
+            Format(0, "#,##0.00")
+    
     End If
         NOMCF2.NOMCF.TextMatrix(I7, 111) = Format(0, "#,##0.00")
     '112 P011G
@@ -1015,20 +993,42 @@ On Error GoTo ErrorHandler
     Else
         NOMCF2.NOMCF.TextMatrix(I7, 127) = Format(0, "#,##0.00")
     End If
-    '128 P022G
+    '==================================================
+    ' LIQUIDACION / FINIQUITO
+    '==================================================
+    
+    If g_TipoNominaActiva = tnLiquidacionFiniquito Then
+    
+        '022 Prima Antigüedad
+    
+        NOMCF2.NOMCF.TextMatrix(I7, 128) = _
+            Format(g_GravadoAntig, "#,##0.00")
+    
+        NOMCF2.NOMCF.TextMatrix(I7, 129) = _
+            Format(g_ExentoAntig, "#,##0.00")
+    
+        '023 Pagos por Separación
+    
+        NOMCF2.NOMCF.TextMatrix(I7, 130) = _
+            Format(Val(Form8.ConNom1.TextMatrix(I7, 4)), "#,##0.00")
+    
+        '025 Indemnización
+    
+        NOMCF2.NOMCF.TextMatrix(I7, 133) = _
+            Format(g_GravadoIndem, "#,##0.00")
+    
+        NOMCF2.NOMCF.TextMatrix(I7, 134) = _
+            Format(g_ExentoIndem, "#,##0.00")
+    
+    Else
+    
         NOMCF2.NOMCF.TextMatrix(I7, 128) = Format(0, "#,##0.00")
-    '129 P022E
         NOMCF2.NOMCF.TextMatrix(I7, 129) = Format(0, "#,##0.00")
-    '130 P023G
         NOMCF2.NOMCF.TextMatrix(I7, 130) = Format(0, "#,##0.00")
-    '131 P024G
-        NOMCF2.NOMCF.TextMatrix(I7, 131) = Format(0, "#,##0.00")
-    '132 P024E
-        NOMCF2.NOMCF.TextMatrix(I7, 132) = Format(0, "#,##0.00")
-    '133 P025G
         NOMCF2.NOMCF.TextMatrix(I7, 133) = Format(0, "#,##0.00")
-    '134 P025E
         NOMCF2.NOMCF.TextMatrix(I7, 134) = Format(0, "#,##0.00")
+    
+    End If
     '135 P026G
         NOMCF2.NOMCF.TextMatrix(I7, 135) = Format(0, "#,##0.00")
     '135 P026E
@@ -1400,17 +1400,5 @@ Gestionaerror:
         End If
 End Sub
 
-Private Function EstadoArchivo(ByVal NumeroArchivo As Integer) As String
 
-    Dim Tamano As Long
 
-    On Error GoTo NoAbierto
-
-    Tamano = LOF(NumeroArchivo)
-    EstadoArchivo = "ABIERTO - Tamaño: " & Tamano
-    Exit Function
-
-NoAbierto:
-    EstadoArchivo = "CERRADO - Error " & Err.Number & ": " & Err.Description
-
-End Function

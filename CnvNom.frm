@@ -161,10 +161,10 @@ Private Sub ArTrNom_Click()
   Dim Wb As Integer, Wc As Integer
     For Wb = 1 To CxNom.Rows - 1
         If IsNumeric(CxNom.TextMatrix(Wb, 2)) Then
-             For Wc = 1 To Form8.connom1.Rows - 1
-                   If CxNom.TextMatrix(Wb, 0) = Form8.connom1.TextMatrix(Wc, 0) Then
-                       Form8.connom1.TextMatrix(Wc, 2) = CxNom.TextMatrix(Wb, 2)
-                       Form8.connom1.Row = Wc: Form8.connom1.Col = 2
+             For Wc = 1 To Form8.ConNom1.Rows - 1
+                   If CxNom.TextMatrix(Wb, 0) = Form8.ConNom1.TextMatrix(Wc, 0) Then
+                       Form8.ConNom1.TextMatrix(Wc, 2) = CxNom.TextMatrix(Wb, 2)
+                       Form8.ConNom1.Row = Wc: Form8.ConNom1.Col = 2
                        Form8.Text2.Text = CxNom.TextMatrix(Wb, 2)
                        Form8.checar
                    End If
@@ -189,9 +189,9 @@ Private Sub Form_Load()
 End Sub
 Sub Limpieza()
    Dim WA As Integer, We As Integer
-   For WA = 1 To Form8.connom1.Rows - 1
-      For We = 2 To Form8.connom1.Cols - 1
-           Form8.connom1.TextMatrix(WA, We) = ""
+   For WA = 1 To Form8.ConNom1.Rows - 1
+      For We = 2 To Form8.ConNom1.Cols - 1
+           Form8.ConNom1.TextMatrix(WA, We) = ""
       Next We
    Next WA
 End Sub

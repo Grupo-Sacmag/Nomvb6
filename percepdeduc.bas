@@ -34,6 +34,60 @@ Public I7 As Long
 Public OrigenCFDI As Integer
 Public UltimaFilaCFDI As Long
 
+' --- Módulo de Variables Globales ---
+Public Enum TipoNominaCFDI
+    tnOrdinaria = 0
+    tnLiquidacionFiniquito = 1
+    tnAguinaldo = 2
+    tnPTU = 3
+    tnBonoPremio = 4
+End Enum
+
+Public g_TipoNominaActiva As TipoNominaCFDI
+Public g_ExentoAntig As Double, g_GravadoAntig As Double
+Public g_ExentoIndem As Double, g_GravadoIndem As Double
+
+' --- FUNCIÓN PARA DETERMINAR EL TIPO DE NÓMINA ---
+Public Function DeterminarTipoNomina(ByVal NombreArchivo As String, Optional ByVal OpcionForm8 As Integer = -1) As TipoNominaCFDI
+    Dim NomUpper As String
+    NomUpper = UCase$(Trim$(NombreArchivo))
+    
+    ' 1. Evaluar si el nombre del archivo inicia explícitamente con los prefijos del ticket (LIQ / ESP)
+    If Left$(NomUpper, 3) = "LIQ" Then
+        DeterminarTipoNomina = tnLiquidacionFiniquito
+        Exit Function
+    ElseIf Left$(NomUpper, 3) = "ESP" Then
+        ' Si inicia con ESP, se revisa la palabra clave contenida en el resto del nombre
+        If InStr(NomUpper, "AGUI") > 0 Or InStr(NomUpper, "GRAT") > 0 Then
+            DeterminarTipoNomina = tnAguinaldo
+        ElseIf InStr(NomUpper, "PTU") > 0 Or InStr(NomUpper, "UTIL") > 0 Then
+            DeterminarTipoNomina = tnPTU
+        Else
+            DeterminarTipoNomina = tnBonoPremio
+        End If
+        Exit Function
+    End If
+    
+    ' 2. Si venía una opción seleccionada desde Form8, se le da preferencia
+    If OpcionForm8 >= 0 Then
+        DeterminarTipoNomina = OpcionForm8
+        Exit Function
+    End If
+    
+    ' 3. Soporte para nombres flexibles de archivo (por si no llevan prefijo estricto)
+    If InStr(NomUpper, "FINIQ") > 0 Or InStr(NomUpper, "LIQ") > 0 Or InStr(NomUpper, "SEPAR") > 0 Or InStr(NomUpper, "INDEM") > 0 Then
+        DeterminarTipoNomina = tnLiquidacionFiniquito
+    ElseIf InStr(NomUpper, "AGUI") > 0 Or InStr(NomUpper, "GRAT") > 0 Then
+        DeterminarTipoNomina = tnAguinaldo
+    ElseIf InStr(NomUpper, "PTU") > 0 Or InStr(NomUpper, "UTIL") > 0 Then
+        DeterminarTipoNomina = tnPTU
+    ElseIf InStr(NomUpper, "BONO") > 0 Or InStr(NomUpper, "PREM") > 0 Then
+        DeterminarTipoNomina = tnBonoPremio
+    Else
+        DeterminarTipoNomina = tnOrdinaria
+    End If
+End Function
+
 Sub reng()
 
 Dim GridOrigen As Object
@@ -200,11 +254,11 @@ If pva8 > 0 Then
             t_per = t_per + pva8 + pee10
         End If
     End If
-    Else
+    ElseIf g_TipoNominaActiva <> tnLiquidacionFiniquito Then
     t_per = t_per + pee10
 End If
 Rem ******************* PARCHE DE PTU DEL 6/6/17 **********************************
-If N_ormal = 1 Then
+If g_TipoNominaActiva = tnPTU Then
   If IsNumeric(GridOrigen.TextMatrix(I7, 6)) Then
     ptu_1 = GridOrigen.TextMatrix(I7, 6)
      If IsNumeric(GridOrigen.TextMatrix(I7, 10)) Then
@@ -228,6 +282,46 @@ Rem ****************************************************************************
 t_grav = t_per - pee10
 t_ext = pee10
 
+'==========================================================================
+' Ajuste de totales para nóminas de Liquidación/Finiquito
+' El exento (Antigüedad + Indemnización) se captura MANUALMENTE en Text3
+' (Form8), que ya llega aquí como pee10 (columna 10 de ConNom1).
+'==========================================================================
+g_ExentoAntig = 0: g_GravadoAntig = 0
+g_ExentoIndem = 0: g_GravadoIndem = 0
+
+If g_TipoNominaActiva = tnLiquidacionFiniquito Then
+    Dim colCompR As Double, colAntigR As Double, colIndemR As Double
+    colCompR = Val(GridOrigen.TextMatrix(I7, 4))
+    colAntigR = Val(GridOrigen.TextMatrix(I7, 5))
+    colIndemR = Val(GridOrigen.TextMatrix(I7, 6))
+
+    t_per = t_per + colCompR + colIndemR
+    ' Nota: colAntigR ya se sumó arriba vía el "Parche Aguinaldo" (columna 5)
+
+    Dim totalExentoManual As Double, totalAntigIndemR As Double
+    totalExentoManual = pee10   ' lo que se capturó en Text3
+    totalAntigIndemR = colAntigR + colIndemR
+
+    ' PROVISIONAL: se aplica primero a Antigüedad, luego el remanente a Indemnización
+    ' — pendiente validar el orden con contabilidad
+    If totalExentoManual >= totalAntigIndemR Then
+        g_ExentoAntig = colAntigR
+        g_ExentoIndem = colIndemR
+    ElseIf totalExentoManual <= colAntigR Then
+        g_ExentoAntig = totalExentoManual
+        g_ExentoIndem = 0
+    Else
+        g_ExentoAntig = colAntigR
+        g_ExentoIndem = totalExentoManual - colAntigR
+    End If
+    g_GravadoAntig = colAntigR - g_ExentoAntig
+    g_GravadoIndem = colIndemR - g_ExentoIndem
+End If
+
+t_grav = t_per - pee10
+t_ext = pee10
+'==========================================================================
 'deducciones-----------------------------------------------------
 If IsNumeric(GridOrigen.TextMatrix(I7, 12)) Then
     isr12 = GridOrigen.TextMatrix(I7, 12)
@@ -282,5 +376,55 @@ t_extded = t_ded - isr12
 
 
 End Sub
+
+Public Function ClasificarTipoNomina(ByVal NombreArch As String) As TipoNominaCFDI
+    Dim n As String
+    n = UCase(Trim(NombreArch))
+
+    ' Orden importa: revisa los más específicos primero
+    If InStr(n, "LIQUID") > 0 Or InStr(n, "LIQUI") > 0 Or InStr(n, "LIQ") > 0 _
+       Or InStr(n, "FINIQUITO") > 0 Or InStr(n, "FINIQ") > 0 Or InStr(n, "FINI") > 0 Then
+        ClasificarTipoNomina = tnLiquidacionFiniquito
+    ElseIf InStr(n, "AGUINALDO") > 0 Or InStr(n, "AGUI") > 0 Then
+        ClasificarTipoNomina = tnAguinaldo
+    ElseIf InStr(n, "PTU") > 0 Then
+        ClasificarTipoNomina = tnPTU
+    ElseIf InStr(n, "BONO") > 0 Then
+        ClasificarTipoNomina = tnBonoPremio
+    Else
+        ClasificarTipoNomina = tnOrdinaria
+    End If
+End Function
+
+Public Function AniosServicioRedondeado(ByVal fechaAlta As Date, ByVal fechaCorte As Date) As Integer
+    Dim aniosCompletos As Integer
+    Dim fechaAniversario As Date
+    Dim fechaLimiteRedondeo As Date
+
+    aniosCompletos = Year(fechaCorte) - Year(fechaAlta)
+    fechaAniversario = DateSerial(Year(fechaAlta) + aniosCompletos, Month(fechaAlta), Day(fechaAlta))
+
+    If fechaAniversario > fechaCorte Then
+        aniosCompletos = aniosCompletos - 1
+        fechaAniversario = DateSerial(Year(fechaAlta) + aniosCompletos, Month(fechaAlta), Day(fechaAlta))
+    End If
+
+    ' Límite: 6 meses + 1 día después del último aniversario cumplido
+    fechaLimiteRedondeo = DateAdd("d", 1, DateAdd("m", 6, fechaAniversario))
+
+    If fechaCorte >= fechaLimiteRedondeo Then
+        AniosServicioRedondeado = aniosCompletos + 1
+    Else
+        AniosServicioRedondeado = aniosCompletos
+    End If
+End Function
+
+Public Function TipoNominaATexto(ByVal t As TipoNominaCFDI) As String
+    Select Case t
+        Case tnLiquidacionFiniquito: TipoNominaATexto = "LIQ"
+        Case tnAguinaldo, tnPTU, tnBonoPremio: TipoNominaATexto = "ESP"
+        Case Else: TipoNominaATexto = "ORD"
+    End Select
+End Function
 
 ' comentario

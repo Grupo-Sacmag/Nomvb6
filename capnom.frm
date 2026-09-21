@@ -947,15 +947,37 @@ Private Sub nomcap_ini_Click(Index As Integer)
     Dim fullArchPath As String
     
     ' 1. Calcular nombre del archivo de n√≥mina
-    If Option1 = True Then
-        If Option3 = True Then
-            Arch = UCase(Mid$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".NOM"
-        Else
-            Arch = UCase(Mid$(Combo1.Text, 1, 3)) + "2" + LTrim$(Str$(empresa.ao)) + ".NOM"
-        End If
-    Else
+    If Option1 = True Then          ' NÛmina normal
+    If Option3 = True Then      ' 1a quincena
+        Arch = UCase(Mid$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".NOM"
+    Else                        ' 2a quincena
+        Arch = UCase(Mid$(Combo1.Text, 1, 3)) + "2" + LTrim$(Str$(empresa.ao)) + ".NOM"
+    End If
+    Else                            ' NÛmina especial
         Arch = Trim(Text1.Text) + ".NOM"
     End If
+    
+    ' =======================================================
+    ' NUEVO: ASIGNACI”N Y CLASIFICACI”N GLOBAL DEL TIPO DE N”MINA
+    ' =======================================================
+    G_NombreArchivoNomina = UCase(Trim(Arch))
+    
+    If Left(G_NombreArchivoNomina, 3) = "LIQ" Then
+        G_TipoNominaProcess = "LIQ"
+    ElseIf Left(G_NombreArchivoNomina, 3) = "ESP" Then
+        G_TipoNominaProcess = "ESP"
+    Else
+        G_TipoNominaProcess = "ORD"
+    End If
+    ' =======================================================
+    
+    ' =======================================================
+    ' CLASIFICACI”N GLOBAL DEL TIPO DE N”MINA (por contenido, no por Left$)
+    ' =======================================================
+    G_NombreArchivoNomina = UCase(Trim(Arch))
+    g_TipoNominaActiva = ClasificarTipoNomina(G_NombreArchivoNomina)
+    G_TipoNominaProcess = TipoNominaATexto(g_TipoNominaActiva)  ' se queda solo para compatibilidad con lo que ya la use
+    ' =======================================================
     
     ' 2. Verificar reglas usando rutas absolutas si el archivo ya existe
     locked = False
@@ -3289,55 +3311,209 @@ Sub carganom()
     Rem 24 Cuenta de banco
 End Sub
 Sub define()
-   
-   ConNom1.Font = "Arial": ConNom1.Font.Size = 8: ConNom1.Font.Bold = True
-   
+
+   ConNom1.Font = "Arial"
+   ConNom1.Font.Size = 8
+   ConNom1.Font.Bold = True
+
    ConNom1.Row = 0
-   ConNom1.Col = 0: ConNom1.CellAlignment = 4: ConNom1.ColWidth(0) = 600: ConNom1.Text = "No."
-   ConNom1.Col = 1: ConNom1.CellAlignment = 4: ConNom1.ColWidth(1) = 3500: ConNom1.Text = "Nombre"
-   ConNom1.Col = 2: ConNom1.CellAlignment = 4: ConNom1.ColWidth(2) = 1200: ConNom1.Text = "dias T."
-   ConNom1.Col = 3: ConNom1.CellAlignment = 4: ConNom1.ColWidth(3) = 1200: ConNom1.Text = "Sueldo"
-   ConNom1.Col = 4: ConNom1.CellAlignment = 4: ConNom1.ColWidth(4) = 1200: ConNom1.Text = "hs.Norm."
-   ConNom1.Col = 5: ConNom1.CellAlignment = 4: ConNom1.ColWidth(5) = 1200
-    
-    If N_ormal = 0 Then
-        ConNom1.Text = "hs.Dobles"
-    Else
+
+   ConNom1.Col = 0
+   ConNom1.CellAlignment = 4
+   ConNom1.ColWidth(0) = 600
+   ConNom1.Text = "No."
+
+   ConNom1.Col = 1
+   ConNom1.CellAlignment = 4
+   ConNom1.ColWidth(1) = 3500
+   ConNom1.Text = "Nombre"
+
+   ConNom1.Col = 2
+   ConNom1.CellAlignment = 4
+   ConNom1.ColWidth(2) = 1200
+   ConNom1.Text = "dias T."
+
+   ConNom1.Col = 3
+   ConNom1.CellAlignment = 4
+   ConNom1.ColWidth(3) = 1200
+   ConNom1.Text = "Sueldo"
+
+   '==========================================================
+   ' COLUMNA 4
+   '==========================================================
+   ConNom1.Col = 4
+   ConNom1.CellAlignment = 4
+   ConNom1.ColWidth(4) = 1200
+
+   If g_TipoNominaActiva = tnLiquidacionFiniquito Then
+        ConNom1.Text = "Compens."
+   Else
+        ConNom1.Text = "hs.Norm."
+   End If
+
+   '==========================================================
+   ' COLUMNA 5
+   '==========================================================
+   ConNom1.Col = 5
+   ConNom1.CellAlignment = 4
+   ConNom1.ColWidth(5) = 1200
+
+   If g_TipoNominaActiva = tnLiquidacionFiniquito Then
+
+        ConNom1.Text = "P.Antig."
+
+   ElseIf g_TipoNominaActiva = tnAguinaldo Then
+
         ConNom1.Text = "Aguinaldo"
-    End If
-    
-    ConNom1.Col = 6: ConNom1.CellAlignment = 4: ConNom1.ColWidth(6) = 1200
-    
-    If N_ormal = 0 Then
-        ConNom1.Text = "hs.Triples"
-    Else
-        ConNom1.Text = "Ptu"
-    End If
-    
-    If N_ormal = 0 Then
-        ConNom1.Col = 7: ConNom1.CellAlignment = 4: ConNom1.ColWidth(7) = 1200: ConNom1.Text = "O.F."
-    Else
-        ConNom1.Col = 7: ConNom1.CellAlignment = 4: ConNom1.ColWidth(7) = 1200: ConNom1.Text = "Premio punt."
-    End If
-   
-    ConNom1.Col = 8: ConNom1.CellAlignment = 4: ConNom1.ColWidth(8) = 1200: ConNom1.Text = "P.Vacac."
-    ConNom1.Col = 9: ConNom1.CellAlignment = 4: ConNom1.ColWidth(9) = 1200: ConNom1.Text = "Otras"
-    ConNom1.Col = 10: ConNom1.CellAlignment = 4: ConNom1.ColWidth(10) = 1200: ConNom1.Text = "Perc.exenta."
-    ConNom1.Col = 11: ConNom1.CellAlignment = 4: ConNom1.ColWidth(11) = 1200: ConNom1.Text = "Tot.Ingr."
-    ConNom1.Col = 12: ConNom1.CellAlignment = 4: ConNom1.ColWidth(12) = 1200: ConNom1.Text = "Ispt"
-    ConNom1.Col = 13: ConNom1.CellAlignment = 4: ConNom1.ColWidth(13) = 1200: ConNom1.Text = "Sub.P/Empl."
-    ConNom1.Col = 14: ConNom1.CellAlignment = 4: ConNom1.ColWidth(14) = 1200: ConNom1.Text = "Imss"
-    ConNom1.Col = 15: ConNom1.CellAlignment = 4: ConNom1.ColWidth(15) = 1200: ConNom1.Text = "Prestamos"
-    ConNom1.Col = 16: ConNom1.CellAlignment = 4: ConNom1.ColWidth(16) = 1200: ConNom1.Text = "Fonacot"
-    ConNom1.Col = 17: ConNom1.CellAlignment = 4: ConNom1.ColWidth(17) = 1200: ConNom1.Text = "Pension Alimenticia"
-    ConNom1.Col = 18: ConNom1.CellAlignment = 4: ConNom1.ColWidth(18) = 1200: ConNom1.Text = "Infonavit"
-    ConNom1.Col = 19: ConNom1.CellAlignment = 4: ConNom1.ColWidth(19) = 1200: ConNom1.Text = "Tot.Deduc"
-    ConNom1.Col = 20: ConNom1.CellAlignment = 4: ConNom1.ColWidth(20) = 1200: ConNom1.Text = "Neto"
-    ConNom1.Col = 21: ConNom1.ColWidth(21) = 0: Rem  ConNom1.Text = "Neto"
-    ConNom1.Col = 22: ConNom1.ColWidth(22) = 0: Rem  ConNom1.Text = "Neto"
-    ConNom1.Col = 23: ConNom1.ColWidth(23) = 0: Rem  ConNom1.Text = "Neto"
-    ConNom1.Col = 24: ConNom1.CellAlignment = 4: ConNom1.ColWidth(24) = 2400: ConNom1.Text = "Banamex"
+
+   Else
+
+        If N_ormal = 0 Then
+            ConNom1.Text = "hs.Dobles"
+        Else
+            ConNom1.Text = "Aguinaldo"
+        End If
+
+   End If
+
+   '==========================================================
+   ' COLUMNA 6
+   '==========================================================
+   ConNom1.Col = 6
+   ConNom1.CellAlignment = 4
+   ConNom1.ColWidth(6) = 1200
+
+   If g_TipoNominaActiva = tnLiquidacionFiniquito Then
+
+        ConNom1.Text = "Indemn."
+
+   ElseIf g_TipoNominaActiva = tnPTU Then
+
+        ConNom1.Text = "PTU"
+
+   Else
+
+        If N_ormal = 0 Then
+            ConNom1.Text = "hs.Triples"
+        Else
+            ConNom1.Text = "Ptu"
+        End If
+
+   End If
+
+   '==========================================================
+   ' COLUMNA 7
+   '==========================================================
+   ConNom1.Col = 7
+   ConNom1.CellAlignment = 4
+   ConNom1.ColWidth(7) = 1200
+
+   If g_TipoNominaActiva = tnBonoPremio Then
+
+        ConNom1.Text = "BONO"
+
+   ElseIf N_ormal = 0 Then
+
+        ConNom1.Text = "O.F."
+
+   Else
+
+        ConNom1.Text = "BONO"
+
+   End If
+
+   '==========================================================
+   ' COLUMNA 8
+   '==========================================================
+   ConNom1.Col = 8
+   ConNom1.CellAlignment = 4
+   ConNom1.ColWidth(8) = 1200
+
+   If g_TipoNominaActiva = tnLiquidacionFiniquito Then
+        ConNom1.Text = "Sdo.Vac."
+   Else
+        ConNom1.Text = "P.Vacac."
+   End If
+
+   '==========================================================
+   ' RESTO DE COLUMNAS
+   '==========================================================
+   ConNom1.Col = 9
+   ConNom1.CellAlignment = 4
+   ConNom1.ColWidth(9) = 1200
+   ConNom1.Text = "Otras"
+
+   ConNom1.Col = 10
+   ConNom1.CellAlignment = 4
+   ConNom1.ColWidth(10) = 1200
+   ConNom1.Text = "Perc.exenta."
+
+   ConNom1.Col = 11
+   ConNom1.CellAlignment = 4
+   ConNom1.ColWidth(11) = 1200
+   ConNom1.Text = "Tot.Ingr."
+
+   ConNom1.Col = 12
+   ConNom1.CellAlignment = 4
+   ConNom1.ColWidth(12) = 1200
+   ConNom1.Text = "Ispt"
+
+   ConNom1.Col = 13
+   ConNom1.CellAlignment = 4
+   ConNom1.ColWidth(13) = 1200
+   ConNom1.Text = "Sub.P/Empl."
+
+   ConNom1.Col = 14
+   ConNom1.CellAlignment = 4
+   ConNom1.ColWidth(14) = 1200
+   ConNom1.Text = "Imss"
+
+   ConNom1.Col = 15
+   ConNom1.CellAlignment = 4
+   ConNom1.ColWidth(15) = 1200
+   ConNom1.Text = "Prestamos"
+
+   ConNom1.Col = 16
+   ConNom1.CellAlignment = 4
+   ConNom1.ColWidth(16) = 1200
+   ConNom1.Text = "Fonacot"
+
+   ConNom1.Col = 17
+   ConNom1.CellAlignment = 4
+   ConNom1.ColWidth(17) = 1200
+   ConNom1.Text = "Pension Alimenticia"
+
+   ConNom1.Col = 18
+   ConNom1.CellAlignment = 4
+   ConNom1.ColWidth(18) = 1200
+   ConNom1.Text = "Infonavit"
+
+   ConNom1.Col = 19
+   ConNom1.CellAlignment = 4
+   ConNom1.ColWidth(19) = 1200
+   ConNom1.Text = "Tot.Deduc"
+
+   ConNom1.Col = 20
+   ConNom1.CellAlignment = 4
+   ConNom1.ColWidth(20) = 1200
+   ConNom1.Text = "Neto"
+
+   ConNom1.Col = 21
+   ConNom1.ColWidth(21) = 0
+
+   ConNom1.Col = 22
+   ConNom1.ColWidth(22) = 0
+
+   ConNom1.Col = 23
+   ConNom1.ColWidth(23) = 0
+
+   ConNom1.Col = 24
+   ConNom1.CellAlignment = 4
+   ConNom1.ColWidth(24) = 2400
+   ConNom1.Text = "Banamex"
+
 End Sub
+
 Sub genenom(gg)
     sum(1) = 0
     sum(2) = 0
