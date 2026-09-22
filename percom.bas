@@ -378,37 +378,37 @@ If li = 2165 Then
 End If
 
 
-If Form8.ConNom1.TextMatrix(li, 0) <> "" Then regtro = Form8.ConNom1.TextMatrix(li, 0) Else regtro = 0
-If Form8.ConNom1.TextMatrix(li, 2) <> "" Then nomina.dias = Form8.ConNom1.TextMatrix(li, 2) Else nomina.dias = 0
-If Form8.ConNom1.TextMatrix(li, 3) <> "" Then nomina.sueldo = Form8.ConNom1.TextMatrix(li, 3) Else nomina.sueldo = 0
-If Form8.ConNom1.TextMatrix(li, 4) <> "" Then nomina.hs_nor = Form8.ConNom1.TextMatrix(li, 4) Else nomina.hs_nor = 0
+If Form8.connom1.TextMatrix(li, 0) <> "" Then regtro = Form8.connom1.TextMatrix(li, 0) Else regtro = 0
+If Form8.connom1.TextMatrix(li, 2) <> "" Then nomina.dias = Form8.connom1.TextMatrix(li, 2) Else nomina.dias = 0
+If Form8.connom1.TextMatrix(li, 3) <> "" Then nomina.sueldo = Form8.connom1.TextMatrix(li, 3) Else nomina.sueldo = 0
+If Form8.connom1.TextMatrix(li, 4) <> "" Then nomina.hs_nor = Form8.connom1.TextMatrix(li, 4) Else nomina.hs_nor = 0
 If N_ormal = 1 Then
-     If Form8.ConNom1.TextMatrix(li, 5) <> "" Then nomina.aguin = Form8.ConNom1.TextMatrix(li, 5) Else nomina.aguin = 0
+     If Form8.connom1.TextMatrix(li, 5) <> "" Then nomina.aguin = Form8.connom1.TextMatrix(li, 5) Else nomina.aguin = 0
         Else
-        If Form8.ConNom1.TextMatrix(li, 5) <> "" Then nomina.hs_dbl = Form8.ConNom1.TextMatrix(li, 5) Else nomina.hs_dbl = 0
+        If Form8.connom1.TextMatrix(li, 5) <> "" Then nomina.hs_dbl = Form8.connom1.TextMatrix(li, 5) Else nomina.hs_dbl = 0
    End If
    If N_ormal = 1 Then
-        If Form8.ConNom1.TextMatrix(li, 6) <> "" Then nomina.ptu = Form8.ConNom1.TextMatrix(li, 6) Else nomina.ptu = 0
+        If Form8.connom1.TextMatrix(li, 6) <> "" Then nomina.ptu = Form8.connom1.TextMatrix(li, 6) Else nomina.ptu = 0
         Else
-        If Form8.ConNom1.TextMatrix(li, 6) <> "" Then nomina.hs_tri = Form8.ConNom1.TextMatrix(li, 6) Else nomina.hs_tri = 0
+        If Form8.connom1.TextMatrix(li, 6) <> "" Then nomina.hs_tri = Form8.connom1.TextMatrix(li, 6) Else nomina.hs_tri = 0
    End If
-   If Form8.ConNom1.TextMatrix(li, 7) <> "" Then
-                nomina.viaticos = Form8.ConNom1.TextMatrix(li, 7)
+   If Form8.connom1.TextMatrix(li, 7) <> "" Then
+                nomina.viaticos = Form8.connom1.TextMatrix(li, 7)
                 Else
                 nomina.viaticos = 0
    End If
-   If Form8.ConNom1.TextMatrix(li, 8) <> "" Then
-                nomina.pvac = Form8.ConNom1.TextMatrix(li, 8)
+   If Form8.connom1.TextMatrix(li, 8) <> "" Then
+                nomina.pvac = Form8.connom1.TextMatrix(li, 8)
                 Else
                 nomina.pvac = 0
    End If
-   If Form8.ConNom1.TextMatrix(li, 9) <> "" Then
-                nomina.otras = Form8.ConNom1.TextMatrix(li, 9)
+   If Form8.connom1.TextMatrix(li, 9) <> "" Then
+                nomina.otras = Form8.connom1.TextMatrix(li, 9)
                 Else
                 nomina.otras = 0
    End If
-   If Form8.ConNom1.TextMatrix(li, 10) <> "" Then
-                nomina.exentos = Form8.ConNom1.TextMatrix(li, 10)
+   If Form8.connom1.TextMatrix(li, 10) <> "" Then
+                nomina.exentos = Form8.connom1.TextMatrix(li, 10)
                 Else
                 nomina.exentos = 0
    End If
