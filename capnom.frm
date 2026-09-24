@@ -958,20 +958,6 @@ Private Sub nomcap_ini_Click(Index As Integer)
     End If
     
     ' =======================================================
-    ' NUEVO: ASIGNACIÓN Y CLASIFICACIÓN GLOBAL DEL TIPO DE NÓMINA
-    ' =======================================================
-    G_NombreArchivoNomina = UCase(Trim(Arch))
-    
-    If Left(G_NombreArchivoNomina, 3) = "LIQ" Then
-        G_TipoNominaProcess = "LIQ"
-    ElseIf Left(G_NombreArchivoNomina, 3) = "ESP" Then
-        G_TipoNominaProcess = "ESP"
-    Else
-        G_TipoNominaProcess = "ORD"
-    End If
-    ' =======================================================
-    
-    ' =======================================================
     ' CLASIFICACIÓN GLOBAL DEL TIPO DE NÓMINA (por contenido, no por Left$)
     ' =======================================================
     G_NombreArchivoNomina = UCase(Trim(Arch))
@@ -3359,13 +3345,9 @@ Sub define()
    ConNom1.ColWidth(5) = 1200
 
    If g_TipoNominaActiva = tnLiquidacionFiniquito Then
-
         ConNom1.Text = "P.Antig."
-
    ElseIf g_TipoNominaActiva = tnAguinaldo Then
-
         ConNom1.Text = "Aguinaldo"
-
    Else
 
         If N_ormal = 0 Then

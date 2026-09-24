@@ -6,23 +6,47 @@ Begin VB.Form Form4
    ClientHeight    =   8640
    ClientLeft      =   465
    ClientTop       =   885
-   ClientWidth     =   12600
+   ClientWidth     =   17895
    Icon            =   "nomedi.frx":0000
    LinkTopic       =   "Form4"
    ScaleHeight     =   8640
-   ScaleWidth      =   12600
+   ScaleWidth      =   17895
    ShowInTaskbar   =   0   'False
+   Begin VB.CommandButton BtnCancelarCambios 
+      Caption         =   "Cancelar Cambios"
+      Height          =   375
+      Left            =   16200
+      TabIndex        =   7
+      Top             =   120
+      Width           =   1575
+   End
+   Begin VB.CommandButton BtnGuardarCambios 
+      Caption         =   "Guardar Cambios"
+      Height          =   375
+      Left            =   14520
+      TabIndex        =   6
+      Top             =   120
+      Width           =   1455
+   End
+   Begin VB.CommandButton BtnHabilitarEdicion 
+      Caption         =   "Habilitar Edicion"
+      Height          =   375
+      Left            =   12840
+      TabIndex        =   5
+      Top             =   120
+      Width           =   1455
+   End
    Begin VB.CommandButton Command1 
       Caption         =   "Limpiar"
       Height          =   375
-      Left            =   11400
+      Left            =   11760
       TabIndex        =   4
       Top             =   120
       Width           =   855
    End
    Begin VB.TextBox Text1 
       Height          =   375
-      Left            =   7440
+      Left            =   7680
       TabIndex        =   3
       Top             =   120
       Width           =   3855
@@ -143,6 +167,7 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Dim ValorAnt
+Dim ModoEdicion As Boolean
 Sub RecPra()
     ListPer.TextMatrix(ListPer.Row, 1) = Trim(personal.ape1) + " " + Trim(personal.ape2) + " " + Trim(personal.nom)
     ListPer.TextMatrix(ListPer.Row, 2) = Trim(personal.RFC)
@@ -158,6 +183,11 @@ Sub RecPra()
 End Sub
 
 Sub ArchCorr()
+  If Not ModoEdicion Then
+      MsgBox "Debes pulsar 'Habilitar edición' antes de modificar datos.", vbExclamation
+      ListPer.Text = ValorAnt
+      Exit Sub
+  End If
   Close 1, 3
   rgtro = ListPer.TextMatrix(ListPer.Row, 0)   ' <-- mover esta línea PRIMERO
 
@@ -409,6 +439,30 @@ Private Sub ArOrNum_Click()
     ListPer.SetFocus
 End Sub
 
+Private Sub BtnCancelarCambios_Click()
+    If MsgBox("Esto descartará TODOS los cambios hechos desde que habilitaste edición. ¿Continuar?", vbYesNo + vbExclamation) = vbYes Then
+        RestaurarArchivos
+        ModoEdicion = False
+        ActualizarBotones
+        CargarGrid   ' releer y repintar desde los archivos restaurados
+    End If
+End Sub
+
+Private Sub BtnGuardarCambios_Click()
+    If MsgBox("¿Confirmar y salir del modo edición?", vbYesNo + vbQuestion) = vbYes Then
+        ModoEdicion = False
+        ActualizarBotones
+        MsgBox "Cambios confirmados.", vbInformation
+    End If
+End Sub
+
+Private Sub BtnHabilitarEdicion_Click()
+    RespaldarArchivos
+    ModoEdicion = True
+    ActualizarBotones
+    MsgBox "Edición habilitada. Los cambios se guardan al vuelo por celda, pero ahora puedes cancelar todo con 'Cancelar cambios'.", vbInformation
+End Sub
+
 Private Sub calcularIntegrado_Click()
 Dim i As Integer
 Dim idEmp As Integer
@@ -584,6 +638,10 @@ Private Sub EditSelTot_Click()
 End Sub
 
 Private Sub EdPegar_Click()
+    If Not ModoEdicion Then
+      MsgBox "Debes pulsar 'Habilitar edición' antes de pegar datos.", vbExclamation
+      Exit Sub
+  End If
   Dim temporal, DeAqui As Integer, RetornoCarro As Long, InicioCopia As Long
   temporal = Clipboard.GetText(vbCFText)
   RetornoCarro = ListPer.Col
@@ -730,108 +788,15 @@ On Error Resume Next
         Form4.Caption = "Edicipon de personal" & " - " & "Modo local (sin conexión remota)"
     End If
 
-    Open "personal.dno" For Random As 2 Len = Len(personal)
-    Dm = LOF(2) / Len(personal)
-    Open "PerOtre.dno" For Random As 3 Len = Len(Otros_Rgtros)
-    dmper = LOF(3) / Len(Otros_Rgtros)
-    Rem Open "Bnxcla.dno" For Random As 4 Len = Len(Clbnx)
-    Open "deon.dno" For Random As 15 Len = Len(DEON)
-    largoDeon = LOF(15) / Len(DEON)
+        z2$ = "#,###,##0.0000"
+    ModoEdicion = False
 
-    If dmper < Dm Then
-        If dmper < 1 Then dmper = 1
-        For r = (dmper + 1) To Dm: Get 3, r, Otros_Rgtros
-            Otros_Rgtros.curp = "": Otros_Rgtros.otra = ""
-            Otros_Rgtros.yotra = "": Otros_Rgtros.yporsi = ""
-            Put 3, r, Otros_Rgtros
-        Next r
-    End If
+    CargarGrid
 
-    ListPer.Cols = 13: ListPer.Rows = 1: ListPer.Row = 0
-    ListPer.Col = 0: ListPer.CellAlignment = 4: ListPer.ColWidth(0) = 400: ListPer.Text = "#"
-    ListPer.Col = 1: ListPer.CellAlignment = 4: ListPer.ColWidth(1) = 3200: ListPer.Text = "Nombre"
-    ListPer.Col = 2: ListPer.CellAlignment = 4: ListPer.ColWidth(2) = 2200: ListPer.Text = "RFC"
-    ListPer.Col = 3: ListPer.CellAlignment = 4: ListPer.ColWidth(3) = 2200: ListPer.Text = "CURP"
-    ListPer.Col = 4: ListPer.CellAlignment = 4: ListPer.ColWidth(4) = 1600: ListPer.Text = "IMSS"
-    ListPer.Col = 5: ListPer.CellAlignment = 4: ListPer.ColWidth(5) = 1200: ListPer.Text = "Fcha.Alta"
-    ListPer.Col = 6: ListPer.CellAlignment = 4: ListPer.ColWidth(6) = 1200: ListPer.Text = "Fcha.Baja"
-    ListPer.Col = 7: ListPer.CellAlignment = 4: ListPer.ColWidth(7) = 1200: ListPer.Text = "Salario dia"
-    ListPer.Col = 8: ListPer.CellAlignment = 4: ListPer.ColWidth(8) = 1200: ListPer.Text = "O.F. dia"
-    ListPer.Col = 9: ListPer.CellAlignment = 4: ListPer.ColWidth(9) = 1200: ListPer.Text = "Otros diario"
-    ListPer.Col = 10: ListPer.CellAlignment = 4: ListPer.ColWidth(10) = 1200: ListPer.Text = "Integrado"
-    ListPer.Col = 11: ListPer.CellAlignment = 4: ListPer.ColWidth(11) = 2200: ListPer.Text = "Tarjeta Bnx"
-    ListPer.Col = 12: ListPer.CellAlignment = 4: ListPer.ColWidth(12) = 2200: ListPer.Text = "Impuesto (ISR)"
-
-    If Dm > 0 Then
-        For r = 1 To Dm: Get 2, r, personal: Get 3, r, Otros_Rgtros: Get 4, r, Clbnx: Get 15, r, DEON
-             apelativo1$ = "": abaja = Val(Mid(personal.fab, 7, 4))
-             If (abaja > 0) And (abaja < empresa.ao - 1) Then GoTo Sig_te
-             If (personal.ape1 >= "A") Or (personal.ape2 >= "A") Then
-                apelativo1$ = RTrim$(personal.ape1) + " " + RTrim$(personal.ape2) + " " + RTrim$(personal.nom)
-                apelativo$ = Left(apelativo1$, 59) + String$(60 - Len(Left(apelativo1$, 59)), " ")
-
-                Dim lAntig As Integer, dFacto As Double, cSdi As Currency
-                lAntig = CalcularAntiguedad(personal.fal)
-                dFacto = 0
-                factor lAntig, dFacto
-                cSdi = (personal.ingr + personal.viat + personal.otras) * dFacto
-                If empresa.sm > 0 Then
-                    If cSdi > (empresa.sm * 25) Then cSdi = (empresa.sm * 25)
-                End If
-
-                If personal.integrado <> cSdi Then
-                    personal.integrado = cSdi
-                    Put 2, r, personal
-                End If
-
-                ListPer.AddItem Format(r, "####0") _
-                    & Chr(9) & apelativo$ _
-                    & Chr(9) & RTrim(personal.RFC) _
-                    & Chr(9) & RTrim(Otros_Rgtros.curp) _
-                    & Chr(9) & (" " + Replace(RTrim(personal.imss), "-", "")) _
-                    & Chr(9) & RTrim(personal.fal) _
-                    & Chr(9) & RTrim(personal.fab) _
-                    & Chr(9) & Format(personal.ingr, z2) _
-                    & Chr(9) & Format(personal.viat, z2) _
-                    & Chr(9) & Format(personal.otras, z2) _
-                    & Chr(9) & Format(personal.integrado, z2) _
-                    & Chr(9) & Format(Clbnx.Q1, "<")
-             End If
-Sig_te:
-        Next r
-        eliminarTarjetas
-
-        Close 2, 3
-        Else
-        MsgBox "No existe personal para la edicion "
-        Close 2, 3
-        Load Form1
-        Form1.Show
-   End If
+    ActualizarBotones
 
 Exit Sub
 End Sub
-
-Private Sub eliminarTarjetas()
-    Dim i As Integer
-    Dim iteracion As String
-
-    For i = 1 To ListPer.Rows
-        If (ListPer.TextMatrix(i, 6) <> "") Then
-            
-            iteracion = ListPer.TextMatrix(i, 0)
-            
-            ListPer.TextMatrix(i, 11) = 0
-            
-            Clbnx.Q1 = 0
-            
-            Put 4, iteracion, Clbnx
-            
-        End If
-    Next i
-
-End Sub
-
 
 Sub REPONE()
 Dim Repuse
@@ -1279,4 +1244,110 @@ Private Sub Text1_KeyPress(KeyAscii As Integer)
     End If
 End Sub
 
+Private Sub RespaldarArchivos()
+    Close 1, 2, 3, 4, 15   ' asegura que nada quede abierto
+    FileCopy "personal.dno", "personal.bak"
+    FileCopy "PerOtre.dno", "PerOtre.bak"
+    If Dir("Bnxcla.dno") <> "" Then FileCopy "Bnxcla.dno", "Bnxcla.bak"
+    If Dir("deon.dno") <> "" Then FileCopy "deon.dno", "deon.bak"
+End Sub
+
+Private Sub RestaurarArchivos()
+    Close 1, 2, 3, 4, 15
+    FileCopy "personal.bak", "personal.dno"
+    FileCopy "PerOtre.bak", "PerOtre.dno"
+    If Dir("Bnxcla.bak") <> "" Then FileCopy "Bnxcla.bak", "Bnxcla.dno"
+    If Dir("deon.bak") <> "" Then FileCopy "deon.bak", "deon.dno"
+End Sub
+
+Private Sub ActualizarBotones()
+    BtnHabilitarEdicion.Enabled = Not ModoEdicion
+    BtnGuardarCambios.Enabled = ModoEdicion
+    BtnCancelarCambios.Enabled = ModoEdicion
+    Form4.Caption = IIf(ModoEdicion, "Edición de personal - MODO EDICIÓN", "Edición de personal - Solo lectura")
+End Sub
+
+Private Sub CargarGrid()
+
+    Close 2, 3, 4, 15
+
+    Open "personal.dno" For Random As 2 Len = Len(personal)
+    Dm = LOF(2) / Len(personal)
+    Open "PerOtre.dno" For Random As 3 Len = Len(Otros_Rgtros)
+    dmper = LOF(3) / Len(Otros_Rgtros)
+    Open "Bnxcla.dno" For Random As 4 Len = Len(Clbnx)   ' <- estaba comentada; sin esto, Get/Put 4 fallan
+    Open "deon.dno" For Random As 15 Len = Len(DEON)
+    largoDeon = LOF(15) / Len(DEON)
+
+    If dmper < Dm Then
+        If dmper < 1 Then dmper = 1
+        For r = (dmper + 1) To Dm: Get 3, r, Otros_Rgtros
+            Otros_Rgtros.curp = "": Otros_Rgtros.otra = ""
+            Otros_Rgtros.yotra = "": Otros_Rgtros.yporsi = ""
+            Put 3, r, Otros_Rgtros
+        Next r
+    End If
+
+    ListPer.Cols = 13: ListPer.Rows = 1: ListPer.Row = 0
+    ListPer.Col = 0: ListPer.CellAlignment = 4: ListPer.ColWidth(0) = 400: ListPer.Text = "#"
+    ListPer.Col = 1: ListPer.CellAlignment = 4: ListPer.ColWidth(1) = 3200: ListPer.Text = "Nombre"
+    ListPer.Col = 2: ListPer.CellAlignment = 4: ListPer.ColWidth(2) = 2200: ListPer.Text = "RFC"
+    ListPer.Col = 3: ListPer.CellAlignment = 4: ListPer.ColWidth(3) = 2200: ListPer.Text = "CURP"
+    ListPer.Col = 4: ListPer.CellAlignment = 4: ListPer.ColWidth(4) = 1600: ListPer.Text = "IMSS"
+    ListPer.Col = 5: ListPer.CellAlignment = 4: ListPer.ColWidth(5) = 1200: ListPer.Text = "Fcha.Alta"
+    ListPer.Col = 6: ListPer.CellAlignment = 4: ListPer.ColWidth(6) = 1200: ListPer.Text = "Fcha.Baja"
+    ListPer.Col = 7: ListPer.CellAlignment = 4: ListPer.ColWidth(7) = 1200: ListPer.Text = "Salario dia"
+    ListPer.Col = 8: ListPer.CellAlignment = 4: ListPer.ColWidth(8) = 1200: ListPer.Text = "O.F. dia"
+    ListPer.Col = 9: ListPer.CellAlignment = 4: ListPer.ColWidth(9) = 1200: ListPer.Text = "Otros diario"
+    ListPer.Col = 10: ListPer.CellAlignment = 4: ListPer.ColWidth(10) = 1200: ListPer.Text = "Integrado"
+    ListPer.Col = 11: ListPer.CellAlignment = 4: ListPer.ColWidth(11) = 2200: ListPer.Text = "Tarjeta Bnx"
+    ListPer.Col = 12: ListPer.CellAlignment = 4: ListPer.ColWidth(12) = 2200: ListPer.Text = "Impuesto (ISR)"
+
+    If Dm > 0 Then
+        For r = 1 To Dm: Get 2, r, personal: Get 3, r, Otros_Rgtros: Get 4, r, Clbnx: Get 15, r, DEON
+             apelativo1$ = "": abaja = Val(Mid(personal.fab, 7, 4))
+             If (abaja > 0) And (abaja < empresa.ao - 1) Then GoTo Sig_te
+             If (personal.ape1 >= "A") Or (personal.ape2 >= "A") Then
+                apelativo1$ = RTrim$(personal.ape1) + " " + RTrim$(personal.ape2) + " " + RTrim$(personal.nom)
+                apelativo$ = Left(apelativo1$, 59) + String$(60 - Len(Left(apelativo1$, 59)), " ")
+
+                Dim lAntig As Integer, dFacto As Double, cSdi As Currency
+                lAntig = CalcularAntiguedad(personal.fal)
+                dFacto = 0
+                factor lAntig, dFacto
+                cSdi = (personal.ingr + personal.viat + personal.otras) * dFacto
+                If empresa.sm > 0 Then
+                    If cSdi > (empresa.sm * 25) Then cSdi = (empresa.sm * 25)
+                End If
+
+                If personal.integrado <> cSdi Then
+                    personal.integrado = cSdi   ' solo en memoria, para mostrarlo correcto en la grilla
+                End If
+
+                ListPer.AddItem Format(r, "####0") _
+                    & Chr(9) & apelativo$ _
+                    & Chr(9) & RTrim(personal.RFC) _
+                    & Chr(9) & RTrim(Otros_Rgtros.curp) _
+                    & Chr(9) & (" " + Replace(RTrim(personal.imss), "-", "")) _
+                    & Chr(9) & RTrim(personal.fal) _
+                    & Chr(9) & RTrim(personal.fab) _
+                    & Chr(9) & Format(personal.ingr, z2) _
+                    & Chr(9) & Format(personal.viat, z2) _
+                    & Chr(9) & Format(personal.otras, z2) _
+                    & Chr(9) & Format(personal.integrado, z2) _
+                    & Chr(9) & Format(Clbnx.Q1, "<")
+             End If
+Sig_te:
+        Next r
+
+        Close 2, 3
+
+    Else
+        MsgBox "No existe personal para la edicion "
+        Close 2, 3
+        Load Form1
+        Form1.Show
+    End If
+
+End Sub
 ' comentario

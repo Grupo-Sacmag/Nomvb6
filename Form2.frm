@@ -1,6 +1,6 @@
 VERSION 5.00
 Begin VB.Form Form2 
-   ClientHeight    =   7890
+   ClientHeight    =   8385
    ClientLeft      =   7560
    ClientTop       =   3570
    ClientWidth     =   10770
@@ -17,16 +17,50 @@ Begin VB.Form Form2
    EndProperty
    Icon            =   "Form2.frx":0000
    LinkTopic       =   "Form2"
-   ScaleHeight     =   7890
+   ScaleHeight     =   8385
    ScaleWidth      =   10770
    ShowInTaskbar   =   0   'False
    StartUpPosition =   2  'CenterScreen
+   Begin VB.CommandButton BtnCancelarCambios 
+      Caption         =   "Cancelar Cambios"
+      BeginProperty Font 
+         Name            =   "Arial"
+         Size            =   9.75
+         Charset         =   0
+         Weight          =   400
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      Height          =   375
+      Left            =   8520
+      TabIndex        =   41
+      Top             =   7800
+      Width           =   1935
+   End
+   Begin VB.CommandButton BtnHabilitarEdicion 
+      Caption         =   "Habilitar Edición"
+      BeginProperty Font 
+         Name            =   "Arial"
+         Size            =   9.75
+         Charset         =   0
+         Weight          =   400
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      Height          =   375
+      Left            =   6480
+      TabIndex        =   40
+      Top             =   7800
+      Width           =   1935
+   End
    Begin VB.CommandButton Command3 
       Caption         =   "Actualizar"
       Height          =   495
-      Left            =   8640
+      Left            =   8520
       TabIndex        =   39
-      Top             =   7200
+      Top             =   7080
       Width           =   1935
    End
    Begin VB.TextBox Text16 
@@ -41,7 +75,7 @@ Begin VB.Form Form2
    End
    Begin VB.CommandButton Command2 
       Height          =   390
-      Left            =   10080
+      Left            =   9960
       Picture         =   "Form2.frx":0442
       Style           =   1  'Graphical
       TabIndex        =   33
@@ -53,14 +87,14 @@ Begin VB.Form Form2
       Height          =   510
       Left            =   6480
       TabIndex        =   32
-      Top             =   7200
+      Top             =   7080
       Width           =   1935
    End
    Begin VB.Frame Frame4 
       Height          =   1215
       Left            =   6480
       TabIndex        =   23
-      Top             =   5760
+      Top             =   5640
       Width           =   4095
       Begin VB.TextBox Text14 
          Height          =   390
@@ -391,7 +425,7 @@ Begin VB.Form Form2
       BackColor       =   &H80000018&
       ForeColor       =   &H80000008&
       Height          =   375
-      Left            =   6480
+      Left            =   6360
       TabIndex        =   34
       Top             =   120
       Width           =   3495
@@ -414,13 +448,52 @@ Dim largoMaestro As Integer
 Dim camposValidosGlobal As Boolean
 Dim empleadoDuplicado As Boolean
 Dim algunCampoVacioGlobal As Boolean
+Dim ModoEdicion As Boolean
+
+Private Sub RespaldarArchivos()
+    Close 2, 3, 4, 8
+    FileCopy "personal.dno", "personal.bak"
+    FileCopy "PerOtre.dno", "PerOtre.bak"
+    If Dir("maestro.dno") <> "" Then FileCopy "maestro.dno", "maestro.bak"
+    If Dir("Bnxcla.dno") <> "" Then FileCopy "Bnxcla.dno", "Bnxcla.bak"
+End Sub
+
+Private Sub RestaurarArchivos()
+    Close 2, 3, 4, 8
+    FileCopy "personal.bak", "personal.dno"
+    FileCopy "PerOtre.bak", "PerOtre.dno"
+    If Dir("maestro.bak") <> "" Then FileCopy "maestro.bak", "maestro.dno"
+    If Dir("Bnxcla.bak") <> "" Then FileCopy "Bnxcla.bak", "Bnxcla.dno"
+End Sub
+
+Private Sub ActualizarBotones()
+    BtnHabilitarEdicion.Enabled = Not ModoEdicion
+    Command1.Enabled = ModoEdicion   ' Guardar (nuevo registro)
+    Command3.Enabled = ModoEdicion   ' Actualizar
+    Command2.Enabled = ModoEdicion   ' Eliminar registro
+    BtnCancelarCambios.Enabled = ModoEdicion
+End Sub
+
+Private Sub BtnCancelarCambios_Click()
+    If MsgBox("Se descartarán los cambios hechos desde que habilitaste edición. ¿Continuar?", vbYesNo + vbExclamation) = vbYes Then
+        RestaurarArchivos
+        AbrirArchivosPersistentes   ' <- nueva línea
+        ModoEdicion = False
+        ActualizarBotones
+        cargarEmpleado Val(Text16.Text)
+    End If
+End Sub
+
+Private Sub BtnHabilitarEdicion_Click()
+    RespaldarArchivos
+    AbrirArchivosPersistentes   ' <- nueva línea
+    ModoEdicion = True
+    ActualizarBotones
+End Sub
 
 Public Sub Form_Load()
-    Close 2, 3, 8, 15
     
-    Open "personal.dno" For Random As 2 Len = Len(personal): largoPersonal = LOF(2) / Len(personal)
-    Open "PerOtre.dno" For Random As 3 Len = Len(Otros_Rgtros): largoOtros = LOF(3) / Len(personal)
-    Open "maestro.dno" For Random As 8 Len = Len(maestro): largoMaestro = LOF(8) / Len(maestro)
+    AbrirArchivosPersistentes
     
     ' NUEVO: limpiar todos los campos SIEMPRE, sin importar si el form ya estaba cargado
     Text1.Text = "": Text2.Text = "": Text3.Text = "": Text4.Text = ""
@@ -436,6 +509,9 @@ Public Sub Form_Load()
         Text16.Text = (largoPersonal + 1)
         LabelAnterior.Caption = ("ID anterior:  " & largoPersonal)
     End If
+    
+    ModoEdicion = False
+    ActualizarBotones
 End Sub
 
 Private Sub Text1_Change()
@@ -459,6 +535,12 @@ If KeyAscii = 13 And Text2.Text <> "" Then
     Dim respuesta As Integer
     Dim respuestaDos As Integer
     Dim idNomina As String
+    
+    If KeyAscii = 13 And Text2.Text <> "" Then
+    If Not ModoEdicion Then
+        MsgBox "Debes habilitar edición primero.", vbExclamation
+        Exit Sub
+    End If
     
     Close 4
     Open "Bnxcla.dno" For Random As 4 Len = Len(Clbnx)
@@ -753,6 +835,12 @@ Public Sub cargarEmpleado(id As Integer)
 End Sub
 
 Private Sub Command1_Click()
+
+    If Not ModoEdicion Then
+        MsgBox "Debes habilitar edición primero.", vbExclamation
+        Exit Sub
+    End If
+    
     Dim sinCamposVacios As Boolean
     Dim camposValidos As Boolean
     Dim noDuplicado As Boolean
@@ -936,5 +1024,12 @@ Private Function IsValidCURP(ByVal curp As String) As Boolean
     ' Aplicar la expresi?n regular a la cadena CURP
     IsValidCURP = regex.Test(curp)
 End Function
+
+Private Sub AbrirArchivosPersistentes()
+    Close 2, 3, 8
+    Open "personal.dno" For Random As 2 Len = Len(personal): largoPersonal = LOF(2) / Len(personal)
+    Open "PerOtre.dno" For Random As 3 Len = Len(Otros_Rgtros): largoOtros = LOF(3) / Len(personal)
+    Open "maestro.dno" For Random As 8 Len = Len(maestro): largoMaestro = LOF(8) / Len(maestro)
+End Sub
 
 ' comentario
