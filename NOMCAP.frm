@@ -696,23 +696,23 @@ End If
     '3 4 NOMBRE
         Get 2, NumerodePersonal, personal:
         MiFechaAlta = Trim(personal.fal)
-        Nombrey = Trim(personal.nom) + " " + Trim(personal.ape1) + " " + Trim(personal.ape2)
+        Nombrey = UCase(Trim(personal.nom) + " " + Trim(personal.ape1) + " " + Trim(personal.ape2))
         NOMCF2.NOMCF.TextMatrix(I7, 2) = Nombrey:
         Get 7, NumerodePersonal, Empleado_1
     '4 5 DIRECCION
-        NOMCF2.NOMCF.TextMatrix(I7, 3) = Trim(Empleado_1.Direccion):
+        NOMCF2.NOMCF.TextMatrix(I7, 3) = UCase(Trim(Empleado_1.Direccion)):
     '5 6 COLONIA
-        NOMCF2.NOMCF.TextMatrix(I7, 4) = Trim(Empleado_1.Colonia):
+        NOMCF2.NOMCF.TextMatrix(I7, 4) = UCase(Trim(Empleado_1.Colonia)):
     '6 7 CIUDAD
-        NOMCF2.NOMCF.TextMatrix(I7, 5) = Trim(Empleado_1.Ciudad):
+        NOMCF2.NOMCF.TextMatrix(I7, 5) = UCase(Trim(Empleado_1.Ciudad)):
     '7 8 ESTADO
-        NOMCF2.NOMCF.TextMatrix(I7, 6) = Trim(Empleado_1.Estado):
+        NOMCF2.NOMCF.TextMatrix(I7, 6) = UCase(Trim(Empleado_1.Estado)):
     '8 9 DELEGACION
-        NOMCF2.NOMCF.TextMatrix(I7, 7) = Trim(Empleado_1.Delegacion):
+        NOMCF2.NOMCF.TextMatrix(I7, 7) = UCase(Trim(Empleado_1.Delegacion)):
     '9 10 CP
         NOMCF2.NOMCF.TextMatrix(I7, 8) = Trim(Empleado_1.Cpostal):
     '10 11 RFC
-        NOMCF2.NOMCF.TextMatrix(I7, 9) = Trim(personal.RFC):
+        NOMCF2.NOMCF.TextMatrix(I7, 9) = UCase(Trim(personal.RFC)):
     '11 12 PAIS
         NOMCF2.NOMCF.TextMatrix(I7, 10) = "MEXICO":
     '12 13 CORREO
@@ -802,7 +802,7 @@ End If
         NOMCF2.NOMCF.TextMatrix(I7, 39) = NumerodePersonal
     '40 41 CURP
         Get 9, NumerodePersonal, Otros_Rgtros
-        NOMCF2.NOMCF.TextMatrix(I7, 40) = Trim(Otros_Rgtros.curp)
+        NOMCF2.NOMCF.TextMatrix(I7, 40) = UCase(Trim(Otros_Rgtros.curp))
     '41 42 TIPOREGIMEN
         NOMCF2.NOMCF.TextMatrix(I7, 41) = "02 Sueldos"
     '42 43 NUMSEGURIDADSOCIAL
