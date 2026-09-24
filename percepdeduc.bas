@@ -31,218 +31,386 @@ Public t_extded As Currency 'total exento deducciones
 Public t_oded As Currency 'total otras deducciones
 Public ptu_1 As Currency, ptu_2 As Currency, ptu_3 As Currency
 Public I7 As Long
+Public OrigenCFDI As Integer
+Public UltimaFilaCFDI As Long
 
+' --- Módulo de Variables Globales ---
+Public Enum TipoNominaCFDI
+    tnOrdinaria = 0
+    tnLiquidacionFiniquito = 1
+    tnAguinaldo = 2
+    tnPTU = 3
+    tnBonoPremio = 4
+End Enum
 
+Public g_TipoNominaActiva As TipoNominaCFDI
+Public g_ExentoAntig As Double, g_GravadoAntig As Double
+Public g_ExentoIndem As Double, g_GravadoIndem As Double
+
+Public Function DeterminarTipoNomina(ByVal NombreArchivo As String, Optional ByVal OpcionForm8 As Integer = -1) As TipoNominaCFDI
+    Dim TipoPorNombre As TipoNominaCFDI
+    TipoPorNombre = ClasificarTipoNomina(NombreArchivo)
+
+    ' Si el nombre trae una palabra clave reconocida, esa manda.
+    If TipoPorNombre <> tnOrdinaria Then
+        DeterminarTipoNomina = TipoPorNombre
+        Exit Function
+    End If
+
+    ' Si no se reconoció nada en el nombre, se respeta lo que venga de Form8 (si aplica).
+    If OpcionForm8 >= 0 Then
+        DeterminarTipoNomina = OpcionForm8
+        Exit Function
+    End If
+
+    DeterminarTipoNomina = tnOrdinaria
+End Function
 
 Sub reng()
-Dim c_per As Integer 'contador percepciones
-Dim c_ded As Integer 'contador de dedducciones
 
-t_per = 0
-t_ded = 0
-c_per = 0
-c_ded = 0
+Dim GridOrigen As Object
 
- sue3 = 0
- via7 = 0
- pva8 = 0
- otr9 = 0
- pee10 = 0
- sub13 = 0
- ptu_1 = 0
- ptu_2 = 0
- ptu_3 = 0
- isr12 = 0
- ims14 = 0
- pre15 = 0
- fon16 = 0
- pea17 = 0
- ifv18 = 0
- 
- t_oi = 0
- T_neto = 0
- 
- t_grav = 0
- t_ext = 0
- t_gravded = 0
- t_extded = 0
- 
- t_oded = 0
- 
- 'hibrido---------------------------------------------------------
-
-If IsNumeric(Form8.ConNom1.TextMatrix(I7, 13)) Then
-    sub13 = (Form8.ConNom1.TextMatrix(I7, 13) * -1)
-Else
-    sub13 = 0
-End If
-
-If IsNumeric(Form8.ConNom1.TextMatrix(I7, 0)) Then
- Get 14, Form8.ConNom1.TextMatrix(I7, 0), nom_com
-            subc13 = nom_com.subdio
-End If
- 
- 'If (subc13 > 0) And (sub13 = 0) Then
-    'sub13 = 0.01
-    't_per = t_per + sub13
-    't_oi = t_oi '+ subc13
-'End If
-
-'percepciones---------------------------------------------------
-If IsNumeric(Form8.ConNom1.TextMatrix(I7, 3)) Then
-    sue3 = Form8.ConNom1.TextMatrix(I7, 3)
-    c_per = c_per + 1:  t_per = t_per + sue3
-Else
-    sue3 = 0
-End If
-
-'Parche Aguinaldp 19/12/2017------------------------------------------
-If N_ormal = 1 Then
-    If IsNumeric(Form8.ConNom1.TextMatrix(I7, 5)) Then
-        agui5 = Form8.ConNom1.TextMatrix(I7, 5)
-        c_per = c_per + 1:  t_per = t_per + agui5
+    If OrigenCFDI = 1 Then
+        Set GridOrigen = FormViewer.ConNom1
     Else
-        agui5 = 0
+        Set GridOrigen = Form8.ConNom1
     End If
-End If
-'---------------------------------------------------------------------
-
-If IsNumeric(Form8.ConNom1.TextMatrix(I7, 9)) Then
-    otr9 = Form8.ConNom1.TextMatrix(I7, 9)
-    sue3 = sue3 ' + otr9
-    t_per = t_per + otr9
-    'otr9 = 0
-Else
-    otr9 = 0
-End If
-
-If IsNumeric(Form8.ConNom1.TextMatrix(I7, 7)) Then
     
-    via7 = Form8.ConNom1.TextMatrix(I7, 7)
-    sue3 = sue3 '+ via7
-    t_per = t_per + via7
-    'via7 = 0
-Else
-    via7 = 0
-End If
-
-'If (via7 > 0) Or (otr9 > 0) Then
-    'c_per = c_per + 1:  t_per = t_per + otr9 + via7
-    't_oi = t_oi + otr9 + via7
-'End If
-
-
-
-If IsNumeric(Form8.ConNom1.TextMatrix(I7, 8)) Then
-    pva8 = Form8.ConNom1.TextMatrix(I7, 8)
-    c_per = c_per + 1:
-Else
-    pva8 = 0
-End If
-
-If IsNumeric(Form8.ConNom1.TextMatrix(I7, 10)) Then
-    pee10 = Form8.ConNom1.TextMatrix(I7, 10)
-    Rem c_per = c_per + 1: t_per = t_per + pee10 **********   aqui se duplica el exento ***********************************
-Else
-    pee10 = 0
-End If
-
-
-If pva8 > 0 Then
-    If pee10 > 0 Then
-        t_per = t_per + pva8 + pee10
+    If GridOrigen Is Nothing Then
+        MsgBox "GridOrigen es Nothing" & vbCrLf & _
+               "OrigenCFDI = " & OrigenCFDI
+        Exit Sub
+    End If
+    
+    Dim c_per As Integer 'contador percepciones
+    Dim c_ded As Integer 'contador de dedducciones
+    
+    t_per = 0
+    t_ded = 0
+    c_per = 0
+    c_ded = 0
+    
+     sue3 = 0
+     via7 = 0
+     pva8 = 0
+     otr9 = 0
+     pee10 = 0
+     sub13 = 0
+     ptu_1 = 0
+     ptu_2 = 0
+     ptu_3 = 0
+     isr12 = 0
+     ims14 = 0
+     pre15 = 0
+     fon16 = 0
+     pea17 = 0
+     ifv18 = 0
+     
+     t_oi = 0
+     T_neto = 0
+     
+     t_grav = 0
+     t_ext = 0
+     t_gravded = 0
+     t_extded = 0
+     
+     t_oded = 0
+     
+    Debug.Print "OrigenCFDI = "; OrigenCFDI
+    Debug.Print "Rows = "; GridOrigen.Rows
+    Debug.Print "Cols = "; GridOrigen.Cols
+    Debug.Print "I7 = "; I7
+     
+     
+     'hibrido---------------------------------------------------------
+    
+    If IsNumeric(GridOrigen.TextMatrix(I7, 13)) Then
+        sub13 = (GridOrigen.TextMatrix(I7, 13) * -1)
     Else
-        If pva8 > (empresa.sm * 15) Then
-            pee10 = (empresa.sm * 15)
-            pva8 = pva8 - pee10
-            t_per = t_per + pva8 + pee10
+        sub13 = 0
+    End If
+    
+    If IsNumeric(GridOrigen.TextMatrix(I7, 0)) Then
+    
+        Debug.Print "I7 = "; I7
+        Debug.Print "Registro = "; GridOrigen.TextMatrix(I7, 0)
+    
+    '------------------
+    Dim pruebaArchivo As Long
+    
+    On Error Resume Next
+    
+    pruebaArchivo = LOF(14)
+    
+    If Err.Number <> 0 Then
+        MsgBox "El archivo #14 NO está abierto." & vbCrLf & _
+               "Error: " & Err.Number & vbCrLf & _
+               Err.Description, vbCritical, "percepdeduc"
+        Err.Clear
+        On Error GoTo 0
+        Exit Sub
+    End If
+    
+    On Error GoTo 0
+    
+    '---------------
+        Get 14, GridOrigen.TextMatrix(I7, 0), nom_com
+    
+        subc13 = nom_com.subdio
+    
+    End If
+     
+     'If (subc13 > 0) And (sub13 = 0) Then
+        'sub13 = 0.01
+        't_per = t_per + sub13
+        't_oi = t_oi '+ subc13
+    'End If
+    
+    'percepciones---------------------------------------------------
+    If IsNumeric(GridOrigen.TextMatrix(I7, 3)) Then
+        sue3 = GridOrigen.TextMatrix(I7, 3)
+        c_per = c_per + 1:  t_per = t_per + sue3
+    Else
+        sue3 = 0
+    End If
+    
+    'Parche Aguinaldp 19/12/2017------------------------------------------
+    If N_ormal = 1 Then
+        If IsNumeric(GridOrigen.TextMatrix(I7, 5)) Then
+            agui5 = GridOrigen.TextMatrix(I7, 5)
+            c_per = c_per + 1:  t_per = t_per + agui5
         Else
-            pee10 = (pva8 - 0.01)
-            pva8 = 0.01
-            t_per = t_per + pva8 + pee10
+            agui5 = 0
         End If
     End If
-    Else
-    t_per = t_per + pee10
-End If
-Rem ******************* PARCHE DE PTU DEL 6/6/17 **********************************
-If N_ormal = 1 Then
-  If IsNumeric(Form8.ConNom1.TextMatrix(I7, 6)) Then
-    ptu_1 = Form8.ConNom1.TextMatrix(I7, 6)
-     If IsNumeric(Form8.ConNom1.TextMatrix(I7, 10)) Then
-        ptu_2 = Form8.ConNom1.TextMatrix(I7, 10)
-        Else
-        ptu_2 = empresa.sm * 15
-        If ptu_2 >= ptu_1 Then
-            ptu_2 = ptu_1
-            ptu_1 = 0
-           Else
-            ptu_1 = ptu_1 - ptu_2
-        End If
-     End If
-     ptu_3 = ptu_1 + ptu_2
-     t_per = ptu_3
-     pee10 = ptu_2
-  End If
-End If
-Rem ******************************************************************************
-
-t_grav = t_per - pee10
-t_ext = pee10
-
-'deducciones-----------------------------------------------------
-If IsNumeric(Form8.ConNom1.TextMatrix(I7, 12)) Then
-    isr12 = Form8.ConNom1.TextMatrix(I7, 12)
-    c_ded = c_ded + 1: t_ded = t_ded + isr12
-Else
-    If sub13 > 0 Then
-        sub13 = sub13 - 0.01: t_per = t_per + sub13
-        isr12 = 0.01: t_ded = t_ded + isr12
-    End If
-End If
-Rem MODIFICADO CON EL PARCHE DEL 6/6/17 ******************
-If isr12 = 0 Then isr12 = 0.01: t_ded = t_ded + isr12
-Rem ******************************************************
-If IsNumeric(Form8.ConNom1.TextMatrix(I7, 14)) Then
-    ims14 = Form8.ConNom1.TextMatrix(I7, 14)
-    c_ded = c_ded + 1: t_ded = t_ded + ims14
-Else
-    ims14 = 0
-End If
-
-If IsNumeric(Form8.ConNom1.TextMatrix(I7, 15)) Then
-    pre15 = Form8.ConNom1.TextMatrix(I7, 15)
-    c_ded = c_ded + 1: t_ded = t_ded + pre15
-Else
-    pre15 = 0
-End If
+    '---------------------------------------------------------------------
     
-If IsNumeric(Form8.ConNom1.TextMatrix(I7, 16)) Then
-    fon16 = Form8.ConNom1.TextMatrix(I7, 16)
-    c_ded = c_ded + 1: t_ded = t_ded + fon16
-Else
-    fon16 = 0
-End If
-
-If IsNumeric(Form8.ConNom1.TextMatrix(I7, 17)) Then
-    pea17 = Form8.ConNom1.TextMatrix(I7, 17)
-    c_ded = c_ded + 1: t_ded = t_ded + pea17
-Else
-    pea17 = 0
-End If
-
-If IsNumeric(Form8.ConNom1.TextMatrix(I7, 18)) Then
-    ifv18 = Form8.ConNom1.TextMatrix(I7, 18)
-    c_ded = c_ded + 1: t_ded = t_ded + ifv18
-Else
-    ifv18 = 0
-End If
-
-t_oded = t_ded - isr12
-T_neto = t_per - t_ded
-t_extded = t_ded - isr12
-
+    If IsNumeric(GridOrigen.TextMatrix(I7, 9)) Then
+        otr9 = GridOrigen.TextMatrix(I7, 9)
+        sue3 = sue3 ' + otr9
+        t_per = t_per + otr9
+        'otr9 = 0
+    Else
+        otr9 = 0
+    End If
+    
+    If IsNumeric(GridOrigen.TextMatrix(I7, 7)) Then
+        
+        via7 = GridOrigen.TextMatrix(I7, 7)
+        sue3 = sue3 '+ via7
+        t_per = t_per + via7
+        'via7 = 0
+    Else
+        via7 = 0
+    End If
+    
+    'If (via7 > 0) Or (otr9 > 0) Then
+        'c_per = c_per + 1:  t_per = t_per + otr9 + via7
+        't_oi = t_oi + otr9 + via7
+    'End If
+    
+    
+    
+    If IsNumeric(GridOrigen.TextMatrix(I7, 8)) Then
+        pva8 = GridOrigen.TextMatrix(I7, 8)
+        c_per = c_per + 1:
+    Else
+        pva8 = 0
+    End If
+    
+    If IsNumeric(GridOrigen.TextMatrix(I7, 10)) Then
+        pee10 = GridOrigen.TextMatrix(I7, 10)
+        Rem c_per = c_per + 1: t_per = t_per + pee10 **********   aqui se duplica el exento ***********************************
+    Else
+        pee10 = 0
+    End If
+    
+    
+    If pva8 > 0 Then
+        If pee10 > 0 Then
+            t_per = t_per + pva8 + pee10
+        Else
+            If pva8 > (empresa.sm * 15) Then
+                pee10 = (empresa.sm * 15)
+                pva8 = pva8 - pee10
+                t_per = t_per + pva8 + pee10
+            Else
+                pee10 = (pva8 - 0.01)
+                pva8 = 0.01
+                t_per = t_per + pva8 + pee10
+            End If
+        End If
+        ElseIf g_TipoNominaActiva <> tnLiquidacionFiniquito Then
+        t_per = t_per + pee10
+    End If
+    Rem ******************* PARCHE DE PTU DEL 6/6/17 **********************************
+    If g_TipoNominaActiva = tnPTU Then
+      If IsNumeric(GridOrigen.TextMatrix(I7, 6)) Then
+        ptu_1 = GridOrigen.TextMatrix(I7, 6)
+         If IsNumeric(GridOrigen.TextMatrix(I7, 10)) Then
+            ptu_2 = GridOrigen.TextMatrix(I7, 10)
+            Else
+            ptu_2 = empresa.sm * 15
+            If ptu_2 >= ptu_1 Then
+                ptu_2 = ptu_1
+                ptu_1 = 0
+               Else
+                ptu_1 = ptu_1 - ptu_2
+            End If
+         End If
+         ptu_3 = ptu_1 + ptu_2
+         t_per = ptu_3
+         pee10 = ptu_2
+      End If
+    End If
+    Rem ******************************************************************************
+    
+    t_grav = t_per - pee10
+    t_ext = pee10
+    
+    '==========================================================================
+    ' Ajuste de totales para nóminas de Liquidación/Finiquito
+    ' El exento (Antigüedad + Indemnización) se captura MANUALMENTE en Text3
+    ' (Form8), que ya llega aquí como pee10 (columna 10 de ConNom1).
+    '==========================================================================
+    g_ExentoAntig = 0: g_GravadoAntig = 0
+    g_ExentoIndem = 0: g_GravadoIndem = 0
+    
+    If g_TipoNominaActiva = tnLiquidacionFiniquito Then
+        Dim colCompR As Double, colAntigR As Double, colIndemR As Double
+        colCompR = Val(GridOrigen.TextMatrix(I7, 4))
+        colAntigR = Val(GridOrigen.TextMatrix(I7, 5))
+        colIndemR = Val(GridOrigen.TextMatrix(I7, 6))
+    
+        t_per = t_per + colCompR + colIndemR
+        ' Nota: colAntigR ya se sumó arriba vía el "Parche Aguinaldo" (columna 5)
+    
+        Dim totalExentoManual As Double, totalAntigIndemR As Double
+        totalExentoManual = pee10   ' lo que se capturó en Text3
+        totalAntigIndemR = colAntigR + colIndemR
+    
+        ' PROVISIONAL: se aplica primero a Antigüedad, luego el remanente a Indemnización
+        ' — pendiente validar el orden con contabilidad
+        If totalExentoManual >= totalAntigIndemR Then
+            g_ExentoAntig = colAntigR
+            g_ExentoIndem = colIndemR
+        ElseIf totalExentoManual <= colAntigR Then
+            g_ExentoAntig = totalExentoManual
+            g_ExentoIndem = 0
+        Else
+            g_ExentoAntig = colAntigR
+            g_ExentoIndem = totalExentoManual - colAntigR
+        End If
+        g_GravadoAntig = colAntigR - g_ExentoAntig
+        g_GravadoIndem = colIndemR - g_ExentoIndem
+    End If
+    
+    t_grav = t_per - pee10
+    t_ext = pee10
+    '==========================================================================
+    'deducciones-----------------------------------------------------
+    If IsNumeric(GridOrigen.TextMatrix(I7, 12)) Then
+        isr12 = GridOrigen.TextMatrix(I7, 12)
+        c_ded = c_ded + 1: t_ded = t_ded + isr12
+    Else
+        If sub13 > 0 Then
+            sub13 = sub13 - 0.01: t_per = t_per + sub13
+            isr12 = 0.01: t_ded = t_ded + isr12
+        End If
+    End If
+    Rem MODIFICADO CON EL PARCHE DEL 6/6/17 ******************
+    If isr12 = 0 Then isr12 = 0.01: t_ded = t_ded + isr12
+    Rem ******************************************************
+    If IsNumeric(GridOrigen.TextMatrix(I7, 14)) Then
+        ims14 = GridOrigen.TextMatrix(I7, 14)
+        c_ded = c_ded + 1: t_ded = t_ded + ims14
+    Else
+        ims14 = 0
+    End If
+    
+    If IsNumeric(GridOrigen.TextMatrix(I7, 15)) Then
+        pre15 = GridOrigen.TextMatrix(I7, 15)
+        c_ded = c_ded + 1: t_ded = t_ded + pre15
+    Else
+        pre15 = 0
+    End If
+        
+    If IsNumeric(GridOrigen.TextMatrix(I7, 16)) Then
+        fon16 = GridOrigen.TextMatrix(I7, 16)
+        c_ded = c_ded + 1: t_ded = t_ded + fon16
+    Else
+        fon16 = 0
+    End If
+    
+    If IsNumeric(GridOrigen.TextMatrix(I7, 17)) Then
+        pea17 = GridOrigen.TextMatrix(I7, 17)
+        c_ded = c_ded + 1: t_ded = t_ded + pea17
+    Else
+        pea17 = 0
+    End If
+    
+    If IsNumeric(GridOrigen.TextMatrix(I7, 18)) Then
+        ifv18 = GridOrigen.TextMatrix(I7, 18)
+        c_ded = c_ded + 1: t_ded = t_ded + ifv18
+    Else
+        ifv18 = 0
+    End If
+    
+    t_oded = t_ded - isr12
+    T_neto = t_per - t_ded
+    t_extded = t_ded - isr12
+    
 
 End Sub
+
+Public Function ClasificarTipoNomina(ByVal NombreArch As String) As TipoNominaCFDI
+    Dim n As String
+    n = UCase(Trim(NombreArch))
+
+    ' Orden importa: revisa los más específicos primero
+    If InStr(n, "LIQUID") > 0 Or InStr(n, "LIQUI") > 0 Or InStr(n, "LIQ") > 0 _
+       Or InStr(n, "FINIQUITO") > 0 Or InStr(n, "FINIQ") > 0 Or InStr(n, "FINI") > 0 Then
+        ClasificarTipoNomina = tnLiquidacionFiniquito
+    ElseIf InStr(n, "AGUINALDO") > 0 Or InStr(n, "AGUI") > 0 Then
+        ClasificarTipoNomina = tnAguinaldo
+    ElseIf InStr(n, "PTU") > 0 Then
+        ClasificarTipoNomina = tnPTU
+    ElseIf InStr(n, "BONO") > 0 Then
+        ClasificarTipoNomina = tnBonoPremio
+    Else
+        ClasificarTipoNomina = tnOrdinaria
+    End If
+End Function
+
+Public Function AniosServicioRedondeado(ByVal fechaAlta As Date, ByVal fechaCorte As Date) As Integer
+    Dim aniosCompletos As Integer
+    Dim fechaAniversario As Date
+    Dim fechaLimiteRedondeo As Date
+
+    aniosCompletos = Year(fechaCorte) - Year(fechaAlta)
+    fechaAniversario = DateSerial(Year(fechaAlta) + aniosCompletos, Month(fechaAlta), Day(fechaAlta))
+
+    If fechaAniversario > fechaCorte Then
+        aniosCompletos = aniosCompletos - 1
+        fechaAniversario = DateSerial(Year(fechaAlta) + aniosCompletos, Month(fechaAlta), Day(fechaAlta))
+    End If
+
+    ' Límite: 6 meses + 1 día después del último aniversario cumplido
+    fechaLimiteRedondeo = DateAdd("d", 1, DateAdd("m", 6, fechaAniversario))
+
+    If fechaCorte >= fechaLimiteRedondeo Then
+        AniosServicioRedondeado = aniosCompletos + 1
+    Else
+        AniosServicioRedondeado = aniosCompletos
+    End If
+End Function
+
+Public Function TipoNominaATexto(ByVal t As TipoNominaCFDI) As String
+    Select Case t
+        Case tnLiquidacionFiniquito: TipoNominaATexto = "LIQ"
+        Case tnAguinaldo, tnPTU, tnBonoPremio: TipoNominaATexto = "ESP"
+        Case Else: TipoNominaATexto = "ORD"
+    End Select
+End Function
 
 ' comentario

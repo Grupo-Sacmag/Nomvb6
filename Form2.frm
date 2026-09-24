@@ -1,6 +1,6 @@
 VERSION 5.00
 Begin VB.Form Form2 
-   ClientHeight    =   7890
+   ClientHeight    =   8385
    ClientLeft      =   7560
    ClientTop       =   3570
    ClientWidth     =   10770
@@ -17,16 +17,50 @@ Begin VB.Form Form2
    EndProperty
    Icon            =   "Form2.frx":0000
    LinkTopic       =   "Form2"
-   ScaleHeight     =   7890
+   ScaleHeight     =   8385
    ScaleWidth      =   10770
    ShowInTaskbar   =   0   'False
    StartUpPosition =   2  'CenterScreen
+   Begin VB.CommandButton BtnCancelarCambios 
+      Caption         =   "Cancelar Cambios"
+      BeginProperty Font 
+         Name            =   "Arial"
+         Size            =   9.75
+         Charset         =   0
+         Weight          =   400
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      Height          =   375
+      Left            =   8520
+      TabIndex        =   41
+      Top             =   7800
+      Width           =   1935
+   End
+   Begin VB.CommandButton BtnHabilitarEdicion 
+      Caption         =   "Habilitar Edición"
+      BeginProperty Font 
+         Name            =   "Arial"
+         Size            =   9.75
+         Charset         =   0
+         Weight          =   400
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      Height          =   375
+      Left            =   6480
+      TabIndex        =   40
+      Top             =   7800
+      Width           =   1935
+   End
    Begin VB.CommandButton Command3 
       Caption         =   "Actualizar"
       Height          =   495
-      Left            =   8640
+      Left            =   8520
       TabIndex        =   39
-      Top             =   7200
+      Top             =   7080
       Width           =   1935
    End
    Begin VB.TextBox Text16 
@@ -41,7 +75,7 @@ Begin VB.Form Form2
    End
    Begin VB.CommandButton Command2 
       Height          =   390
-      Left            =   10080
+      Left            =   9960
       Picture         =   "Form2.frx":0442
       Style           =   1  'Graphical
       TabIndex        =   33
@@ -53,14 +87,14 @@ Begin VB.Form Form2
       Height          =   510
       Left            =   6480
       TabIndex        =   32
-      Top             =   7200
+      Top             =   7080
       Width           =   1935
    End
    Begin VB.Frame Frame4 
       Height          =   1215
       Left            =   6480
       TabIndex        =   23
-      Top             =   5760
+      Top             =   5640
       Width           =   4095
       Begin VB.TextBox Text14 
          Height          =   390
@@ -391,7 +425,7 @@ Begin VB.Form Form2
       BackColor       =   &H80000018&
       ForeColor       =   &H80000008&
       Height          =   375
-      Left            =   6480
+      Left            =   6360
       TabIndex        =   34
       Top             =   120
       Width           =   3495
@@ -414,24 +448,69 @@ Dim largoMaestro As Integer
 Dim camposValidosGlobal As Boolean
 Dim empleadoDuplicado As Boolean
 Dim algunCampoVacioGlobal As Boolean
+Dim ModoEdicion As Boolean
+Private EsNuevo As Boolean
+
+Private Sub RespaldarArchivos()
+    Close 2, 3, 4, 8
+    FileCopy "personal.dno", "personal.bak"
+    FileCopy "PerOtre.dno", "PerOtre.bak"
+    If Dir("maestro.dno") <> "" Then FileCopy "maestro.dno", "maestro.bak"
+    If Dir("Bnxcla.dno") <> "" Then FileCopy "Bnxcla.dno", "Bnxcla.bak"
+End Sub
+
+Private Sub RestaurarArchivos()
+    Close 2, 3, 4, 8
+    FileCopy "personal.bak", "personal.dno"
+    FileCopy "PerOtre.bak", "PerOtre.dno"
+    If Dir("maestro.bak") <> "" Then FileCopy "maestro.bak", "maestro.dno"
+    If Dir("Bnxcla.bak") <> "" Then FileCopy "Bnxcla.bak", "Bnxcla.dno"
+End Sub
+
+Private Sub ActualizarBotones()
+    If EsNuevo Then
+        ' Captura nueva: solo Archivar (Command1) y Actualizar (Command3)
+        BtnHabilitarEdicion.Visible = False
+        BtnCancelarCambios.Visible = False
+        Command2.Visible = False
+        Command1.Visible = True
+        Command3.Visible = True
+        Command1.Enabled = True
+        Command3.Enabled = True
+    Else
+        ' Empleado existente: solo botones de edición
+        Command1.Visible = False
+        BtnHabilitarEdicion.Visible = True
+        BtnCancelarCambios.Visible = True
+        Command2.Visible = True
+        Command3.Visible = True
+        BtnHabilitarEdicion.Enabled = Not ModoEdicion
+        BtnCancelarCambios.Enabled = ModoEdicion
+        Command3.Enabled = ModoEdicion
+        Command2.Enabled = ModoEdicion
+    End If
+    BloquearCampos Not ModoEdicion
+End Sub
+
+Private Sub BtnCancelarCambios_Click()
+    If MsgBox("Se descartarán los cambios hechos desde que habilitaste edición. ¿Continuar?", vbYesNo + vbExclamation) = vbYes Then
+        RestaurarArchivos
+        AbrirArchivosPersistentes   ' <- nueva línea
+        ModoEdicion = False
+        ActualizarBotones
+        cargarEmpleado Val(Text16.Text)
+    End If
+End Sub
+
+Private Sub BtnHabilitarEdicion_Click()
+    RespaldarArchivos
+    AbrirArchivosPersistentes   ' <- nueva línea
+    ModoEdicion = True
+    ActualizarBotones
+End Sub
 
 Public Sub Form_Load()
-    Close 2, 3, 8, 15
     
-    Open "personal.dno" For Random As 2 Len = Len(personal): largoPersonal = LOF(2) / Len(personal)
-    Open "PerOtre.dno" For Random As 3 Len = Len(Otros_Rgtros): largoOtros = LOF(3) / Len(personal)
-    Open "maestro.dno" For Random As 8 Len = Len(maestro): largoMaestro = LOF(8) / Len(maestro)
-    
-    If largoPersonal <= 0 Then
-        MsgBox ("Achis, no hay personal. Intenta con otra carpeta!")
-        Get 2, 1, personal
-    Else
-        Get 2, largoPersonal, personal
-    
-        Text16.Text = (largoPersonal + 1)
-        LabelAnterior.Caption = ("ID anterior:  " & largoPersonal)
-        
-    End If
 End Sub
 
 Private Sub Text1_Change()
@@ -451,10 +530,17 @@ Private Sub Text16_KeyPress(KeyAscii As Integer)
 End Sub
 
 Private Sub Text2_KeyPress(KeyAscii As Integer)
-If KeyAscii = 13 And Text2.Text <> "" Then
+    If EsNuevo Then Exit Sub
+    If KeyAscii = 13 And Text2.Text <> "" Then
     Dim respuesta As Integer
     Dim respuestaDos As Integer
     Dim idNomina As String
+    
+    If KeyAscii = 13 And Text2.Text <> "" Then
+    If Not ModoEdicion Then
+        MsgBox "Debes habilitar edición primero.", vbExclamation
+        Exit Sub
+    End If
     
     Close 4
     Open "Bnxcla.dno" For Random As 4 Len = Len(Clbnx)
@@ -651,7 +737,7 @@ Private Sub eliminarRegistro()
     Close 8
     
     MsgBox "Registro eliminado con ?xito.", vbInformation
-    limpiarCampos
+    Unload Me
 End Sub
 Private Sub limpiarCampos()
     Text1.Text = Empty
@@ -669,8 +755,6 @@ Private Sub limpiarCampos()
     Text13.Text = Empty
     Text14.Text = Empty
     Text15.Text = Empty
-    
-    Me.Form_Load
 End Sub
 
 Private Sub calcularImpuestoMensual()
@@ -749,6 +833,12 @@ Public Sub cargarEmpleado(id As Integer)
 End Sub
 
 Private Sub Command1_Click()
+
+    If Not ModoEdicion Then
+        MsgBox "Debes habilitar edición primero.", vbExclamation
+        Exit Sub
+    End If
+    
     Dim sinCamposVacios As Boolean
     Dim camposValidos As Boolean
     Dim noDuplicado As Boolean
@@ -855,7 +945,11 @@ End Sub
 
 
 Private Sub Command3_Click()
-    actualizarRegistro
+    If EsNuevo Then
+        Command1_Click          ' mismas validaciones (vacíos, RFC/CURP, duplicado)
+    Else
+        actualizarRegistro
+    End If
 End Sub
 
 Private Sub actualizarRegistro()
@@ -872,43 +966,8 @@ Private Sub actualizarRegistro()
 End Sub
 
 Private Sub guardarRegistro()
-
-Close 4
-On Error GoTo manejador
-    Dim registro As Integer
-    registro = Val(Text16.Text)
-       
-    personal.fal = Text1.Text
-    personal.fab = Text2.Text
-    personal.RFC = Text3.Text
-    Otros_Rgtros.curp = Text4.Text
-    personal.nom = Text5.Text
-    personal.ape1 = Text6.Text
-    personal.ape2 = Text7.Text
-    personal.imss = Replace(Text8.Text, "-", "")
-    If IsNumeric(Text9.Text) Then personal.ingr = Text9.Text Else personal.ingr = 0
-    If IsNumeric(Text10.Text) Then personal.viat = Text10.Text Else personal.viat = 0
-    If IsNumeric(Text11.Text) Then personal.otras = Text11.Text Else personal.otras = 0
-    If IsNumeric(Text12.Text) Then personal.integrado = Text12.Text Else personal.integrado = 0
-    If IsNumeric(Text13.Text) Then maestro.O_1 = Text13.Text Else maestro.O_1 = 0
-    If IsNumeric(Text14.Text) Then maestro.por_1 = Text14.Text Else maestro.por_1 = 0
-     
-    Put 2, registro, personal
-    Put 3, registro, Otros_Rgtros
-    Put 8, registro, maestro
-     
     MsgBox "Se guardó con éxito."
-    
-    limpiarCampos
-    Exit Sub
-    
-manejador:
-    If Err.Number = 13 Then
-        MsgBox "Error 13: Error de tipo." & vbCrLf & _
-               "Por favor, asegúrese de que los campos numéricos (Sueldo Diario, Viáticos, Otras Percepciones, Número de Obra, Porcentaje) no estén vacíos y contengan únicamente números.", vbCritical, "Error de Validación de Datos"
-    Else
-        MsgBox "Error " & Err.Number & ": " & Err.Description, vbCritical, "Error al Guardar"
-    End If
+    Unload Me
 End Sub
 
 Private Function IsValidDate(ByVal fecha As String) As Boolean
@@ -933,4 +992,45 @@ Private Function IsValidCURP(ByVal curp As String) As Boolean
     IsValidCURP = regex.Test(curp)
 End Function
 
+Private Sub AbrirArchivosPersistentes()
+    Close 2, 3, 8
+    Open "personal.dno" For Random As 2 Len = Len(personal): largoPersonal = LOF(2) / Len(personal)
+    Open "PerOtre.dno" For Random As 3 Len = Len(Otros_Rgtros): largoOtros = LOF(3) / Len(personal)
+    Open "maestro.dno" For Random As 8 Len = Len(maestro): largoMaestro = LOF(8) / Len(maestro)
+End Sub
+
+Public Sub IniciarNuevo()
+    EsNuevo = True
+    ModoEdicion = True          ' en captura nueva no hay que "habilitar edición"
+    AbrirArchivosPersistentes
+    limpiarCampos
+
+    Text16.Text = (largoPersonal + 1)
+    If largoPersonal <= 0 Then
+        MsgBox ("Achis, no hay personal. Intenta con otra carpeta!")
+        Get 2, 1, personal
+    Else
+        Get 2, largoPersonal, personal
+        LabelAnterior.Caption = ("ID anterior:  " & largoPersonal)
+    End If
+    LabelAnterior.Visible = True
+    ActualizarBotones
+End Sub
+
+Public Sub IniciarConsulta(ByVal id As Integer)
+    EsNuevo = False
+    ModoEdicion = False
+    AbrirArchivosPersistentes
+    cargarEmpleado id
+    LabelAnterior.Visible = False
+    ActualizarBotones
+End Sub
+
+Private Sub BloquearCampos(ByVal bloquear As Boolean)
+    Dim i As Integer
+    For i = 1 To 15
+        Me.Controls("Text" & i).locked = bloquear
+    Next i
+    ' Text16 (ID) se deja libre: con Enter sirve para navegar a otro empleado
+End Sub
 ' comentario

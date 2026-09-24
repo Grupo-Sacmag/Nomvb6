@@ -664,6 +664,7 @@ End Sub
 
 Private Sub percap_Click(Index As Integer)
   Load Form2
+  Form2.IniciarNuevo
   Form2.Show
 End Sub
 

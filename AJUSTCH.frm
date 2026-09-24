@@ -77,12 +77,30 @@ Attribute VB_Exposed = False
 
 Dim valcelant
 Dim fila(50) As Integer, ubica(50) As Integer, rubro(50) As String * 30
+' ==============================================================================
+' SUBRUTINA depura MODIFICADA
+' ==============================================================================
 Sub depura(elemento)
-    If IsNumeric(elemento) Then
-        Rem Nada
+    Dim elemUpper As String
+    elemUpper = UCase$(Trim$(elemento))
+    
+    ' 1. Si no es totalmente numérico, evaluamos si es un nombre de archivo válido
+    If Not IsNumeric(elemento) Then
+        
+        ' Permitir prefijos de nóminas especiales/liquidaciones (LIQ..., ESP..., FINIQ..., AGUI..., PTU...)
+        If Left$(elemUpper, 3) = "LIQ" Or Left$(elemUpper, 3) = "ESP" _
+           Or InStr(elemUpper, "FINIQ") > 0 Or InStr(elemUpper, "AGUI") > 0 _
+           Or InStr(elemUpper, "PTU") > 0 Or InStr(elemUpper, "BONO") > 0 Then
+            
+            ' Es un nombre de archivo alfanumérico válido, lo dejamos pasar
+            Exit Sub
+            
         Else
-        MsgBox "Solo se aceptan valores numericos"
-        Text1.Text = valcelant
+            ' Si la celda era para importes numéricos y se ingresó texto no válido
+            MsgBox "Solo se aceptan valores numéricos o nombres de nómina válidos (LIQ..., ESP..., FINIQ...)", vbExclamation, "Validación de Captura"
+            Text1.Text = valcelant
+        End If
+        
     End If
 End Sub
 
@@ -128,6 +146,7 @@ End Sub
 Private Sub Text1_Change()
     AJTE.Text = Text1.Text
 End Sub
+
 Private Sub Text1_GotFocus()
     SendKeys "{end}"
 End Sub
@@ -135,21 +154,32 @@ End Sub
 Private Sub Text1_KeyDown(KeyCode As Integer, Shift As Integer)
     Rem AJTE.SetFocus
 End Sub
-
 Private Sub Text1_KeyPress(KeyAscii As Integer)
     Select Case KeyAscii
-       
-       Case 13
         
-        depura Text1.Text
-        AJTE.Text = Text1.Text
-        AJTE.SetFocus
-        Rem nada
-       Case 27
-        Text1.Text = valcelant
-        AJTE.SetFocus
-       Rem nada
-       
+        Case 13 ' --- AL PRESIONAR ENTER ---
+            
+            ' 1. Validar la entrada (permite números e identificadores LIQ, ESP, FINIQ)
+            depura Text1.Text
+            
+            ' 2. Asignar el texto a la celda activa del grid
+            AJTE.Text = Text1.Text
+            
+            ' 3. CAPTURA Y DETECCIÓN AUTOMÁTICA DEL TIPO DE NÓMINA
+            NombreArchivoNomina = Trim$(Text1.Text)
+            g_TipoNominaActiva = DeterminarTipoNomina(NombreArchivoNomina)
+            
+            ' Registro en la ventana Inmediato para confirmación del programador
+            Debug.Print "Form8 -> Nombre Nómina Capturado: " & NombreArchivoNomina
+            Debug.Print "Form8 -> Tipo Nómina Activa (Enum): " & g_TipoNominaActiva
+            
+            ' 4. Devolver foco a la grilla
+            AJTE.SetFocus
+            
+        Case 27 ' --- AL PRESIONAR ESCAPE ---
+            Text1.Text = valcelant
+            AJTE.SetFocus
+            
     End Select
 End Sub
 
@@ -158,28 +188,27 @@ Private Sub AJTE_LeaveCell()
 End Sub
 
 Private Sub AJTE_RowColChange()
-     Rem AJTE.BackColor = vbWhite
-     If AJTE.Text <> "" Then valcelant = AJTE.Text
-     Text1.Text = AJTE.Text
+    Rem AJTE.BackColor = vbWhite
+    If AJTE.Text <> "" Then valcelant = AJTE.Text
+    Text1.Text = AJTE.Text
 End Sub
 Private Sub AJTE_KeyDown(KeyCode As Integer, Shift As Integer)
-      Select Case KeyCode
-            Case vbKeyDelete
-                AJTE.Text = ""
-                Text1.Text = AJTE.Text
-            Case vbKeyF2
-                If AJTE.Text <> "" Then valcelant = AJTE.Text
-                Text1.Text = AJTE.Text
-                Text1.SetFocus
-               
-       End Select
+    Select Case KeyCode
+        Case vbKeyDelete
+            AJTE.Text = ""
+            Text1.Text = AJTE.Text
+        Case vbKeyF2
+            If AJTE.Text <> "" Then valcelant = AJTE.Text
+            Text1.Text = AJTE.Text
+            Text1.SetFocus
+    End Select
 End Sub
 
 Private Sub AJTE_KeyPress(KeyAscii As Integer)
-         Rem ajte.SelectionMode = flexSelectionFree
-         If AJTE.Text <> "" Then valcelant = AJTE.Text
-         Text1.Text = Chr$(KeyAscii)
-         Text1.SetFocus
+    Rem ajte.SelectionMode = flexSelectionFree
+    If AJTE.Text <> "" Then valcelant = AJTE.Text
+    Text1.Text = Chr$(KeyAscii)
+    Text1.SetFocus
 End Sub
 
 Private Sub Form_Load()
