@@ -18,6 +18,7 @@ Begin VB.Form Form4
       Left            =   16200
       TabIndex        =   7
       Top             =   120
+      Visible         =   0   'False
       Width           =   1575
    End
    Begin VB.CommandButton BtnGuardarCambios 
@@ -26,6 +27,7 @@ Begin VB.Form Form4
       Left            =   14520
       TabIndex        =   6
       Top             =   120
+      Visible         =   0   'False
       Width           =   1455
    End
    Begin VB.CommandButton BtnHabilitarEdicion 
@@ -34,6 +36,7 @@ Begin VB.Form Form4
       Left            =   12840
       TabIndex        =   5
       Top             =   120
+      Visible         =   0   'False
       Width           =   1455
    End
    Begin VB.CommandButton Command1 
@@ -820,9 +823,10 @@ Dim Repuse
 End Sub
 Private Sub list1_KeyPress(KeyAscii As Integer)
      If KeyAscii = 13 Then
-        rgtro = Val(Mid$(list1.List(list1.ListIndex), 61, 6))
+        rgtro = ListPer.TextMatrix(ListPer.Row, 0)
         Load Form2
-        Form2.Show
+        Form2.IniciarConsulta CInt(rgtro)   ' reemplaza a Form2.cargarEmpleado (rgtro)
+        Form2.Show 1
      End If
 End Sub
 
@@ -858,9 +862,8 @@ Private Sub ListPer_KeyPress(KeyAscii As Integer)
          Case 13:
             rgtro = ListPer.TextMatrix(ListPer.Row, 0)
             Load Form2
-            Form2.cargarEmpleado (rgtro)
+            Form2.IniciarConsulta CInt(rgtro)   ' reemplaza a Form2.cargarEmpleado (rgtro)
             Form2.Show 1
-            
             Close 2
             Open "personal.dno" For Random As 2 Len = Len(personal)
             Get 2, rgtro, personal

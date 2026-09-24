@@ -449,6 +449,7 @@ Dim camposValidosGlobal As Boolean
 Dim empleadoDuplicado As Boolean
 Dim algunCampoVacioGlobal As Boolean
 Dim ModoEdicion As Boolean
+Private EsNuevo As Boolean
 
 Private Sub RespaldarArchivos()
     Close 2, 3, 4, 8
@@ -467,11 +468,28 @@ Private Sub RestaurarArchivos()
 End Sub
 
 Private Sub ActualizarBotones()
-    BtnHabilitarEdicion.Enabled = Not ModoEdicion
-    Command1.Enabled = ModoEdicion   ' Guardar (nuevo registro)
-    Command3.Enabled = ModoEdicion   ' Actualizar
-    Command2.Enabled = ModoEdicion   ' Eliminar registro
-    BtnCancelarCambios.Enabled = ModoEdicion
+    If EsNuevo Then
+        ' Captura nueva: solo Archivar (Command1) y Actualizar (Command3)
+        BtnHabilitarEdicion.Visible = False
+        BtnCancelarCambios.Visible = False
+        Command2.Visible = False
+        Command1.Visible = True
+        Command3.Visible = True
+        Command1.Enabled = True
+        Command3.Enabled = True
+    Else
+        ' Empleado existente: solo botones de edición
+        Command1.Visible = False
+        BtnHabilitarEdicion.Visible = True
+        BtnCancelarCambios.Visible = True
+        Command2.Visible = True
+        Command3.Visible = True
+        BtnHabilitarEdicion.Enabled = Not ModoEdicion
+        BtnCancelarCambios.Enabled = ModoEdicion
+        Command3.Enabled = ModoEdicion
+        Command2.Enabled = ModoEdicion
+    End If
+    BloquearCampos Not ModoEdicion
 End Sub
 
 Private Sub BtnCancelarCambios_Click()
@@ -493,25 +511,6 @@ End Sub
 
 Public Sub Form_Load()
     
-    AbrirArchivosPersistentes
-    
-    ' NUEVO: limpiar todos los campos SIEMPRE, sin importar si el form ya estaba cargado
-    Text1.Text = "": Text2.Text = "": Text3.Text = "": Text4.Text = ""
-    Text5.Text = "": Text6.Text = "": Text7.Text = "": Text8.Text = ""
-    Text9.Text = "": Text10.Text = 0: Text11.Text = 0: Text12.Text = ""
-    Text13.Text = "": Text14.Text = "": Text15.Text = ""
-    
-    If largoPersonal <= 0 Then
-        MsgBox ("Achis, no hay personal. Intenta con otra carpeta!")
-        Get 2, 1, personal
-    Else
-        Get 2, largoPersonal, personal
-        Text16.Text = (largoPersonal + 1)
-        LabelAnterior.Caption = ("ID anterior:  " & largoPersonal)
-    End If
-    
-    ModoEdicion = False
-    ActualizarBotones
 End Sub
 
 Private Sub Text1_Change()
@@ -531,7 +530,8 @@ Private Sub Text16_KeyPress(KeyAscii As Integer)
 End Sub
 
 Private Sub Text2_KeyPress(KeyAscii As Integer)
-If KeyAscii = 13 And Text2.Text <> "" Then
+    If EsNuevo Then Exit Sub
+    If KeyAscii = 13 And Text2.Text <> "" Then
     Dim respuesta As Integer
     Dim respuestaDos As Integer
     Dim idNomina As String
@@ -737,7 +737,7 @@ Private Sub eliminarRegistro()
     Close 8
     
     MsgBox "Registro eliminado con ?xito.", vbInformation
-    limpiarCampos
+    Unload Me
 End Sub
 Private Sub limpiarCampos()
     Text1.Text = Empty
@@ -755,8 +755,6 @@ Private Sub limpiarCampos()
     Text13.Text = Empty
     Text14.Text = Empty
     Text15.Text = Empty
-    
-    Me.Form_Load
 End Sub
 
 Private Sub calcularImpuestoMensual()
@@ -947,7 +945,11 @@ End Sub
 
 
 Private Sub Command3_Click()
-    actualizarRegistro
+    If EsNuevo Then
+        Command1_Click          ' mismas validaciones (vacíos, RFC/CURP, duplicado)
+    Else
+        actualizarRegistro
+    End If
 End Sub
 
 Private Sub actualizarRegistro()
@@ -964,43 +966,8 @@ Private Sub actualizarRegistro()
 End Sub
 
 Private Sub guardarRegistro()
-
-Close 4
-On Error GoTo manejador
-    Dim registro As Integer
-    registro = Val(Text16.Text)
-       
-    personal.fal = Text1.Text
-    personal.fab = Text2.Text
-    personal.RFC = Text3.Text
-    Otros_Rgtros.curp = Text4.Text
-    personal.nom = Text5.Text
-    personal.ape1 = Text6.Text
-    personal.ape2 = Text7.Text
-    personal.imss = Replace(Text8.Text, "-", "")
-    If IsNumeric(Text9.Text) Then personal.ingr = Text9.Text Else personal.ingr = 0
-    If IsNumeric(Text10.Text) Then personal.viat = Text10.Text Else personal.viat = 0
-    If IsNumeric(Text11.Text) Then personal.otras = Text11.Text Else personal.otras = 0
-    If IsNumeric(Text12.Text) Then personal.integrado = Text12.Text Else personal.integrado = 0
-    If IsNumeric(Text13.Text) Then maestro.O_1 = Text13.Text Else maestro.O_1 = 0
-    If IsNumeric(Text14.Text) Then maestro.por_1 = Text14.Text Else maestro.por_1 = 0
-     
-    Put 2, registro, personal
-    Put 3, registro, Otros_Rgtros
-    Put 8, registro, maestro
-     
     MsgBox "Se guardó con éxito."
     Unload Me
-    limpiarCampos
-    Exit Sub
-    
-manejador:
-    If Err.Number = 13 Then
-        MsgBox "Error 13: Error de tipo." & vbCrLf & _
-               "Por favor, asegúrese de que los campos numéricos (Sueldo Diario, Viáticos, Otras Percepciones, Número de Obra, Porcentaje) no estén vacíos y contengan únicamente números.", vbCritical, "Error de Validación de Datos"
-    Else
-        MsgBox "Error " & Err.Number & ": " & Err.Description, vbCritical, "Error al Guardar"
-    End If
 End Sub
 
 Private Function IsValidDate(ByVal fecha As String) As Boolean
@@ -1032,4 +999,38 @@ Private Sub AbrirArchivosPersistentes()
     Open "maestro.dno" For Random As 8 Len = Len(maestro): largoMaestro = LOF(8) / Len(maestro)
 End Sub
 
+Public Sub IniciarNuevo()
+    EsNuevo = True
+    ModoEdicion = True          ' en captura nueva no hay que "habilitar edición"
+    AbrirArchivosPersistentes
+    limpiarCampos
+
+    Text16.Text = (largoPersonal + 1)
+    If largoPersonal <= 0 Then
+        MsgBox ("Achis, no hay personal. Intenta con otra carpeta!")
+        Get 2, 1, personal
+    Else
+        Get 2, largoPersonal, personal
+        LabelAnterior.Caption = ("ID anterior:  " & largoPersonal)
+    End If
+    LabelAnterior.Visible = True
+    ActualizarBotones
+End Sub
+
+Public Sub IniciarConsulta(ByVal id As Integer)
+    EsNuevo = False
+    ModoEdicion = False
+    AbrirArchivosPersistentes
+    cargarEmpleado id
+    LabelAnterior.Visible = False
+    ActualizarBotones
+End Sub
+
+Private Sub BloquearCampos(ByVal bloquear As Boolean)
+    Dim i As Integer
+    For i = 1 To 15
+        Me.Controls("Text" & i).locked = bloquear
+    Next i
+    ' Text16 (ID) se deja libre: con Enter sirve para navegar a otro empleado
+End Sub
 ' comentario
