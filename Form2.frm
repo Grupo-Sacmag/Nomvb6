@@ -530,51 +530,57 @@ Private Sub Text16_KeyPress(KeyAscii As Integer)
 End Sub
 
 Private Sub Text2_KeyPress(KeyAscii As Integer)
-    If EsNuevo Then Exit Sub
-    If KeyAscii = 13 And Text2.Text <> "" Then
-    Dim respuesta As Integer
-    Dim respuestaDos As Integer
-    Dim idNomina As String
-    
-    If KeyAscii = 13 And Text2.Text <> "" Then
-    If Not ModoEdicion Then
-        MsgBox "Debes habilitar edición primero.", vbExclamation
-        Exit Sub
-    End If
-    
-    Close 4
-    Open "Bnxcla.dno" For Random As 4 Len = Len(Clbnx)
-       
-    idNomina = Text16.Text
-    
-    Get 4, idNomina, Clbnx
-    
-    respuesta = MsgBox("Se eliminar? el n?mero de tarjeta: " + Clbnx.Q1 + " , ?Deseas continuar?", vbOKCancel)
-    
-    If respuesta = vbOK Then
-        ' C?digo para eliminar los datos bancarios
-        respuestaDos = MsgBox("Esta acci?n es irreversible asegurate de tener un copia del n?mero de tarjeta.", vbOKCancel)
-        
-        If respuestaDos = vbOK Then
 
-            Clbnx.Q1 = 0
-            
-            Put 4, idNomina, Clbnx
-            
-            MsgBox ("Se elimino el n?mero de tarjeta.")
-            
-        ElseIf respuestaDos = vbCancel Then
-            MsgBox "Operaci?n cancelada"
+    If EsNuevo Then Exit Sub
+
+    If KeyAscii = 13 And Text2.Text <> "" Then
+
+        Dim respuesta As Integer
+        Dim respuestaDos As Integer
+        Dim idNomina As String
+
+        If Not ModoEdicion Then
+            MsgBox "Debes habilitar edición primero.", vbExclamation
+            Exit Sub
         End If
 
-    ElseIf respuesta = vbCancel Then
+        Close 4
+        Open "Bnxcla.dno" For Random As #4 Len = Len(Clbnx)
 
-        MsgBox "Operaci?n cancelada."
+        idNomina = Text16.Text
+
+        Get #4, idNomina, Clbnx
+
+        respuesta = MsgBox( _
+            "¿Se eliminará el número de tarjeta: " & Clbnx.Q1 & "?" & vbCrLf & vbCrLf & "¿Deseas continuar?", vbOKCancel + vbQuestion)
+
+        If respuesta = vbOK Then
+
+            respuestaDos = MsgBox( _
+                "Esta acción es irreversible. " & "Asegúrate de tener una copia del número de tarjeta.", vbOKCancel + vbExclamation)
+
+            If respuestaDos = vbOK Then
+
+                Clbnx.Q1 = "0"
+
+                Put #4, idNomina, Clbnx
+
+                MsgBox "Se eliminó el número de tarjeta.", vbInformation
+
+            Else
+                MsgBox "Operación cancelada.", vbInformation
+            End If
+
+        Else
+            MsgBox "Operación cancelada.", vbInformation
+        End If
+
+        Close #4
+
     End If
 
-End If
-
 End Sub
+
 
 Private Sub Text3_Change()
     ' Obtener el texto de Text1
