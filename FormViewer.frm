@@ -248,17 +248,13 @@ Public Sub LoadPayroll(ByVal fName As String)
     Dim nameOnly As String
     Dim pos As Long
     Dim rutaBase As String
-
     Dim r As Long
     Dim yavas As Integer
-
     Dim totalMaestro As Long
     Dim totalCmp As Long
     Dim totalBnx As Long
-
     Dim numeroError As Long
     Dim descripcionError As String
-
 
     '========================================================
     ' INICIO DE CARGA
@@ -266,9 +262,7 @@ Public Sub LoadPayroll(ByVal fName As String)
 
     cargandoNomina = True
     CargaCorrecta = False
-
     CerrarArchivosVisor
-
 
     '========================================================
     ' REINICIAR ESTADO DE LA NOMINA ANTERIOR
@@ -276,149 +270,98 @@ Public Sub LoadPayroll(ByVal fName As String)
 
     limite = 0
     renglon = 0
-
     nm = 0
     fi_nm = 0
     Dm = 0
-
     textoFiltro = ""
-
     TxtBuscar.Text = ""
-
 
     '========================================================
     ' OBTENER NOMBRE Y RUTA
     '========================================================
 
     nameOnly = fName
-
     pos = InStrRev(fName, "\")
-
+    
     If pos > 0 Then
-
         nameOnly = Mid$(fName, pos + 1)
         rutaBase = Left$(fName, pos)
-
     Else
-
         rutaBase = CurDir$
-
         If Right$(rutaBase, 1) <> "\" Then
             rutaBase = rutaBase & "\"
         End If
-
     End If
 
-
     LblFile.Caption = "Archivo: " & nameOnly
-
 
     '========================================================
     ' VALIDAR NOMBRE
     '========================================================
 
     If Len(nameOnly) < 5 Then
-
-        MsgBox "El nombre del archivo de nómina no es válido.", _
-               vbExclamation, "Visor de nómina"
-
+        MsgBox "El nombre del archivo de nómina no es válido.", vbExclamation, "Visor de nómina"
         GoTo Salida
-
     End If
-
 
     '========================================================
     ' ABRIR PERSONAL.DNO
     '========================================================
 
-    Open rutaBase & "personal.dno" _
-        For Random As #2 _
-        Len = Len(personal)
-
+    Open rutaBase & "personal.dno" For Random As #2 Len = Len(personal)
     Dm = LOF(2) / Len(personal)
 
-
     If Dm <= 0 Then
-
-        MsgBox "No existe información válida en personal.dno." & _
-               vbCrLf & _
-               "No se puede abrir la nómina.", _
-               vbCritical, "Error"
-
+        MsgBox "No existe información válida en personal.dno." & vbCrLf & "No se puede abrir la nómina.", vbCritical, "Error"
         GoTo Salida
-
     End If
 
-
     '========================================================
-    ' DETERMINAR NOMINA NORMAL / ESPECIAL
+    ' DETERMINAR TIPO DE NOMINA (unificado con Form8 ya no depende de un global externo ni de IsNormalPayrollName)
     '========================================================
 
-    If IsNormalPayrollName(nameOnly) Then
+    G_NombreArchivoNomina = UCase$(Trim$(nameOnly))
+    g_TipoNominaActiva = ClasificarTipoNomina(G_NombreArchivoNomina)
+    G_TipoNominaProcess = TipoNominaATexto(g_TipoNominaActiva)
 
+    If g_TipoNominaActiva = tnOrdinaria Then
         N_ormal = 0
         diat = 15
-
     Else
-
         N_ormal = 1
         diat = 0
-
     End If
-
 
     '========================================================
     ' ARCHIVOS
     '========================================================
-
+    
     Arch = fName
-
-    Arch1 = rutaBase & _
-            Left$(nameOnly, Len(nameOnly) - 4) & ".cmp"
-
+    Arch1 = rutaBase & Left$(nameOnly, Len(nameOnly) - 4) & ".cmp"
 
     '========================================================
     ' ABRIR NOMINA
     '========================================================
 
-    Open Arch _
-        For Random As #6 _
-        Len = Len(nomina)
-
+    Open Arch For Random As #6 Len = Len(nomina)
     nm = LOF(6) / Len(nomina)
 
-
     If nm <= 0 Then
-
-        MsgBox "El archivo de nómina está vacío o no contiene registros.", _
-               vbInformation, "Visor de Nómina"
-
+        MsgBox "El archivo de nómina está vacío o no contiene registros.", vbInformation, "Visor de Nómina"
         GoTo Salida
-
     End If
-
 
     '========================================================
     ' ABRIR ARCHIVOS AUXILIARES
     '========================================================
 
-    Open Arch1 _
-        For Random As #14 _
-        Len = Len(nom_com)
-
-    Open rutaBase & "bnxcla.dno" _
-        For Random As #12 _
-        Len = Len(Clbnx)
-
-    Open rutaBase & "maestro.dno" _
-        For Random As #8 _
-        Len = Len(maestro)
-
+    Open Arch1 For Random As #14 Len = Len(nom_com)
+    Open rutaBase & "bnxcla.dno" For Random As #12 Len = Len(Clbnx)
+    Open rutaBase & "maestro.dno" For Random As #8 Len = Len(maestro)
 
     totalCmp = LOF(14) / Len(nom_com)
     totalBnx = LOF(12) / Len(Clbnx)
     totalMaestro = LOF(8) / Len(maestro)
-
 
     '========================================================
     ' DETERMINAR NUMERO SEGURO DE REGISTROS
@@ -432,37 +375,25 @@ Public Sub LoadPayroll(ByVal fName As String)
     '========================================================
 
     If nm < Dm Then
-
         fi_nm = nm
-
     Else
-
         fi_nm = Dm
-
     End If
-
 
     If fi_nm <= 0 Then
-
-        MsgBox "No existen registros compatibles entre la nómina " & _
-               "y personal.dno.", _
-               vbInformation, "Visor de Nómina"
-
+        MsgBox "No existen registros compatibles entre la nómina " & "y personal.dno.", vbInformation, "Visor de Nómina"
         GoTo Salida
-
     End If
-
 
     '========================================================
     ' PREPARAR GRID COMPLETAMENTE DESDE CERO
     '========================================================
 
     ConNom1.Redraw = False
-
     ConNom1.Clear
 
     'Primero las columnas
-    ConNom1.Cols = 25
+    ConNom1.Cols = 27
 
     'Después las filas
     ConNom1.Rows = fi_nm + 2
@@ -485,34 +416,28 @@ Public Sub LoadPayroll(ByVal fName As String)
     '========================================================
 
     ProgressBar1.Visible = True
-
     ProgressBar1.Min = 0
     ProgressBar1.Max = fi_nm
     ProgressBar1.Value = 0
-
 
     '========================================================
     ' LEER REGISTROS
     '========================================================
 
     For r = 1 To fi_nm
-
         ProgressBar1.Value = r
-
 
         '--------------------------------------------
         ' NOMINA
         '--------------------------------------------
-
+        
         Get #6, r, nomina
-
 
         '--------------------------------------------
         ' PERSONAL
         '--------------------------------------------
 
         Get #2, r, personal
-
 
         '--------------------------------------------
         ' MAESTRO
@@ -522,7 +447,6 @@ Public Sub LoadPayroll(ByVal fName As String)
             Get #8, r, maestro
         End If
 
-
         '--------------------------------------------
         ' CMP
         '--------------------------------------------
@@ -530,7 +454,6 @@ Public Sub LoadPayroll(ByVal fName As String)
         If r <= totalCmp Then
             Get #14, r, nom_com
         End If
-
 
         '--------------------------------------------
         ' VERIFICAR SI TIENE INFORMACION
@@ -540,11 +463,9 @@ Public Sub LoadPayroll(ByVal fName As String)
 
         verifica yavas
 
-
         If yavas > 0 Then
-
             renglon = renglon + 1
-
+            
             'Garantizar que la fila exista
             If renglon >= ConNom1.Rows Then
                 ConNom1.Rows = renglon + 2
@@ -552,26 +473,18 @@ Public Sub LoadPayroll(ByVal fName As String)
 
             ConNom1.Row = renglon
             ConNom1.Col = 0
-
             ConNom1.Text = Format$(r, "#####")
-
             limite = limite + 1
-
             regtro = r
-
             carganom
-
         End If
-
     Next r
-
 
     '========================================================
     ' ELIMINAR REGISTROS SIN INFORMACION
     '========================================================
-
+    
     eliminacion
-
 
     '========================================================
     ' MUY IMPORTANTE:
@@ -588,15 +501,12 @@ Public Sub LoadPayroll(ByVal fName As String)
     ConNom1.Col = 0
     ConNom1.ColSel = 0
 
-
     '========================================================
     ' AJUSTAR AL NUMERO REAL DE REGISTROS
     '========================================================
 
     If limite < 0 Then limite = 0
-
     ConNom1.Rows = limite + 2
-
 
     '========================================================
     ' SUMAS
@@ -604,74 +514,57 @@ Public Sub LoadPayroll(ByVal fName As String)
 
     sumavert
 
-
     '========================================================
     ' DEJAR SELECCION EN UNA FILA VALIDA
     '========================================================
 
     If limite > 0 Then
-
         ConNom1.Row = 1
         ConNom1.RowSel = 1
-
     Else
-
         ConNom1.Row = 0
         ConNom1.RowSel = 0
-
     End If
-
+    
     ConNom1.Col = 0
     ConNom1.ColSel = 0
-
 
     '========================================================
     ' FINALIZAR CORRECTAMENTE
     '========================================================
 
     ConNom1.Redraw = True
-
     ProgressBar1.Visible = False
-
     CargaCorrecta = True
-
     GoTo Salida
 
-
-'============================================================
-' ERROR
-'============================================================
+    '============================================================
+    ' ERROR
+    '============================================================
 
 ErrorHandler:
+        
+        numeroError = Err.Number
+        descripcionError = Err.Description
+        
+        CargaCorrecta = False
+        
+        On Error Resume Next
+        
+        ConNom1.Redraw = True
+        ProgressBar1.Visible = False
+        
+        On Error GoTo 0
+        
+        MsgBox "Error al cargar la nómina." & vbCrLf & "Número: " & numeroError & vbCrLf & "Descripción: " & descripcionError, vbCritical, "Error"
 
-    numeroError = Err.Number
-    descripcionError = Err.Description
-
-    CargaCorrecta = False
-
-    On Error Resume Next
-
-    ConNom1.Redraw = True
-    ProgressBar1.Visible = False
-
-    On Error GoTo 0
-
-    MsgBox "Error al cargar la nómina." & vbCrLf & _
-           "Número: " & numeroError & vbCrLf & _
-           "Descripción: " & descripcionError, _
-           vbCritical, "Error"
-
-
-'============================================================
-' SALIDA COMUN
-'============================================================
-
+    '============================================================
+    ' SALIDA COMUN
+    '============================================================
+    
 Salida:
-
-    CerrarArchivosVisor
-
-    cargandoNomina = False
-
+        CerrarArchivosVisor
+        cargandoNomina = False
 End Sub
 
 Private Function IsNormalPayrollName(ByVal fName As String) As Boolean
@@ -700,18 +593,13 @@ Sub carganom()
     Dim ingresos As Currency
     Dim deducciones As Currency
     Dim neto As Currency
-
     Dim ii As Integer
     Dim li As Long
 
-    ConNom1.TextMatrix(ConNom1.Row, 1) = _
-        RTrim$(personal.ape1) & " " & _
-        RTrim$(personal.ape2) & " " & _
-        RTrim$(personal.nom)
+    ConNom1.TextMatrix(ConNom1.Row, 1) = RTrim$(personal.ape1) & " " & RTrim$(personal.ape2) & " " & RTrim$(personal.nom)
 
     li = ConNom1.Row
     ii = 2
-
 
     If nomina.dias <> 0 Then
         ConNom1.TextMatrix(li, 2) = Format$(nomina.dias, "##0.00")
@@ -721,7 +609,6 @@ Sub carganom()
 
     ii = ii + 1
 
-
     If nomina.sueldo <> 0 Then
         ConNom1.TextMatrix(li, 3) = Format$(nomina.sueldo, z1$)
     Else
@@ -729,7 +616,6 @@ Sub carganom()
     End If
 
     ii = ii + 1
-
 
     If nomina.hs_nor <> 0 Then
         ConNom1.TextMatrix(li, 4) = Format$(nomina.hs_nor, z1$)
@@ -739,48 +625,37 @@ Sub carganom()
 
     ii = ii + 1
 
-
     If N_ormal = 1 Then
-
         If nomina.aguin <> 0 Then
             ConNom1.TextMatrix(li, 5) = Format$(nomina.aguin, z1$)
         Else
             ConNom1.TextMatrix(li, ii) = ""
         End If
-
     Else
-
         If nomina.hs_dbl <> 0 Then
             ConNom1.TextMatrix(li, 5) = Format$(nomina.hs_dbl, z1$)
         Else
             ConNom1.TextMatrix(li, ii) = ""
         End If
-
     End If
-
+    
     ii = ii + 1
 
-
     If N_ormal = 1 Then
-
         If nomina.ptu <> 0 Then
             ConNom1.TextMatrix(li, 6) = Format$(nomina.ptu, z1$)
         Else
             ConNom1.TextMatrix(li, ii) = ""
         End If
-
     Else
-
         If nomina.hs_tri <> 0 Then
             ConNom1.TextMatrix(li, 6) = Format$(nomina.hs_tri, z1$)
         Else
             ConNom1.TextMatrix(li, ii) = ""
         End If
-
     End If
 
     ii = ii + 1
-
 
     If nomina.viaticos <> 0 Then
         ConNom1.TextMatrix(li, 7) = Format$(nomina.viaticos, z1$)
@@ -790,7 +665,6 @@ Sub carganom()
 
     ii = ii + 1
 
-
     If nomina.pvac <> 0 Then
         ConNom1.TextMatrix(li, 8) = Format$(nomina.pvac, z1$)
     Else
@@ -798,7 +672,6 @@ Sub carganom()
     End If
 
     ii = ii + 1
-
 
     If nomina.otras <> 0 Then
         ConNom1.TextMatrix(li, 9) = Format$(nomina.otras, z1$)
@@ -808,7 +681,6 @@ Sub carganom()
 
     ii = ii + 1
 
-
     If nomina.exentos <> 0 Then
         ConNom1.TextMatrix(li, 10) = Format$(nomina.exentos, z1$)
     Else
@@ -817,18 +689,7 @@ Sub carganom()
 
     ii = ii + 1
 
-
-    ingresos = nomina.sueldo + _
-               nomina.hs_nor + _
-               nomina.hs_dbl + _
-               nomina.hs_tri + _
-               nomina.aguin + _
-               nomina.ptu + _
-               nomina.viaticos + _
-               nomina.pvac + _
-               nomina.otras + _
-               nomina.exentos
-
+    ingresos = nomina.sueldo + nomina.hs_nor + nomina.hs_dbl + nomina.hs_tri + nomina.aguin + nomina.ptu + nomina.viaticos + nomina.pvac + nomina.otras + nomina.exentos
 
     If ingresos <> 0 Then
         ConNom1.TextMatrix(li, 11) = Format$(ingresos, z1$)
@@ -838,7 +699,6 @@ Sub carganom()
 
     ii = ii + 1
 
-
     If nomina.ispt <> 0 Then
         ConNom1.TextMatrix(li, 12) = Format$(nomina.ispt, z1$)
     Else
@@ -846,7 +706,6 @@ Sub carganom()
     End If
 
     ii = ii + 1
-
 
     If nomina.crdsal <> 0 Then
         ConNom1.TextMatrix(li, 13) = Format$(nomina.crdsal, z1$)
@@ -856,7 +715,6 @@ Sub carganom()
 
     ii = ii + 1
 
-
     If nomina.imss <> 0 Then
         ConNom1.TextMatrix(li, 14) = Format$(nomina.imss, z1$)
     Else
@@ -864,7 +722,6 @@ Sub carganom()
     End If
 
     ii = ii + 1
-
 
     If nomina.prestamos <> 0 Then
         ConNom1.TextMatrix(li, 15) = Format$(nomina.prestamos, z1$)
@@ -874,7 +731,6 @@ Sub carganom()
 
     ii = ii + 1
 
-
     If nomina.fonacot <> 0 Then
         ConNom1.TextMatrix(li, 16) = Format$(nomina.fonacot, z1$)
     Else
@@ -882,7 +738,6 @@ Sub carganom()
     End If
 
     ii = ii + 1
-
 
     If nomina.telefono <> 0 Then
         ConNom1.TextMatrix(li, 17) = Format$(nomina.telefono, z1$)
@@ -892,7 +747,6 @@ Sub carganom()
 
     ii = ii + 1
 
-
     If nomina.otraded <> 0 Then
         ConNom1.TextMatrix(li, 18) = Format$(nomina.otraded, z1$)
     Else
@@ -901,15 +755,7 @@ Sub carganom()
 
     ii = ii + 1
 
-
-    deducciones = nomina.crdsal + _
-                  nomina.ispt + _
-                  nomina.imss + _
-                  nomina.prestamos + _
-                  nomina.fonacot + _
-                  nomina.telefono + _
-                  nomina.otraded
-
+    deducciones = nomina.crdsal + nomina.ispt + nomina.imss + nomina.prestamos + nomina.fonacot + nomina.telefono + nomina.otraded
 
     If deducciones <> 0 Then
         ConNom1.TextMatrix(li, 19) = Format$(deducciones, z1$)
@@ -919,9 +765,7 @@ Sub carganom()
 
     ii = ii + 1
 
-
     neto = ingresos - deducciones
-
 
     If neto <> 0 Then
         ConNom1.TextMatrix(li, 20) = Format$(neto, z1$)
@@ -929,46 +773,36 @@ Sub carganom()
         ConNom1.TextMatrix(li, ii) = ""
     End If
 
-
     ConNom1.TextMatrix(li, 21) = "0"
     ConNom1.TextMatrix(li, 22) = "0"
     ConNom1.TextMatrix(li, 23) = "0"
-
 
     If N_ormal = 1 Then
         ConNom1.TextMatrix(li, 23) = "1"
     End If
 
-
     '========================================================
     ' BANAMEX
     '========================================================
-
     If regtro > 0 Then
-
         If regtro <= LOF(12) / Len(Clbnx) Then
-
             Get #12, regtro, Clbnx
-
-            ConNom1.TextMatrix(li, 24) = _
-                " " & Clbnx.Q1
-
+            ConNom1.TextMatrix(li, 24) = " " & Clbnx.Q1
         Else
-
             ConNom1.TextMatrix(li, 24) = ""
-
         End If
-
     Else
-
         ConNom1.TextMatrix(li, 24) = ""
-
     End If
-
+    
+    If g_TipoNominaActiva = tnLiquidacionFiniquito Then
+        If nomina.hsnor <> 0 Then ConNom1.TextMatrix(li, 25) = Format(nomina.hsnor, z1$) Else ConNom1.TextMatrix(li, 25) = ""
+        If nomina.hstri <> 0 Then ConNom1.TextMatrix(li, 26) = Format(nomina.hstri, z1$) Else ConNom1.TextMatrix(li, 26) = ""
+    End If
 End Sub
 
 Sub define()
-     ConNom1.Cols = 25
+     ConNom1.Cols = 27
      ConNom1.Font = "Arial": ConNom1.Font.Size = 8: ConNom1.Font.Bold = True
      
      ConNom1.Row = 0
@@ -1037,6 +871,8 @@ Sub verifica(yavas)
     If nomina.fonacot <> 0 Then yavas = 1
     If nomina.telefono <> 0 Then yavas = 1
     If nomina.otraded <> 0 Then yavas = 1
+    If nomina.hsnor <> 0 Then yavas = 1
+    If nomina.hstri <> 0 Then yavas = 1
 End Sub
 Sub eliminacion()
 

@@ -530,49 +530,59 @@ Private Sub Text16_KeyPress(KeyAscii As Integer)
 End Sub
 
 Private Sub Text2_KeyPress(KeyAscii As Integer)
-    If EsNuevo Then Exit Sub
-    If KeyAscii = 13 And Text2.Text <> "" Then
-    Dim respuesta As Integer
-    Dim respuestaDos As Integer
-    Dim idNomina As String
-    
-    If KeyAscii = 13 And Text2.Text <> "" Then
-    If Not ModoEdicion Then
-        MsgBox "Debes habilitar edición primero.", vbExclamation
-        Exit Sub
-    End If
-    
-    Close 4
-    Open "Bnxcla.dno" For Random As 4 Len = Len(Clbnx)
-       
-    idNomina = Text16.Text
-    
-    Get 4, idNomina, Clbnx
-    
-    respuesta = MsgBox("Se eliminar? el n?mero de tarjeta: " + Clbnx.Q1 + " , ?Deseas continuar?", vbOKCancel)
-    
-    If respuesta = vbOK Then
-        ' C?digo para eliminar los datos bancarios
-        respuestaDos = MsgBox("Esta acci?n es irreversible asegurate de tener un copia del n?mero de tarjeta.", vbOKCancel)
-        
-        If respuestaDos = vbOK Then
 
-            Clbnx.Q1 = 0
-            
-            Put 4, idNomina, Clbnx
-            
-            MsgBox ("Se elimino el n?mero de tarjeta.")
-            
-        ElseIf respuestaDos = vbCancel Then
-            MsgBox "Operaci?n cancelada"
+    If EsNuevo Then Exit Sub
+
+    If KeyAscii = 13 And Text2.Text <> "" Then
+
+        Dim respuesta As Integer
+        Dim respuestaDos As Integer
+        Dim idNomina As String
+
+        If Not ModoEdicion Then
+            MsgBox "Debes habilitar edición primero.", vbExclamation
+            Exit Sub
         End If
 
-    ElseIf respuesta = vbCancel Then
+        Close 4
+        Open "Bnxcla.dno" For Random As #4 Len = Len(Clbnx)
 
-        MsgBox "Operaci?n cancelada."
+        idNomina = Text16.Text
+
+        Get #4, idNomina, Clbnx
+
+        respuesta = MsgBox( _
+            "¿Se eliminará el número de tarjeta: " & Clbnx.Q1 & _
+            "?" & vbCrLf & vbCrLf & _
+            "¿Deseas continuar?", _
+            vbOKCancel + vbQuestion)
+
+        If respuesta = vbOK Then
+
+            respuestaDos = MsgBox( _
+                "Esta acción es irreversible. " & _
+                "Asegúrate de tener una copia del número de tarjeta.", _
+                vbOKCancel + vbExclamation)
+
+            If respuestaDos = vbOK Then
+
+                Clbnx.Q1 = "0"
+
+                Put #4, idNomina, Clbnx
+
+                MsgBox "Se eliminó el número de tarjeta.", vbInformation
+
+            Else
+                MsgBox "Operación cancelada.", vbInformation
+            End If
+
+        Else
+            MsgBox "Operación cancelada.", vbInformation
+        End If
+
+        Close #4
+
     End If
-
-End If
 
 End Sub
 
@@ -966,8 +976,70 @@ Private Sub actualizarRegistro()
 End Sub
 
 Private Sub guardarRegistro()
-    MsgBox "Se guardó con éxito."
+
+    Dim id As Long
+
+    id = Val(Text16.Text)
+
+    ' ==========================================
+    ' LEER LOS REGISTROS ACTUALES
+    ' ==========================================
+    Get 2, id, personal
+    Get 3, id, Otros_Rgtros
+    Get 8, id, maestro
+
+    ' ==========================================
+    ' ACTUALIZAR DATOS DE PERSONAL
+    ' ==========================================
+    personal.fal = Text1.Text
+    personal.fab = Text2.Text
+    personal.RFC = Text3.Text
+    personal.nom = Text5.Text
+    personal.ape1 = Text6.Text
+    personal.ape2 = Text7.Text
+    personal.imss = Text8.Text
+
+    If IsNumeric(Text9.Text) Then
+        personal.ingr = CCur(Text9.Text)
+    End If
+
+    If IsNumeric(Text10.Text) Then
+        personal.viat = CCur(Text10.Text)
+    End If
+
+    If IsNumeric(Text11.Text) Then
+        personal.otras = CCur(Text11.Text)
+    End If
+
+    If IsNumeric(Text12.Text) Then
+        personal.integrado = CCur(Text12.Text)
+    End If
+
+    ' ==========================================
+    ' ACTUALIZAR CURP
+    ' ==========================================
+    Otros_Rgtros.curp = Text4.Text
+
+    ' ==========================================
+    ' ACTUALIZAR DATOS DE MAESTRO
+    ' ==========================================
+    maestro.O_1 = Text13.Text
+
+    If IsNumeric(Text14.Text) Then
+        maestro.por_1 = CCur(Text14.Text)
+    End If
+
+    ' ==========================================
+    ' ESCRIBIR LOS REGISTROS
+    ' ==========================================
+    Put 2, id, personal
+    Put 3, id, Otros_Rgtros
+    Put 8, id, maestro
+
+    MsgBox "Se guardó con éxito.", vbInformation
+
     Unload Me
+
 End Sub
 
 Private Function IsValidDate(ByVal fecha As String) As Boolean

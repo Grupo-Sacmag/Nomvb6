@@ -1684,12 +1684,12 @@ Private Sub Importar_Click()
 Dim oRS As New ADODB.Recordset
 Dim oConn As New ADODB.Connection
 
-    excel.CancelError = True
+    Excel.CancelError = True
     On Error GoTo ErrHandler
-    excel.ShowOpen
+    Excel.ShowOpen
     
-    If (excel.FileName <> "") Then
-        oConn.Open "Provider=Microsoft.ACE.OLEDB.12.0;" & "data source=  '" + excel.FileName + "' ; " & "Extended Properties= ""Excel 8.0;HDR=Yes"""
+    If (Excel.FileName <> "") Then
+        oConn.Open "Provider=Microsoft.ACE.OLEDB.12.0;" & "data source=  '" + Excel.FileName + "' ; " & "Extended Properties= ""Excel 8.0;HDR=Yes"""
         Set oRS = New ADODB.Recordset
             oRS.CursorLocation = adUseClient
             oRS.CursorType = adOpenStatic
@@ -2347,6 +2347,8 @@ Sub verifica(yavas)
     If nomina.fonacot <> 0 Then yavas = 1
     If nomina.telefono <> 0 Then yavas = 1
     If nomina.otraded <> 0 Then yavas = 1
+    If nomina.hsnor <> 0 Then yavas = 1
+    If nomina.hstri <> 0 Then yavas = 1
   
 End Sub
 
@@ -2956,16 +2958,30 @@ Dim Vw As Integer
     For late = 3 To 20
         sumv(late) = 0
     Next late
+    Dim sumv25 As Currency, sumv26 As Currency
+    sumv25 = 0: sumv26 = 0
         
-    For li = 1 To limite: Vw = Vw + 1
+    For li = FILA_INICIO_DATOS To limite
+        Vw = Vw + 1
         ProgressBar1.Value = li
-        ConNom1.Row = li
+        
         For late = 3 To 20
             ii = late
-            If ConNom1.TextMatrix(li, ii) <> "" Then
-                sumv(late) = sumv(late) + ConNom1.TextMatrix(li, ii)
+            If Trim$(ConNom1.TextMatrix(li, ii)) <> "" Then
+                If IsNumeric(ConNom1.TextMatrix(li, ii)) Then
+                    sumv(late) = sumv(late) + CCur(ConNom1.TextMatrix(li, ii))
+                End If
             End If
         Next late
+
+        If g_TipoNominaActiva = tnLiquidacionFiniquito Then
+            If Trim$(ConNom1.TextMatrix(li, 25)) <> "" And IsNumeric(ConNom1.TextMatrix(li, 25)) Then
+                sumv25 = sumv25 + CCur(ConNom1.TextMatrix(li, 25))
+            End If
+            If Trim$(ConNom1.TextMatrix(li, 26)) <> "" And IsNumeric(ConNom1.TextMatrix(li, 26)) Then
+                sumv26 = sumv26 + CCur(ConNom1.TextMatrix(li, 26))
+            End If
+        End If
     Next li
     
     li = limite + 1
@@ -2979,6 +2995,11 @@ Dim Vw As Integer
             ConNom1.TextMatrix(li, ii) = ""
         End If
     Next late
+    
+    If g_TipoNominaActiva = tnLiquidacionFiniquito Then
+        If sumv25 <> 0 Then ConNom1.TextMatrix(li, 25) = Format$(sumv25, z1$) Else ConNom1.TextMatrix(li, 25) = ""
+        If sumv26 <> 0 Then ConNom1.TextMatrix(li, 26) = Format$(sumv26, z1$) Else ConNom1.TextMatrix(li, 26) = ""
+    End If
     
     ConNom1.Col = colanti: ConNom1.Row = renati
     ProgressBar1.Visible = False
@@ -3295,14 +3316,23 @@ Sub carganom()
     
     ConNom1.TextMatrix(li, 24) = (" " + Clbnx.Q1)
     Rem 24 Cuenta de banco
+    
+    ConNom1.TextMatrix(li, 24) = (" " + Clbnx.Q1)
+    Rem 24 Cuenta de banco
+    
+    If g_TipoNominaActiva = tnLiquidacionFiniquito Then
+        If nomina.hsnor <> 0 Then ConNom1.TextMatrix(li, 25) = Format(nomina.hsnor, z1$) Else ConNom1.TextMatrix(li, 25) = ""
+        If nomina.hstri <> 0 Then ConNom1.TextMatrix(li, 26) = Format(nomina.hstri, z1$) Else ConNom1.TextMatrix(li, 26) = ""
+        End If
 End Sub
+
 Sub define()
-
-   ConNom1.Font = "Arial"
-   ConNom1.Font.Size = 8
-   ConNom1.Font.Bold = True
-
-   ConNom1.Row = 0
+    ConNom1.Cols = 27
+    ConNom1.Font = "Arial"
+    ConNom1.Font.Size = 8
+    ConNom1.Font.Bold = True
+    
+    ConNom1.Row = 0
 
    ConNom1.Col = 0
    ConNom1.CellAlignment = 4
@@ -3489,11 +3519,28 @@ Sub define()
    ConNom1.Col = 23
    ConNom1.ColWidth(23) = 0
 
-   ConNom1.Col = 24
-   ConNom1.CellAlignment = 4
-   ConNom1.ColWidth(24) = 2400
-   ConNom1.Text = "Banamex"
-
+   ConNom1.Col = 24: ConNom1.CellAlignment = 4: ConNom1.ColWidth(24) = 2400: ConNom1.Text = "Banamex"
+   ConNom1.Col = 25: ConNom1.CellAlignment = 4
+    If g_TipoNominaActiva = tnLiquidacionFiniquito Then
+        ConNom1.ColWidth(25) = 1200
+        ConNom1.Text = "Aguinaldo"
+    Else
+        ConNom1.ColWidth(25) = 0
+    End If
+    
+    ConNom1.Col = 26: ConNom1.CellAlignment = 4
+    If g_TipoNominaActiva = tnLiquidacionFiniquito Then
+        ConNom1.ColWidth(26) = 1200
+        ConNom1.Text = "P.Vac.Liq."
+    Else
+        ConNom1.ColWidth(26) = 0
+    End If
+    
+    ' ==== NUEVO: reacomodo visual para Liquidación/Finiquito ====
+   If g_TipoNominaActiva = tnLiquidacionFiniquito Then
+       ConNom1.ColPosition(25) = 9    ' Aguinaldo -> justo después de Sdo.Vac.
+       ConNom1.ColPosition(26) = 10   ' P.Vac.Liq. -> justo después de Aguinaldo
+   End If
 End Sub
 
 Sub genenom(gg)
@@ -3645,6 +3692,11 @@ For f = 1 To limite
    If ConNom1.TextMatrix(f, 9) <> "" Then nomina.otras = ConNom1.TextMatrix(f, 9) Else nomina.otras = 0
    If ConNom1.TextMatrix(f, 10) <> "" Then nomina.exentos = ConNom1.TextMatrix(f, 10) Else nomina.exentos = 0
    
+   ' NUEVO: Aguinaldo y Prima Vacacional de Liquidación/Finiquito
+   If g_TipoNominaActiva = tnLiquidacionFiniquito Then
+       If ConNom1.TextMatrix(f, 25) <> "" Then nomina.hsnor = ConNom1.TextMatrix(f, 25) Else nomina.hsnor = 0
+       If ConNom1.TextMatrix(f, 26) <> "" Then nomina.hstri = ConNom1.TextMatrix(f, 26) Else nomina.hstri = 0
+   End If
    
    If ConNom1.TextMatrix(f, 12) <> "" Then nomina.ispt = ConNom1.TextMatrix(f, 12) Else nomina.ispt = 0
    '''''''Codigo de Modificacion''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -3945,7 +3997,6 @@ Public Sub main()
     ' Funcion que viene desde el form1
     generarNominas
 End Sub
-
 
 Private Sub generarNominas()
     ProgressBar1.Visible = True

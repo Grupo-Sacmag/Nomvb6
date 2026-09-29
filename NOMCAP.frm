@@ -747,12 +747,7 @@ End If
     '25 26 TOTALSEPARACIONINDEMNIZACION
     If g_TipoNominaActiva = tnLiquidacionFiniquito Then
     
-        NOMCF2.NOMCF.TextMatrix(I7, 24) = _
-            Format( _
-                Val(GridOrigen.TextMatrix(I7, 4)) + _
-                Val(GridOrigen.TextMatrix(I7, 5)) + _
-                Val(GridOrigen.TextMatrix(I7, 6)), _
-                "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 24) = Format(Val(GridOrigen.TextMatrix(I7, 4)) + Val(GridOrigen.TextMatrix(I7, 5)) + Val(GridOrigen.TextMatrix(I7, 6)), "#,##0.00")
     
     Else
     
@@ -961,14 +956,17 @@ End If
                 Else
                 NOMCF2.NOMCF.TextMatrix(I7, 101) = Format(GridOrigen.TextMatrix(I7, 10), "###0.00"): Rem 65 P002 GGratificación Anual (Aguinaldo exento)
            End If
-            ElseIf GridOrigen.TextMatrix(I7, 5) = "" Then
+           ElseIf GridOrigen.TextMatrix(I7, 5) = "" Then
                 NOMCF2.NOMCF.TextMatrix(I7, 100) = Format(0, "#,##0.00")
                 NOMCF2.NOMCF.TextMatrix(I7, 101) = Format(0, "#,##0.00")
             End If
-        Else
+                ElseIf g_TipoNominaActiva = tnLiquidacionFiniquito Then
+                NOMCF2.NOMCF.TextMatrix(I7, 100) = Format(g_GravadoAguiLiq, "###0.00")
+                NOMCF2.NOMCF.TextMatrix(I7, 101) = Format(g_ExentoAguiLiq, "###0.00")
+            Else
                 NOMCF2.NOMCF.TextMatrix(I7, 100) = Format(0, "#,##0.00")
                 NOMCF2.NOMCF.TextMatrix(I7, 101) = Format(0, "#,##0.00")
-        End If
+            End If
     '101 102
     '102 103
     'P003G PTU
@@ -1033,12 +1031,16 @@ End If
     '125 P020E
         NOMCF2.NOMCF.TextMatrix(I7, 125) = Format(0, "#,##0.00")
     '126 P021G
-       NOMCF2.NOMCF.TextMatrix(I7, 126) = Format(pva8, "#,##0.00")
-    '127 P021E
-    If N_ormal = 0 Then
-        NOMCF2.NOMCF.TextMatrix(I7, 127) = Format(pee10, "#,##0.00")
+          If g_TipoNominaActiva = tnLiquidacionFiniquito Then
+        NOMCF2.NOMCF.TextMatrix(I7, 126) = Format(g_GravadoPVacLiq, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 127) = Format(g_ExentoPVacLiq, "#,##0.00")
     Else
-        NOMCF2.NOMCF.TextMatrix(I7, 127) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 126) = Format(pva8, "#,##0.00")
+        If N_ormal = 0 Then
+            NOMCF2.NOMCF.TextMatrix(I7, 127) = Format(pee10, "#,##0.00")
+        Else
+            NOMCF2.NOMCF.TextMatrix(I7, 127) = Format(0, "#,##0.00")
+        End If
     End If
     '==================================================
     ' LIQUIDACION / FINIQUITO
@@ -1047,34 +1049,22 @@ End If
     If g_TipoNominaActiva = tnLiquidacionFiniquito Then
     
         '022 Prima Antigüedad
-    
-        NOMCF2.NOMCF.TextMatrix(I7, 128) = _
-            Format(g_GravadoAntig, "#,##0.00")
-    
-        NOMCF2.NOMCF.TextMatrix(I7, 129) = _
-            Format(g_ExentoAntig, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 128) = Format(g_GravadoAntig, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 129) = Format(g_ExentoAntig, "#,##0.00")
     
         '023 Pagos por Separación
-    
-        NOMCF2.NOMCF.TextMatrix(I7, 130) = _
-            Format(Val(GridOrigen.TextMatrix(I7, 4)), "#,##0.00")
-    
+        NOMCF2.NOMCF.TextMatrix(I7, 130) = Format(Val(GridOrigen.TextMatrix(I7, 4)), "#,##0.00")
+        
         '025 Indemnización
-    
-        NOMCF2.NOMCF.TextMatrix(I7, 133) = _
-            Format(g_GravadoIndem, "#,##0.00")
-    
-        NOMCF2.NOMCF.TextMatrix(I7, 134) = _
-            Format(g_ExentoIndem, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 133) = Format(g_GravadoIndem, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 134) = Format(g_ExentoIndem, "#,##0.00")
     
     Else
-    
         NOMCF2.NOMCF.TextMatrix(I7, 128) = Format(0, "#,##0.00")
         NOMCF2.NOMCF.TextMatrix(I7, 129) = Format(0, "#,##0.00")
         NOMCF2.NOMCF.TextMatrix(I7, 130) = Format(0, "#,##0.00")
         NOMCF2.NOMCF.TextMatrix(I7, 133) = Format(0, "#,##0.00")
         NOMCF2.NOMCF.TextMatrix(I7, 134) = Format(0, "#,##0.00")
-    
     End If
     '135 P026G
         NOMCF2.NOMCF.TextMatrix(I7, 135) = Format(0, "#,##0.00")
@@ -1446,6 +1436,3 @@ Gestionaerror:
             MsgBox "Se ha producido un error. Tipo de error = " & Err.Number & ". Descripción: " & Err.Description & Chr(13) & "Debes verificar que tengas el directorio C:\salarioDI\Archivo.cg", vbOKOnly, "C:\salarioDI\Archivo.cg"
         End If
 End Sub
-
-
-
