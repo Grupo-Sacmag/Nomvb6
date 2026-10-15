@@ -953,8 +953,11 @@ Private Sub Form_Load()
         ComboEspecial.Clear
         ComboEspecial.AddItem "1. Aguinaldo / PTU"
         ComboEspecial.AddItem "2. Liquidaciones (Compensaciones/Antig" & Chr(252) & "edad/Indemnizaciones)"
+        ComboEspecial.AddItem "3. Otro"
         ComboEspecial.ListIndex = 0
-        ComboEspecial.Visible = False
+        N_ormal = 0
+        OcultarCamposEspeciales
+        ActualizarEncabezados
     Else
         Close 2
         MsgBox "No existe archivo de personal no es posible capturar la nomina"
@@ -2791,7 +2794,7 @@ Rem On Error GoTo manejador
          Case 4 To 6
               hs_ext = personal.ingr / 8
               
-            If N_ormal = 0 Then
+            If N_ormal = 0 Or ComboEspecial.ListIndex = 2 Then
               Select Case ruta
                  Case 4 To 6
                     dato_sal = dato_ent * hs_ext
@@ -3239,14 +3242,14 @@ Sub carganom()
     If nomina.hs_nor <> 0 Then ConNom1.TextMatrix(li, 4) = Format(nomina.hs_nor, z1$) Else ConNom1.TextMatrix(li, ii) = ""
     ii = ii + 1: Rem 4 Horas Normales
     
-    If N_ormal = 1 Then
+    If N_ormal = 1 And ComboEspecial.ListIndex <> 2 Then
         If nomina.aguin <> 0 Then ConNom1.TextMatrix(li, 5) = Format(nomina.aguin, z1$) Else ConNom1.TextMatrix(li, ii) = ""
     Else
         If nomina.hs_dbl <> 0 Then ConNom1.TextMatrix(li, 5) = Format(nomina.hs_dbl, z1$) Else ConNom1.TextMatrix(li, ii) = ""
     End If
     ii = ii + 1: Rem 5 Horas dobles
    
-    If N_ormal = 1 Then ' **********************  AQUI VA EL PTU EN LUGAR DE HORAS EXTRAS TRIPLES  *****************
+    If N_ormal = 1 And ComboEspecial.ListIndex <> 2 Then ' **********************  AQUI VA EL PTU EN LUGAR DE HORAS EXTRAS TRIPLES  *****************
        If nomina.ptu <> 0 Then ConNom1.TextMatrix(li, 6) = Format(nomina.ptu, z1$) Else ConNom1.TextMatrix(li, ii) = ""
        Else
        If nomina.hs_tri <> 0 Then ConNom1.TextMatrix(li, 6) = Format(nomina.hs_tri, z1$) Else ConNom1.TextMatrix(li, ii) = ""
@@ -3329,8 +3332,10 @@ Sub define()
    Else
        If ComboEspecial.ListIndex = 0 Then
            ConNom1.Text = "hs.Norm."
-       Else
+       ElseIf ComboEspecial.ListIndex = 2 Then
            ConNom1.Text = "hs.Norm."
+       Else
+           ConNom1.Text = "Sdo.Vac."
        End If
    End If
    
@@ -3340,6 +3345,8 @@ Sub define()
    Else
        If ComboEspecial.ListIndex = 0 Then
            ConNom1.Text = "Aguinaldo"
+       ElseIf ComboEspecial.ListIndex = 2 Then
+           ConNom1.Text = "hs.Dobles"
        Else
            ConNom1.Text = "Compensac."
        End If
@@ -3351,6 +3358,8 @@ Sub define()
    Else
        If ComboEspecial.ListIndex = 0 Then
            ConNom1.Text = "Ptu"
+       ElseIf ComboEspecial.ListIndex = 2 Then
+           ConNom1.Text = "hs.Triples"
        Else
            ConNom1.Text = "P. Antig" & Chr(252) & "edad"
        End If
@@ -3362,6 +3371,8 @@ Sub define()
    Else
        If ComboEspecial.ListIndex = 0 Then
            ConNom1.Text = "Bono"
+       ElseIf ComboEspecial.ListIndex = 2 Then
+           ConNom1.Text = "O.F."
        Else
            ConNom1.Text = "Indemnizac."
        End If
@@ -3519,12 +3530,12 @@ For f = 1 To limite
    If ConNom1.TextMatrix(f, 2) <> "" Then nomina.dias = ConNom1.TextMatrix(f, 2) Else nomina.dias = 0
    If ConNom1.TextMatrix(f, 3) <> "" Then nomina.sueldo = ConNom1.TextMatrix(f, 3) Else nomina.sueldo = 0
    If ConNom1.TextMatrix(f, 4) <> "" Then nomina.hs_nor = ConNom1.TextMatrix(f, 4) Else nomina.hs_nor = 0
-   If N_ormal = 1 Then
+   If N_ormal = 1 And ComboEspecial.ListIndex <> 2 Then
         If ConNom1.TextMatrix(f, 5) <> "" Then nomina.aguin = ConNom1.TextMatrix(f, 5) Else nomina.aguin = 0
         Else
         If ConNom1.TextMatrix(f, 5) <> "" Then nomina.hs_dbl = ConNom1.TextMatrix(f, 5) Else nomina.hs_dbl = 0
    End If
-   If N_ormal = 1 Then
+   If N_ormal = 1 And ComboEspecial.ListIndex <> 2 Then
         If ConNom1.TextMatrix(f, 6) <> "" Then nomina.ptu = ConNom1.TextMatrix(f, 6) Else nomina.ptu = 0
         Else
         If ConNom1.TextMatrix(f, 6) <> "" Then nomina.hs_tri = ConNom1.TextMatrix(f, 6) Else nomina.hs_tri = 0
@@ -4308,9 +4319,11 @@ Private Sub Option1_GotFocus()
 End Sub
 
 Private Sub Option1_Click()
+    N_ormal = 0
     Combo1.locked = False
     Combo1.Visible = True
-    ComboEspecial.Visible = False
+    OcultarCamposEspeciales
+    ActualizarEncabezados
 End Sub
 
 Private Sub Option2_Click()
@@ -4323,7 +4336,7 @@ On Error GoTo errorManejador
         Combo1.locked = True
         Combo1.Visible = False
         
-        ComboEspecial.Visible = True
+        MostrarCamposEspeciales
         ActualizarPrefijo
         ActualizarEncabezados
         Text1.SetFocus
@@ -4342,6 +4355,9 @@ End Sub
 Private Sub Option3_Click()
      If meselegido = 0 Then meselegido = 1
      If Option3 = True Then
+          N_ormal = 0
+          OcultarCamposEspeciales
+          ActualizarEncabezados
           Label7.Caption = "Nomina de la 1a.quincena " + Combo1.Text + Str$(empresa.ao)
           dia_pago = 15 - 1
           Combo1.Visible = True
@@ -4354,6 +4370,9 @@ End Sub
 Private Sub Option4_Click()
      If meselegido = 0 Then meselegido = 1
      If Option4 = True Then
+        N_ormal = 0
+        OcultarCamposEspeciales
+        ActualizarEncabezados
         Label7.Caption = "Nomina de la 2a.quincena " + Combo1.Text + Str$(empresa.ao)
         dia_pago = dd(meselegido) - 1
         
@@ -4372,13 +4391,21 @@ Private Sub Option4_Click()
 End Sub
 
 Private Sub Text1_KeyPress(KeyAscii As Integer)
+On Error GoTo ErrHandler
   If KeyAscii = 13 Then
       Text1.Text = UCase(Text1.Text)
       If Len(Text1.Text) > 1 Then
           If N_ormal = 1 Then
+              If ComboEspecial.ListIndex = 2 Then
+                  If UCase(Left(Text1.Text, 3)) = "LIQ" Or UCase(Left(Text1.Text, 3)) = "FIN" Or UCase(Left(Text1.Text, 3)) = "PTU" Or UCase(Left(Text1.Text, 4)) = "AGUI" Then
+                      MsgBox "En la opcion Otro el nombre no puede iniciar con LIQ, FIN, PTU o AGUI", vbExclamation, "Nombre no permitido"
+                      Text1.Text = ""
+                      Exit Sub
+                  End If
+              End If
               If UCase(Left(Text1.Text, 3)) = "LIQ" Then
                   ComboEspecial.ListIndex = 1
-              ElseIf UCase(Left(Text1.Text, 3)) = "ESP" Then
+              ElseIf UCase(Left(Text1.Text, 3)) = "ESP" And ComboEspecial.ListIndex <> 2 Then
                   ComboEspecial.ListIndex = 0
               End If
               ActualizarEncabezados
@@ -4397,6 +4424,9 @@ Private Sub Text1_KeyPress(KeyAscii As Integer)
         Text3.Text = empresa.sm * 15
       End If
    End If
+Exit Sub
+ErrHandler:
+    MsgBox "Error en Text1_KeyPress: " & Err.Description
 End Sub
 
 Public Sub presionarEnterForm8()
@@ -4639,8 +4669,14 @@ Private Sub ComboEspecial_Click()
 End Sub
 
 Private Sub ActualizarPrefijo()
+On Error GoTo ErrHandler
     If N_ormal = 1 Then
         Dim prefix As String
+        If ComboEspecial.ListIndex = 2 Then
+            Text1.locked = False
+            Text1.Text = ""
+            Exit Sub
+        End If
         If ComboEspecial.ListIndex = 0 Then
             prefix = "ESP"
         Else
@@ -4650,6 +4686,9 @@ Private Sub ActualizarPrefijo()
         Text1.Text = prefix
         Text1.selStart = Len(prefix)
     End If
+Exit Sub
+ErrHandler:
+    MsgBox "Error en ActualizarPrefijo: " & Err.Description
 End Sub
 
 Public Sub ActualizarEncabezados()
@@ -4665,8 +4704,13 @@ Public Sub ActualizarEncabezados()
             ConNom1.TextMatrix(0, 5) = "Aguinaldo"
             ConNom1.TextMatrix(0, 6) = "Ptu"
             ConNom1.TextMatrix(0, 7) = "Bono"
+        ElseIf ComboEspecial.ListIndex = 2 Then
+            ConNom1.TextMatrix(0, 4) = "hs.Norm."
+            ConNom1.TextMatrix(0, 5) = "hs.Dobles"
+            ConNom1.TextMatrix(0, 6) = "hs.Triples"
+            ConNom1.TextMatrix(0, 7) = "O.F."
         Else
-            ConNom1.TextMatrix(0, 4) = "hs.Norm"
+            ConNom1.TextMatrix(0, 4) = "Sdo.Vac."
             ConNom1.TextMatrix(0, 5) = "Compensac."
             ConNom1.TextMatrix(0, 6) = "P. Antig" & Chr(252) & "edad"
             ConNom1.TextMatrix(0, 7) = "Indemnizac."
@@ -4675,8 +4719,10 @@ Public Sub ActualizarEncabezados()
 End Sub
 
 Private Sub Text1_Change()
+On Error GoTo ErrHandler
     If N_ormal = 1 Then
         Dim prefix As String
+        If ComboEspecial.ListIndex = 2 Then Exit Sub
         If ComboEspecial.ListIndex = 0 Then
             prefix = "ESP"
         Else
@@ -4694,6 +4740,30 @@ Private Sub Text1_Change()
             End If
         End If
     End If
+Exit Sub
+ErrHandler:
+    MsgBox "Error en Text1_Change: " & Err.Description
 End Sub
 
 
+
+
+Private Sub OcultarCamposEspeciales()
+    On Error Resume Next
+    ComboEspecial.Visible = False
+    Text1.Visible = False
+    Label5.Visible = False
+    Text3.Visible = False
+    Label8.Visible = False
+    Text1.Text = ""
+    Text3.Text = ""
+End Sub
+
+Private Sub MostrarCamposEspeciales()
+    On Error Resume Next
+    ComboEspecial.Visible = True
+    Text1.Visible = True
+    Label5.Visible = True
+    Text3.Visible = True
+    Label8.Visible = True
+End Sub
