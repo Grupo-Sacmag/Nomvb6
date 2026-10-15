@@ -22,15 +22,6 @@ Begin VB.Form Form8
    ScaleHeight     =   7995
    ScaleWidth      =   15270
    WindowState     =   2  'Maximized
-   Begin VB.TextBox txtSuf 
-      Height          =   375
-      Left            =   6120
-      MaxLength       =   4
-      TabIndex        =   21
-      Text            =   "Text5"
-      Top             =   960
-      Width           =   2295
-   End
    Begin VB.TextBox txtPre 
       Height          =   375
       Left            =   3360
@@ -60,9 +51,9 @@ Begin VB.Form Form8
          Strikethrough   =   0   'False
       EndProperty
       Height          =   360
-      Left            =   9600
+      Left            =   6840
       TabIndex        =   16
-      Top             =   1320
+      Top             =   960
       Width           =   2295
    End
    Begin MSComctlLib.ProgressBar ProgressBar1 
@@ -299,27 +290,19 @@ Begin VB.Form Form8
          Strikethrough   =   0   'False
       EndProperty
       Height          =   330
-      Left            =   12000
+      Left            =   9240
       TabIndex        =   18
-      Top             =   1320
+      Top             =   960
       Visible         =   0   'False
       Width           =   1560
    End
-   Begin VB.Label lblSuf 
-      Caption         =   "Despues:"
-      Height          =   255
-      Left            =   6120
-      TabIndex        =   23
-      Top             =   720
-      Width           =   1095
-   End
-   Begin VB.Label lblPre 
-      Caption         =   "Antes:"
+   Begin VB.Label lblNombre 
+      Caption         =   "Nombre:"
       Height          =   255
       Left            =   3360
-      TabIndex        =   22
+      TabIndex        =   21
       Top             =   720
-      Width           =   735
+      Width           =   975
    End
    Begin VB.Label Label1 
       Caption         =   "Buscar:"
@@ -333,9 +316,9 @@ Begin VB.Form Form8
          Strikethrough   =   0   'False
       EndProperty
       Height          =   255
-      Left            =   8760
+      Left            =   6000
       TabIndex        =   17
-      Top             =   1440
+      Top             =   1080
       Width           =   735
    End
    Begin VB.Label Label9 
@@ -930,7 +913,14 @@ Private Sub Borrarblancos_Click(Index As Integer)
 End Sub
 
 Private Sub cboEspecial_Click()
+
     ActualizarNombreEspecial
+
+    If cboEspecial.ListIndex >= 0 Then
+        txtPre.SetFocus
+        txtPre.SelStart = Len(txtPre.Text)
+    End If
+
 End Sub
 
 Private Sub Form_Load()
@@ -1012,51 +1002,40 @@ Private Sub nomcap_ini_Click(Index As Integer)
     Dim fso As Object
     Dim lockDate As Date
     Dim modDate As Date
-
-    ActualizarNombreEspecial
-    Arch = Trim$(Text1.Text)
     
-    If Arch = "" Then
-        MsgBox "Debes indicar el nombre de la nómina.", vbExclamation
-        Exit Sub
-    End If
-    
-    AplicarTipoNomina Arch
-    
-    ' =======================================================
+        ' =======================================================
     ' 1. CONSTRUIR EL NOMBRE DEL ARCHIVO
     ' =======================================================
-
+    
     If Option1.Value = True Then
-
-        ' Nómina normal
+    
+        ' ---------------------------------------------------
+        ' NÓMINA NORMAL
+        ' ---------------------------------------------------
+        
         If Option3.Value = True Then
             ' Primera quincena
-            Arch = UCase$(Mid$(Combo1.Text, 1, 3)) & _
-                   "1" & LTrim$(Str$(empresa.ao)) & ".NOM"
-        Else
+            Arch = UCase$(Mid$(Combo1.Text, 1, 3)) & "1" & LTrim$(Str$(empresa.ao)) & ".NOM"
+        ElseIf Option4.Value = True Then
             ' Segunda quincena
-            Arch = UCase$(Mid$(Combo1.Text, 1, 3)) & _
-                   "2" & LTrim$(Str$(empresa.ao)) & ".NOM"
-        End If
-
-    ElseIf Option2.Value = True Then
-
-        ' Nómina especial
-        ActualizarNombreEspecial
-
-        If Len(Trim$(Text1.Text)) = 0 Then
-            MsgBox "Seleccione el tipo de nómina especial " & _
-                   "(Aguinaldo, PTU, Bono, Finiquito o Liquidación).", _
-                   vbExclamation, "Nómina"
+            Arch = UCase$(Mid$(Combo1.Text, 1, 3)) & "2" & LTrim$(Str$(empresa.ao)) & ".NOM"
+        Else
+            MsgBox "Seleccione Primera o Segunda quincena.", vbExclamation, "Nómina"
             Exit Sub
         End If
-
+    ElseIf Option2.Value = True Then
+        ' ---------------------------------------------------
+        ' NÓMINA ESPECIAL
+        ' ---------------------------------------------------
+    
+        ActualizarNombreEspecial
+        If Len(Trim$(Text1.Text)) = 0 Then
+            MsgBox "Seleccione el tipo de nómina especial " & "(Aguinaldo, PTU, Bono, Finiquito o Liquidación).", vbExclamation, "Nómina"
+            Exit Sub
+        End If
         Arch = Trim$(Text1.Text) & ".NOM"
-
     Else
-        MsgBox "Seleccione el tipo de nómina que desea capturar.", _
-               vbExclamation, "Nómina"
+        MsgBox "Seleccione el tipo de nómina que desea capturar.", vbExclamation, "Nómina"
         Exit Sub
     End If
 
@@ -4037,7 +4016,6 @@ Public Sub main()
     generarNominas
 End Sub
 
-
 Private Sub generarNominas()
     ProgressBar1.Visible = True
     QUIN = 0
@@ -4446,16 +4424,23 @@ Private Sub Option1_GotFocus()
 End Sub
 
 Private Sub Option1_Click()
-Combo1.locked = False
+
+    Combo1.locked = False
     Combo1.Visible = True
 
     MostrarControlesEspecial False
+
+    txtPre.Text = ""
+    cboEspecial.ListIndex = -1
+
 End Sub
 
 Private Sub Option2_Click()
+
 On Error GoTo errorManejador
 
     If Option2 = True Then
+
         Option3 = False
         Option4 = False
 
@@ -4465,15 +4450,24 @@ On Error GoTo errorManejador
         Combo1.locked = True
         Combo1.Visible = False
 
+        ' Limpiar nombre anterior.
+        txtPre.Text = ""
+        cboEspecial.ListIndex = -1
+        Text1.Text = ""
+
+        Label7.Caption = ""
+
         MostrarControlesEspecial True
+
         cboEspecial.SetFocus
+
     End If
 
 Exit Sub
 
 errorManejador:
-    MsgBox (Err.Number & " " & Err.Description)
-    
+    MsgBox Err.Number & " " & Err.Description
+
 End Sub
 
 Public Sub presionarOption2()
@@ -4768,9 +4762,7 @@ Private Sub MostrarControlesEspecial(ByVal v As Boolean)
 
     cboEspecial.Visible = v
     txtPre.Visible = v
-    txtSuf.Visible = v
-    lblPre.Visible = v
-    lblSuf.Visible = v
+    lblNombre.Visible = v
 
 End Sub
 
@@ -4793,44 +4785,31 @@ Private Function SoloDigitos(ByVal texto As String) As String
 End Function
 
 Private Sub ActualizarNombreEspecial()
-If ActualizandoNombre Then Exit Sub
+
+    If ActualizandoNombre Then Exit Sub
 
     On Error GoTo Salida
 
     ActualizandoNombre = True
 
-    ' Solo permitir números en txtPre
-    If txtPre.Text <> SoloDigitos(txtPre.Text) Then
-        txtPre.Text = SoloDigitos(txtPre.Text)
-        txtPre.SelStart = Len(txtPre.Text)
-    End If
+    Dim numero As String
+    Dim concepto As String
+    Dim nombreFinal As String
 
-    ' Construir nombre final
-    txtSuf.Text = Trim$(txtPre.Text) & Trim$(cboEspecial.Text)
+    numero = Trim$(txtPre.Text)
+    concepto = Trim$(cboEspecial.Text)
 
-    ' Mostrar también el nombre final en Label7
-    Label7.Caption = txtSuf.Text
+    ' Construir el nombre de la nómina especial.
+    nombreFinal = numero & concepto
 
-    ' Si Text1 se utiliza como nombre interno:
-    Text1.Text = txtSuf.Text
+    ' Guardar únicamente el nombre.
+    Text1.Text = nombreFinal
+
+    ' Mostrarlo al usuario.
+    Label7.Caption = nombreFinal
 
 Salida:
     ActualizandoNombre = False
-End Sub
-Private Sub ConfirmarNombreEspecial()
-
-    ActualizarNombreEspecial
-
-    If Len(Text1.Text) = 0 Then Exit Sub
-
-    Option1 = False
-    Option3 = False
-    Option4 = False
-
-    Text3.SetFocus
-
-    ConNom1.Row = 1
-    ConNom1.Col = C_DIAS
 
 End Sub
 
@@ -4840,31 +4819,11 @@ End Sub
 
 Private Sub txtPre_KeyPress(KeyAscii As Integer)
 
-    If KeyAscii = 13 Then
-        KeyAscii = 0
-        txtSuf.SetFocus
+    ' Backspace
+    If KeyAscii = 8 Then Exit Sub
 
-    ElseIf KeyAscii <> 8 And _
-           (KeyAscii < 48 Or KeyAscii > 57) Then
-
-        KeyAscii = 0
-    End If
-
-End Sub
-
-Private Sub txtSuf_Change()
-    ActualizarNombreEspecial
-End Sub
-
-Private Sub txtSuf_KeyPress(KeyAscii As Integer)
-
-    If KeyAscii = 13 Then
-        KeyAscii = 0
-        ConfirmarNombreEspecial
-
-    ElseIf KeyAscii <> 8 And _
-           (KeyAscii < 48 Or KeyAscii > 57) Then
-
+    ' Solo números
+    If KeyAscii < 48 Or KeyAscii > 57 Then
         KeyAscii = 0
     End If
 
