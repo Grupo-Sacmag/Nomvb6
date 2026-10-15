@@ -809,29 +809,18 @@ Sub verifica(yavas)
     If nomina.hstri <> 0 Then yavas = 1
 End Sub
 Sub eliminacion()
-
     Dim re As Long
-
     re = 1
-
     Do While re <= limite
-
         ' Si no tiene total de ingresos, se considera
         ' un registro sin información de nómina.
-        If Trim$(ConNom1.TextMatrix(re, 11)) = "" Then
-
+        If Trim$(ConNom1.TextMatrix(re, C_TOTCOLS)) = "" Then
             ConNom1.RemoveItem re
-
             limite = limite - 1
-
         Else
-
             re = re + 1
-
         End If
-
     Loop
-
 End Sub
 
 Sub sumavert()

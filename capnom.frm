@@ -22,6 +22,32 @@ Begin VB.Form Form8
    ScaleHeight     =   7995
    ScaleWidth      =   11865
    WindowState     =   2  'Maximized
+   Begin VB.TextBox txtSuf 
+      Height          =   375
+      Left            =   6000
+      MaxLength       =   4
+      TabIndex        =   21
+      Text            =   "Text5"
+      Top             =   600
+      Width           =   2295
+   End
+   Begin VB.TextBox txtPre 
+      Height          =   375
+      Left            =   3360
+      MaxLength       =   4
+      TabIndex        =   20
+      Text            =   "Text5"
+      Top             =   1200
+      Width           =   2295
+   End
+   Begin VB.ComboBox cboEspecial 
+      Height          =   360
+      Left            =   3360
+      Style           =   2  'Dropdown List
+      TabIndex        =   19
+      Top             =   600
+      Width           =   2295
+   End
    Begin VB.TextBox Text4 
       Appearance      =   0  'Flat
       BeginProperty Font 
@@ -76,9 +102,9 @@ Begin VB.Form Form8
          Strikethrough   =   0   'False
       EndProperty
       Height          =   360
-      Left            =   7800
+      Left            =   8520
       TabIndex        =   13
-      Top             =   1200
+      Top             =   1080
       Width           =   1815
    End
    Begin VB.TextBox Text2 
@@ -279,6 +305,30 @@ Begin VB.Form Form8
       Visible         =   0   'False
       Width           =   1560
    End
+   Begin VB.Label lblSuf 
+      Caption         =   "Despues:"
+      Height          =   255
+      Left            =   6000
+      TabIndex        =   24
+      Top             =   240
+      Width           =   1095
+   End
+   Begin VB.Label Label2 
+      Caption         =   "Antes:"
+      Height          =   255
+      Left            =   0
+      TabIndex        =   23
+      Top             =   0
+      Width           =   735
+   End
+   Begin VB.Label lblPre 
+      Caption         =   "Antes:"
+      Height          =   255
+      Left            =   5880
+      TabIndex        =   22
+      Top             =   1200
+      Width           =   735
+   End
    Begin VB.Label Label1 
       Caption         =   "Buscar:"
       BeginProperty Font 
@@ -316,9 +366,9 @@ Begin VB.Form Form8
          Strikethrough   =   0   'False
       EndProperty
       Height          =   255
-      Left            =   6120
+      Left            =   6840
       TabIndex        =   12
-      Top             =   1200
+      Top             =   1080
       Width           =   1455
    End
    Begin VB.Label Label7 
@@ -333,10 +383,10 @@ Begin VB.Form Form8
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      Height          =   375
-      Left            =   240
+      Height          =   615
+      Left            =   0
       TabIndex        =   9
-      Top             =   1800
+      Top             =   1560
       Width           =   9375
    End
    Begin VB.Label Label5 
@@ -886,6 +936,16 @@ Private Sub Borrarblancos_Click(Index As Integer)
 
 End Sub
 
+Private Sub cboEspecial_Click()
+    ActualizarNombreEspecial
+
+    If cboEspecial.Text = "PTU" Then
+        Text3.Text = empresa.sm * 15
+    End If
+
+    If txtPre.Visible Then txtPre.SetFocus
+End Sub
+
 Private Sub Form_Load()
 
     InicializarColumnas tnOrdinaria
@@ -923,24 +983,38 @@ Private Sub Form_Load()
     Get #2, 1, personal
      
     If Dm > 0 Then
-        ConNom1.Cols = 25
-        ConNom1.Rows = Dm + 2
-        For i = 1 To 12
-            Combo1.AddItem RTrim$(mm(i))
-        Next i
-        Combo1.Text = Combo1.List(0)
-        miMesesito = Month(Date)
-        Combo1.ListIndex = miMesesito - 1
-        Label7.Caption = "Nomina de la 1a.quincena de" + Combo1.Text + Str$(empresa.ao)
+    ConNom1.Cols = 25
+    ConNom1.Rows = Dm + 2
+
+    For i = 1 To 12
+        Combo1.AddItem RTrim$(mm(i))
+    Next i
+
+    Combo1.Text = Combo1.List(0)
+    miMesesito = Month(Date)
+    Combo1.ListIndex = miMesesito - 1
+
+    Label7.Caption = "Nomina de la 1a.quincena de" + Combo1.Text + Str$(empresa.ao)
     Else
         Close 2
         MsgBox "No existe archivo de personal no es posible capturar la nomina"
     End If
-        
+
+    cboEspecial.Clear
+    cboEspecial.AddItem "AGUINALDO"
+    cboEspecial.AddItem "PTU"
+    cboEspecial.AddItem "BONO"
+    cboEspecial.AddItem "FINIQUITO"
+    cboEspecial.AddItem "LIQUIDACION"
+
+    Text1.Visible = False
+    MostrarControlesEspecial False
+
     GoTo sale8
 
 Manejo8:
-   capnosal_Click 1
+    capnosal_Click 1
+
 sale8:
 End Sub
 
@@ -948,67 +1022,130 @@ Private Sub nomcap_ini_Click(Index As Integer)
     Dim Arch As String
     Dim locked As Boolean
     Dim fullArchPath As String
-    
-    ' 1. Calcular nombre del archivo de nÃ³mina
-    If Option1 = True Then          ' Nómina normal
-    If Option3 = True Then      ' 1a quincena
-        Arch = UCase(Mid$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".NOM"
-    Else                        ' 2a quincena
-        Arch = UCase(Mid$(Combo1.Text, 1, 3)) + "2" + LTrim$(Str$(empresa.ao)) + ".NOM"
-    End If
-    Else                            ' Nómina especial
-        Arch = Trim(Text1.Text) + ".NOM"
-    End If
-    
-    ' =======================================================
-    ' CLASIFICACIÓN GLOBAL DEL TIPO DE NÓMINA (por contenido, no por Left$)
-    ' =======================================================
-    G_NombreArchivoNomina = UCase(Trim(Arch))
-    g_TipoNominaActiva = ClasificarTipoNomina(G_NombreArchivoNomina)
-    G_TipoNominaProcess = TipoNominaATexto(g_TipoNominaActiva)  ' se queda solo para compatibilidad con lo que ya la use
-    ' =======================================================
-    
-    ' 2. Verificar reglas usando rutas absolutas si el archivo ya existe
-    locked = False
-    
-    On Error Resume Next
     Dim fso As Object
+    Dim lockDate As Date
+    Dim modDate As Date
+
+    ' =======================================================
+    ' 1. CONSTRUIR EL NOMBRE DEL ARCHIVO
+    ' =======================================================
+
+    If Option1.Value = True Then
+
+        ' Nómina normal
+        If Option3.Value = True Then
+            ' Primera quincena
+            Arch = UCase$(Mid$(Combo1.Text, 1, 3)) & _
+                   "1" & LTrim$(Str$(empresa.ao)) & ".NOM"
+        Else
+            ' Segunda quincena
+            Arch = UCase$(Mid$(Combo1.Text, 1, 3)) & _
+                   "2" & LTrim$(Str$(empresa.ao)) & ".NOM"
+        End If
+
+    ElseIf Option2.Value = True Then
+
+        ' Nómina especial
+        ActualizarNombreEspecial
+
+        If Len(Trim$(Text1.Text)) = 0 Then
+            MsgBox "Seleccione el tipo de nómina especial " & _
+                   "(Aguinaldo, PTU, Bono, Finiquito o Liquidación).", _
+                   vbExclamation, "Nómina"
+            Exit Sub
+        End If
+
+        Arch = Trim$(Text1.Text) & ".NOM"
+
+    Else
+        MsgBox "Seleccione el tipo de nómina que desea capturar.", _
+               vbExclamation, "Nómina"
+        Exit Sub
+    End If
+
+    ' =======================================================
+    ' 2. CLASIFICAR EL TIPO DE NÓMINA E INICIALIZAR COLUMNAS
+    ' =======================================================
+
+    AplicarTipoNomina Arch
+
+    ' =======================================================
+    ' 3. COMPROBAR SI EL ARCHIVO ESTÁ BLOQUEADO
+    ' =======================================================
+
+    locked = False
+
+    On Error Resume Next
+
     Set fso = CreateObject("Scripting.FileSystemObject")
-    fullArchPath = CStr(Trim(Form1.Dir1)) & "\" & Arch
-    
-    If fso.FileExists(fullArchPath) Then
-        If Option1 = True Then ' Normal
-            Dim lockDate As Date
-            If Option3 = True Then ' 1a Quincena
-                lockDate = DateSerial(empresa.ao, Combo1.ListIndex + 1, 19)
-            Else ' 2a Quincena
-                lockDate = DateSerial(empresa.ao, Combo1.ListIndex + 2, 4)
+
+    fullArchPath = CStr(Trim$(Form1.Dir1)) & "\" & Arch
+
+    If Not fso Is Nothing Then
+        If fso.FileExists(fullArchPath) Then
+
+            If Option1.Value = True Then
+                ' Nómina normal: conservar las reglas por quincena.
+
+                If Option3.Value = True Then
+                    ' Primera quincena
+                    lockDate = DateSerial( _
+                        empresa.ao, Combo1.ListIndex + 1, 19)
+                Else
+                    ' Segunda quincena
+                    lockDate = DateSerial( _
+                        empresa.ao, Combo1.ListIndex + 2, 4)
+                End If
+
+                If Date > lockDate Then
+                    locked = True
+                End If
+
+            Else
+                ' Nómina especial: conservar el plazo de 10 días.
+
+                modDate = FileDateTime(fullArchPath)
+
+                If Date > modDate + 10 Then
+                    locked = True
+                End If
+
             End If
-            If Date > lockDate Then locked = True
-        Else ' Especial
-            Dim modDate As Date
-            modDate = FileDateTime(fullArchPath)
-            If Date > modDate + 10 Then locked = True
         End If
     End If
+
     On Error GoTo 0
-    
-    ' 3. Redirigir si estÃ¡ bloqueado
+
+    Set fso = Nothing
+
+    ' =======================================================
+    ' 4. ABRIR EL VISUALIZADOR SI EL ARCHIVO ESTÁ BLOQUEADO
+    ' =======================================================
+
     If locked Then
-        MsgBox "El archivo de esta nÃ³mina ya fue creado anteriormente y no puede ser modificado por reglas de negocio." & vbCrLf & _
-               "Se abrirÃ¡ en modo de sÃ³lo lectura en el Visualizador.", vbInformation, "NÃ³mina Cerrada"
+        MsgBox "El archivo de esta nómina ya fue creado " & _
+               "anteriormente y no puede ser modificado " & _
+               "por reglas de negocio." & vbCrLf & _
+               "Se abrirá en modo de sólo lectura en el Visualizador.", _
+               vbInformation, "Nómina Cerrada"
+
         Form8.Hide
+
         Load FormViewer
         FormViewer.Show
         FormViewer.LoadPayroll fullArchPath
+
         Exit Sub
     End If
-    
-    ' Captura normal si no estÃ¡ bloqueada (si no existe, se crearÃ¡ de forma nativa)
+
+    ' =======================================================
+    ' 5. CONTINUAR CON LA CAPTURA
+    ' =======================================================
+
     generarNominas
     FuncionImpuesto
-End Sub
 
+End Sub
 Private Sub ReleaseObjects(o_Excel As Object, o_Libro As Object, o_Hoja As Object)
     If Not o_Excel Is Nothing Then Set o_Excel = Nothing
     If Not o_Libro Is Nothing Then Set o_Libro = Nothing
@@ -1921,95 +2058,95 @@ Sub checa_fecha(MiFecha, MiDía, Resta)
    If MiDía = 1 Then dia_pago = dia_pago - 2
 End Sub
 
-Sub lin_che(empieza, termina)
-    antes = Printer.FontSize
-    anntes$ = Printer.FontName
-    anchopapel = Printer.Height
-    largopapel = Printer.Width
-    Printer.Height = 10118.57
-    Printer.Width = 12247.2
-    Printer.Orientation = 1
-    Printer.Font = "sans serif"
-    Printer.FontSize = 10
-    respuesta = MsgBox("Desea hacer pausa despues de imprimir cada cheque?", vbCritical + vbYesNo, "Impresion Cheques")
-   
-    If respuesta = vbYes Then pausa = 1 Else pausa = 0
-   
-    apeajte
-    Get 8, 1, formajte
-   
-    For r = empieza To termina
-        If ConNom1.TextMatrix(r, 0) > "" Then
-            numerillo = ConNom1.TextMatrix(r, 0)
-            Get 2, numerillo, personal
-            nombrecillo = RTrim(personal.nom) + " " + RTrim(personal.ape1) + " " + RTrim(personal.ape2)
-        Else
-            nombrecillo = ConNom1.TextMatrix(r, 1)
-        End If
-    
-        For ppe = 1 To formajte.totr
-            Select Case (ppe)
-                Case formajte.fechar
-                    Printer.Print Tab(formajte.fechac);
-                    Printer.Print dia_pago; " DE "; RTrim$(mm(meselegido)); " de "; empresa.ao;
-                Case formajte.benefr
-                    Printer.Print Tab(formajte.benefc);
-                    Printer.Print nombrecillo;
-                    If ConNom1.TextMatrix(r, 10) <> "" Then sacale = ConNom1.TextMatrix(r, 10) Else sacale = 0
-                    operacion = ConNom1.TextMatrix(r, 20) - sacale
-                    Printer.Print Tab(formajte.impnumc); Format(operacion, z2$)
-                Case formajte.impletr
-                    Printer.Print Tab(formajte.impletc);
-                    gt_bi# = operacion
-                    Dinero
-                    Printer.Print Feria;
-                Case formajte.concepr
-                    Printer.Print Tab(formajte.concepc);
-                    Printer.Print Label7.Caption; " "; comp_ti;
-                Case formajte.inicopr
-                    Printer.Print Tab(formajte.name);
-                    Printer.Print "GASTOS A COMPROBAR";
-                    Printer.Print Tab(formajte.debec);
-                    Printer.Print Format(operacion, z2$)
-                    Printer.Print Tab(formajte.name);
-                    Printer.Print ConNom1.TextMatrix(r, 1)
-                    Printer.Print Tab(formajte.name);
-                    Printer.Print "BANCOS";
-                    Printer.Print Tab(formajte.haberc); Format(operacion, z2$)
-                    Printer.Print Tab(formajte.name); "CITIBANK"
-                Case formajte.sumasr
-                    Printer.Print Tab(formajte.debec);
-                    Printer.Print Format(operacion, z2$);
-                    Printer.Print Tab(formajte.haberc); Format(operacion, z2$);
-                End Select
-                    Printer.Print
-        Next ppe
+    Sub lin_che(empieza, termina)
+        antes = Printer.FontSize
+        anntes$ = Printer.FontName
+        anchopapel = Printer.Height
+        largopapel = Printer.Width
+        Printer.Height = 10118.57
+        Printer.Width = 12247.2
+        Printer.Orientation = 1
+        Printer.Font = "sans serif"
+        Printer.FontSize = 10
+        respuesta = MsgBox("Desea hacer pausa despues de imprimir cada cheque?", vbCritical + vbYesNo, "Impresion Cheques")
        
-        If r < termina Then
-            Rem Printer.NewPage
-            If pausa = 1 Then
-                     respuesta = MsgBox("Acomode papel antes de continuar", vbOKCancel + vbCritical + vbDefaultButton2, "Impresion cheques")
-                If respuesta = vbOK Then
-                        Rem nada
-                    Else
-                        r = termina
-                        GoTo saltoimpre
-            
-                 End If
-              End If
-         End If
-    Next r
-     
+        If respuesta = vbYes Then pausa = 1 Else pausa = 0
+       
+        apeajte
+        Get 8, 1, formajte
+       
+        For r = empieza To termina
+            If ConNom1.TextMatrix(r, 0) > "" Then
+                numerillo = ConNom1.TextMatrix(r, 0)
+                Get 2, numerillo, personal
+                nombrecillo = RTrim(personal.nom) + " " + RTrim(personal.ape1) + " " + RTrim(personal.ape2)
+            Else
+                nombrecillo = ConNom1.TextMatrix(r, 1)
+            End If
+        
+            For ppe = 1 To formajte.totr
+                Select Case (ppe)
+                    Case formajte.fechar
+                        Printer.Print Tab(formajte.fechac);
+                        Printer.Print dia_pago; " DE "; RTrim$(mm(meselegido)); " de "; empresa.ao;
+                    Case formajte.benefr
+                        Printer.Print Tab(formajte.benefc);
+                        Printer.Print nombrecillo;
+                        If ConNom1.TextMatrix(r, C_EXENTA) <> "" Then sacale = ConNom1.TextMatrix(r, C_EXENTA) Else sacale = 0
+                        operacion = ConNom1.TextMatrix(r, C_NETO) - sacale
+                        Printer.Print Tab(formajte.impnumc); Format(operacion, z2$)
+                    Case formajte.impletr
+                        Printer.Print Tab(formajte.impletc);
+                        gt_bi# = operacion
+                        Dinero
+                        Printer.Print Feria;
+                    Case formajte.concepr
+                        Printer.Print Tab(formajte.concepc);
+                        Printer.Print Label7.Caption; " "; comp_ti;
+                    Case formajte.inicopr
+                        Printer.Print Tab(formajte.name);
+                        Printer.Print "GASTOS A COMPROBAR";
+                        Printer.Print Tab(formajte.debec);
+                        Printer.Print Format(operacion, z2$)
+                        Printer.Print Tab(formajte.name);
+                        Printer.Print ConNom1.TextMatrix(r, 1)
+                        Printer.Print Tab(formajte.name);
+                        Printer.Print "BANCOS";
+                        Printer.Print Tab(formajte.haberc); Format(operacion, z2$)
+                        Printer.Print Tab(formajte.name); "CITIBANK"
+                    Case formajte.sumasr
+                        Printer.Print Tab(formajte.debec);
+                        Printer.Print Format(operacion, z2$);
+                        Printer.Print Tab(formajte.haberc); Format(operacion, z2$);
+                    End Select
+                        Printer.Print
+            Next ppe
+           
+            If r < termina Then
+                Rem Printer.NewPage
+                If pausa = 1 Then
+                         respuesta = MsgBox("Acomode papel antes de continuar", vbOKCancel + vbCritical + vbDefaultButton2, "Impresion cheques")
+                    If respuesta = vbOK Then
+                            Rem nada
+                        Else
+                            r = termina
+                            GoTo saltoimpre
+                
+                     End If
+                  End If
+             End If
+        Next r
+         
 saltoimpre:
-   
-   Close 8
-   Printer.EndDoc
-   Printer.Height = anchopapel
-   Printer.Width = largopapel
-   Printer.FontSize = antes
-   Printer.FontName = anntes$
-   Printer.FontBold = False
-End Sub
+       
+       Close 8
+       Printer.EndDoc
+       Printer.Height = anchopapel
+       Printer.Width = largopapel
+       Printer.FontSize = antes
+       Printer.FontName = anntes$
+       Printer.FontBold = False
+    End Sub
 Sub lin_rbo(empieza, termina)
 On Error GoTo manejadorError:
     nomb_e$ = Printer.FontName
@@ -2350,29 +2487,47 @@ Sub verifica(yavas)
     If nomina.fonacot <> 0 Then yavas = 1
     If nomina.telefono <> 0 Then yavas = 1
     If nomina.otraded <> 0 Then yavas = 1
-  
+    If nomina.hsnor <> 0 Then yavas = 1
 End Sub
 
+
 Sub eliminacion()
+    Dim antecol As Long
+    Dim anteren As Long
+    Dim re As Long
+
     antecol = ConNom1.Col
     anteren = ConNom1.Row
-    conta1 = 0
-    re = 0
-        
-    Do Until re = (limite)
-        re = re + 1
-        If (Trim(ConNom1.TextMatrix(re, 11)) = "") Then
+
+    re = 1
+
+    Do While re <= limite
+
+        ' Revisar la columna Banamex, que sí es un índice válido.
+        If Trim$(ConNom1.TextMatrix(re, C_BANAMEX)) = "" Then
             ConNom1.RemoveItem re
-            re = re - 1
             limite = limite - 1
+        Else
+            re = re + 1
         End If
+
     Loop
-        
-    If anteren <= limite Then ConNom1.Row = anteren Else ConNom1.Row = limite
-    If anteren < 1 Then ConNom1.Row = 1
-    ConNom1.Col = antecol
+
+    If limite < 1 Then
+        ConNom1.Row = 1
+    ElseIf anteren <= limite Then
+        ConNom1.Row = anteren
+    Else
+        ConNom1.Row = limite
+    End If
+
+    If antecol >= 0 And antecol < ConNom1.Cols Then
+        ConNom1.Col = antecol
+    End If
+
     sumavert
 End Sub
+
 Sub tot_sub(fin)
      
      actual = Printer.CurrentY + 220
@@ -2983,7 +3138,6 @@ Sub checar()
     Exit Sub
 End Sub
 
-
 Sub sumavert()
 Dim Vw As Integer
     ProgressBar1.Min = 0: ProgressBar1.Max = ConNom1.Rows: ProgressBar1.Value = 0: ProgressBar1.Visible = True
@@ -3212,8 +3366,9 @@ saltaAnual:
     ConNom1.Col = colanti
 End Sub
 
-
 Sub inte_grar()
+
+    If g_TipoNominaActiva = tnLiquidacionFiniquito Then Exit Sub
      aoingr = Val(Mid$(personal.fal, 7, 4))
      If aoingr < 1900 Then
         Select Case aoingr
@@ -3231,7 +3386,7 @@ Sub inte_grar()
      factor antig, facto
      
       exe_nto = 0
-     If IsNumeric(ConNom1.TextMatrix(li, 10)) Then
+     If IsNumeric(ConNom1.TextMatrix(li, C_EXENTA)) Then
             exe_nto = ConNom1.TextMatrix(li, 10) - (empresa.sm * diaseg * 0.4)
             If exe_nto < 0 Then exe_nto = 0
                     
@@ -3242,8 +3397,8 @@ Sub inte_grar()
         
         viat_per = 0
         otras_per = 0
-        If IsNumeric(ConNom1.TextMatrix(li, 7)) Then viat_per = ConNom1.TextMatrix(li, 7)
-        If IsNumeric(ConNom1.TextMatrix(li, 9)) Then otras_per = ConNom1.TextMatrix(li, 9)
+        If IsNumeric(ConNom1.TextMatrix(li, C_CONC7)) Then viat_per = ConNom1.TextMatrix(li, C_CONC7)
+        If IsNumeric(ConNom1.TextMatrix(li, C_OTRAS)) Then otras_per = ConNom1.TextMatrix(li, C_OTRAS)
         
         Dim base_integ As Currency
         base_integ = sum(1) - viat_per - otras_per - p_vacacional + exe_nto
@@ -3647,8 +3802,8 @@ Private Sub FuncionImpuesto()
             Get #2, regtro, personal
         End If
     
-        If IsNumeric(ConNom1.TextMatrix(li, 21)) Then
-            impto1 = ConNom1.TextMatrix(li, 21)
+        If IsNumeric(ConNom1.TextMatrix(li, C_ISPT)) Then
+            impto1 = ConNom1.TextMatrix(li, C_ISPT)
         Else
             impto1 = 0
         End If
@@ -4294,21 +4449,29 @@ Private Sub Option1_GotFocus()
 End Sub
 
 Private Sub Option1_Click()
-    Combo1.locked = False
+Combo1.locked = False
     Combo1.Visible = True
+
+    MostrarControlesEspecial False
 End Sub
 
 Private Sub Option2_Click()
 On Error GoTo errorManejador
+
     If Option2 = True Then
         Option3 = False
         Option4 = False
-        Text1.SetFocus
+
         N_ormal = 1
         dia_pago = 15 - 1
+
         Combo1.locked = True
         Combo1.Visible = False
+
+        MostrarControlesEspecial True
+        cboEspecial.SetFocus
     End If
+
 Exit Sub
 
 errorManejador:
@@ -4321,53 +4484,48 @@ Public Sub presionarOption2()
 End Sub
 
 Private Sub Option3_Click()
-     If meselegido = 0 Then meselegido = 1
-     If Option3 = True Then
-          Label7.Caption = "Nomina de la 1a.quincena " + Combo1.Text + Str$(empresa.ao)
-          dia_pago = 15 - 1
-          Combo1.Visible = True
-          Combo1.locked = False
-          Combo1.SetFocus
-     End If
+MostrarControlesEspecial False
+
+    If meselegido = 0 Then meselegido = 1
+
+    If Option3 = True Then
+        Label7.Caption = "Nomina de la 1a.quincena " + _
+                         Combo1.Text + Str$(empresa.ao)
+
+        dia_pago = 15 - 1
+
+        Combo1.Visible = True
+        Combo1.locked = False
+        Combo1.SetFocus
+    End If
 End Sub
 
 Private Sub Option4_Click()
-     If meselegido = 0 Then meselegido = 1
-     If Option4 = True Then
-        Label7.Caption = "Nomina de la 2a.quincena " + Combo1.Text + Str$(empresa.ao)
+ MostrarControlesEspecial False
+
+    If meselegido = 0 Then meselegido = 1
+
+    If Option4 = True Then
+        Label7.Caption = "Nomina de la 2a.quincena " + _
+                         Combo1.Text + Str$(empresa.ao)
+
         dia_pago = dd(meselegido) - 1
-        
+
         If meselegido = 12 Then
-              respuesta = MsgBox("Desea hacer Calculo Anual", vbCritical + vbYesNo, "Captura Ultima Nomina")
-              If respuesta = vbYes Then
-                 cal_anual = 1
-                 Else
-                 cal_anual = 0
-              End If
-         End If
+            respuesta = MsgBox("Desea hacer Calculo Anual", _
+                               vbCritical + vbYesNo, _
+                               "Captura Ultima Nomina")
+
+            If respuesta = vbYes Then
+                cal_anual = 1
+            Else
+                cal_anual = 0
+            End If
+        End If
+
         Combo1.Visible = True
         Combo1.SetFocus
-     End If
-End Sub
-
-Private Sub Text1_KeyPress(KeyAscii As Integer)
-  If KeyAscii = 13 Then
-      Text1.Text = UCase(Text1.Text)
-      If Len(Text1.Text) > 1 Then
-          Label7.Caption = Text1.Text + " " + Str$(empresa.ao)
-          Option1 = False
-          Rem Option2 = False
-          Option3 = False
-          Option4 = False
-          Text3.SetFocus
-          ConNom1.Row = 1
-          ConNom1.Col = 2
-      End If
-      
-      If Text1.Text = "PTU" Then
-        Text3.Text = empresa.sm * 15
-      End If
-   End If
+    End If
 End Sub
 
 Public Sub presionarEnterForm8()
@@ -4480,7 +4638,7 @@ Public Sub calculoRetencion(ingresoBruto, impuesto, porcentajeSubsidio, idEmplea
             End If
             
         impto = impto - subdio
-        ConNom1.TextMatrix(li, 13) = subdio
+        ConNom1.TextMatrix(li, C_SUBEMP) = subdio
         
         If impto < 0 Then
             impto = 0
@@ -4601,8 +4759,113 @@ Private Sub Encab(ByVal c As Long, ByVal txt As String, ByVal ancho As Long)
     ConNom1.Text = txt
 End Sub
 
+Private Sub MostrarControlesEspecial(ByVal v As Boolean)
 
+    cboEspecial.Visible = v
+    txtPre.Visible = v
+    txtSuf.Visible = v
+    lblPre.Visible = v
+    lblSuf.Visible = v
 
-' comentario
+End Sub
 
+Private Function SoloDigitos(ByVal s As String) As String
+
+    Dim i As Long
+    Dim r As String
+
+    For i = 1 To Len(s)
+        If Mid$(s, i, 1) >= "0" And Mid$(s, i, 1) <= "9" Then
+            r = r & Mid$(s, i, 1)
+        End If
+    Next i
+
+    SoloDigitos = r
+
+End Function
+
+Private Sub ActualizarNombreEspecial()
+
+    If cboEspecial.ListIndex < 0 Then
+        Text1.Text = ""
+        Label7.Caption = ""
+        Exit Sub
+    End If
+
+    Text1.Text = SoloDigitos(txtPre.Text) & cboEspecial.Text & SoloDigitos(txtSuf.Text)
+
+    Label7.Caption = Text1.Text + " " + Str$(empresa.ao)
+
+End Sub
+
+Private Sub ConfirmarNombreEspecial()
+
+    ActualizarNombreEspecial
+
+    If Len(Text1.Text) = 0 Then Exit Sub
+
+    Option1 = False
+    Option3 = False
+    Option4 = False
+
+    Text3.SetFocus
+
+    ConNom1.Row = 1
+    ConNom1.Col = C_DIAS
+
+End Sub
+
+Private Sub txtPre_Change()
+ Dim s As String
+
+    s = SoloDigitos(txtPre.Text)
+
+    If txtPre.Text <> s Then
+        txtPre.Text = s
+        txtPre.SelStart = Len(txtPre.Text)
+    End If
+
+    ActualizarNombreEspecial
+End Sub
+
+Private Sub txtPre_KeyPress(KeyAscii As Integer)
+
+    If KeyAscii = 13 Then
+        KeyAscii = 0
+        txtSuf.SetFocus
+
+    ElseIf KeyAscii <> 8 And _
+           (KeyAscii < 48 Or KeyAscii > 57) Then
+
+        KeyAscii = 0
+    End If
+
+End Sub
+
+Private Sub txtSuf_Change()
+    Dim s As String
+
+    s = SoloDigitos(txtSuf.Text)
+
+    If txtSuf.Text <> s Then
+        txtSuf.Text = s
+        txtSuf.SelStart = Len(txtSuf.Text)
+    End If
+
+    ActualizarNombreEspecial
+End Sub
+
+Private Sub txtSuf_KeyPress(KeyAscii As Integer)
+
+    If KeyAscii = 13 Then
+        KeyAscii = 0
+        ConfirmarNombreEspecial
+
+    ElseIf KeyAscii <> 8 And _
+           (KeyAscii < 48 Or KeyAscii > 57) Then
+
+        KeyAscii = 0
+    End If
+
+End Sub
 
