@@ -287,9 +287,6 @@ Begin VB.Form Form1
          End
       End
    End
-   Begin VB.Menu configNom 
-      Caption         =   "&Configuración"
-   End
    Begin VB.Menu Ayuda 
       Caption         =   "&Ayuda"
       Begin VB.Menu Version 
@@ -304,17 +301,11 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Private NavegandoDirectorio As Boolean
 
-Private Sub capturarCédulaFiscal_Click()
-    FormCedulaFiscal.Show
-End Sub
-
-Private Sub configNom_Click()
-    Rem nominaConfiguracion.Show
-    EstadisticasPersonal.Show
-End Sub
+' ============================================================
+' CARGA / CIERRE DEL FORMULARIO
+' ============================================================
 
 Private Sub Form_Load()
-
     On Error GoTo ManejoError
 
     Apertura
@@ -323,22 +314,16 @@ Private Sub Form_Load()
 
     Kincenal = 1
 
-    mm(1) = "ENERO": mm(2) = "FEBRERO": mm(3) = "MARZO": mm(4) = "ABRIL"
-    mm(5) = "MAYO": mm(6) = "JUNIO": mm(7) = "JULIO": mm(8) = "AGOSTO"
-    mm(9) = "SEPTIEMBRE": mm(10) = "OCTUBRE": mm(11) = "NOVIEMBRE": mm(12) = "DICIEMBRE"
+    InicializarMeses
+    InicializarDiasMes
 
-    dd(1) = 31: dd(2) = 28: dd(3) = 31: dd(4) = 30
-    dd(5) = 31: dd(6) = 30: dd(7) = 31: dd(8) = 31
-    dd(9) = 30: dd(10) = 31: dd(11) = 30: dd(12) = 31
-
-inicio:
-
+Inicio:
     z1$ = "#,###,##0.00"
     z2$ = "##,##0.00"
 
     empresarial
 
-    ' Intentar conexión, pero NO impedir el arranque
+    'Intentar conexión, pero NO impedir el arranque.
     ConectarBaseDatos
 
     File1.Pattern = "*.NOM"
@@ -355,24 +340,65 @@ ManejoError:
     ChDir "C:\"
     Dir1 = "C:\"
     File1 = Dir1
-    GoTo inicio
+    GoTo Inicio
 
 Sale:
     Exit Sub
-
 End Sub
 
+Private Sub Form_Unload(Cancel As Integer)
+    Close
+    End
+End Sub
+
+Private Sub InicializarMeses()
+    mm(1) = "ENERO"
+    mm(2) = "FEBRERO"
+    mm(3) = "MARZO"
+    mm(4) = "ABRIL"
+    mm(5) = "MAYO"
+    mm(6) = "JUNIO"
+    mm(7) = "JULIO"
+    mm(8) = "AGOSTO"
+    mm(9) = "SEPTIEMBRE"
+    mm(10) = "OCTUBRE"
+    mm(11) = "NOVIEMBRE"
+    mm(12) = "DICIEMBRE"
+End Sub
+
+Private Sub InicializarDiasMes()
+    dd(1) = 31
+    dd(2) = 28
+    dd(3) = 31
+    dd(4) = 30
+    dd(5) = 31
+    dd(6) = 30
+    dd(7) = 31
+    dd(8) = 31
+    dd(9) = 30
+    dd(10) = 31
+    dd(11) = 30
+    dd(12) = 31
+End Sub
+
+' ============================================================
+' CONFIGURACION INICIAL / DIRECTORIO DE TARIFAS
+' ============================================================
+
 Sub Apertura()
-On Error GoTo mens1
-   DIR_CALC = "C:\GconTA\Rutabl.gcs"
-   miarchivo = ""
-      miarchivo = Dir(DIR_CALC, vbDirectory)
+    On Error GoTo mens1
+
+    DIR_CALC = "C:\GconTA\Rutabl.gcs"
+    miarchivo = ""
+    miarchivo = Dir(DIR_CALC, vbDirectory)
+
     If miarchivo <> "" Then
         Open DIR_CALC For Input As #9
         Mi_limite = LOF(9)
-        Else
+    Else
         Mi_limite = 0
-   End If
+    End If
+
     If Mi_limite = 0 Then
         DirecT_arifas = "C:\TARIFA25\"
         Dir_imptos = DirecT_arifas
@@ -384,7 +410,7 @@ On Error GoTo mens1
         SubT_Mes = DirecT_arifas
         Close #9
         Exit Sub
-   End If
+    End If
 
 mens1:
     MsgBox ("No se encuentra Microsoft Excel")
@@ -393,8 +419,9 @@ End Sub
 
 Sub CambioDirectorio()
     On Error GoTo mens2
+
     Close
-    
+
     Tot_Dat = 0
     CapturaDatos.Caption = Form1.Caption
     CapturaDatos.Label1(0).Caption = "Subdirectorio Tarifas de retención mensual  : "
@@ -402,162 +429,207 @@ Sub CambioDirectorio()
     CapturaDatos.Examinar(0).Caption = "Archivar"
     CapturaDatos.Examinar(1).Caption = "Salir"
     CapturaDatos.Show 1
-          
+
     If DirecT_arifas <= "" Then
         DirecT_arifas = "C:\TARIFA25\"
-        Open DIR_CALC For Output As 9
-        Print #9, DirecT_arifas
-        Close #9
-    Else
-        Open DIR_CALC For Output As 9
-        Print #9, DirecT_arifas
-        Close #9
     End If
-    
-Exit Sub
+
+    Open DIR_CALC For Output As 9
+    Print #9, DirecT_arifas
+    Close #9
+
+    Exit Sub
 
 mens2:
     MsgBox "No puedo crear el Rutabl.gcs", vbCritical
 End Sub
 
-Sub empresarial()
+' ============================================================
+' EMPRESA / BASE DE DATOS
+' ============================================================
 
+Sub empresarial()
     On Error GoTo Empre2
 
     Close #1
 
     AbreEmpr = "empresa.dno"
 
-    '-----------------------------------------
-    ' VERIFICAR SI EL ARCHIVO YA EXISTE
-    '-----------------------------------------
     If Dir$(AbreEmpr) = "" Then
-
-        Label1.Caption = _
-            "No existe Empresa Cambie subdirectorio o Capture datos"
-
-        Label2.Caption = " "
-
+        MostrarEmpresaNoEncontrada
         Exit Sub
-
     End If
 
-    '-----------------------------------------
-    ' ABRIR SOLO SI YA EXISTE
-    '-----------------------------------------
     Open AbreEmpr For Random As #1 Len = Len(empresa)
 
     cm = LOF(1) / Len(empresa)
 
     If cm > 0 Then
-
         Get #1, cm, empresa
 
         emp = empresa.name
 
         Label1.Caption = "Empresa : " & empresa.name
-
         Label2.Caption = _
             "Año : " & Str$(empresa.ao) & Chr(13) & _
             " Salario Minimo $" & Str$(empresa.psub) & Chr(13) & _
             "UMA x dia :$ " & Format(empresa.sm, z1$)
 
         Close #1
-
     Else
-
         Close #1
-
-        Label1.Caption = _
-            "No existe Empresa Cambie subdirectorio o Capture datos"
-
-        Label2.Caption = " "
-
+        MostrarEmpresaNoEncontrada
     End If
 
     Exit Sub
 
 Empre2:
-
     On Error Resume Next
 
     Close #1
+    MostrarEmpresaNoEncontrada
+End Sub
 
-    Label1.Caption = _
-        "No existe Empresa Cambie subdirectorio o Capture datos"
-
+Private Sub MostrarEmpresaNoEncontrada()
+    Label1.Caption = "No existe Empresa Cambie subdirectorio o Capture datos"
     Label2.Caption = " "
-
 End Sub
 
-Private Sub arDirTar_Click()
-   CambioDirectorio
-   SubT_Mes = DirecT_arifas
-   Dir_imptos = DirecT_arifas
-   Close 9
-End Sub
+Private Sub ConectarBaseDatos()
+    On Error Resume Next
 
-Private Sub creasub_Click(Index As Integer)
-   Text1.SetFocus
-End Sub
-
-Private Sub Dir1_Click()
-    
-    ' Un solo clic únicamente selecciona la carpeta.
-    ' No se navega ni se actualiza información.
-
-End Sub
-
-Private Sub Dir1_DblClick()
-
-    AbrirDirectorioSeleccionado
-
-End Sub
-Private Sub Dir1_Change()
-
-    ActualizarDirectorio
-
-End Sub
-Private Sub Dir1_KeyPress(KeyAscii As Integer)
-
-    If KeyAscii = 13 Then
-
-        KeyAscii = 0
-
-        AbrirDirectorioSeleccionado
-
+    If con.State <> 0 Then
+        con.Close
     End If
 
-End Sub
-Private Sub Drive1_Change()
+    Err.Clear
 
+    strconnect = "Provider=SQLOLEDB;Data Source=SQL6012.site4now.net;Initial Catalog=db_a4091b_sacmag"
+
+    con.Open strconnect, _
+             "db_a4091b_sacmag_admin", _
+             "Sacmag2020"
+
+    'Si falla SQL, simplemente continuar.
+    Err.Clear
+
+    On Error GoTo 0
+End Sub
+
+' ============================================================
+' NAVEGACION DE DIRECTORIOS / ARCHIVOS NOM
+' ============================================================
+
+Private Sub Drive1_Change()
     On Error GoTo manejadorError
 
     ChDrive Drive1.Drive
-
     Dir1.Path = Drive1.Drive
 
     Exit Sub
 
 manejadorError:
-
     MsgBox Err.Description, vbExclamation, "Cambio de unidad"
-
 End Sub
 
-Private Sub Emp_dat_Click(Index As Integer)
-    Load Form3
-    Form3.Show
+Private Sub Dir1_Click()
+    'Un solo clic únicamente selecciona la carpeta.
+    'No se navega ni se actualiza información.
 End Sub
 
+Private Sub Dir1_DblClick()
+    AbrirDirectorioSeleccionado
+End Sub
 
-Private Sub empcom_Click()
-    Load Repre
-    Repre.Show 1
+Private Sub Dir1_Change()
+    ActualizarDirectorio
+End Sub
+
+Private Sub Dir1_KeyPress(KeyAscii As Integer)
+    If KeyAscii = 13 Then
+        KeyAscii = 0
+        AbrirDirectorioSeleccionado
+    End If
+End Sub
+
+Private Sub ActualizarDirectorio()
+    Dim RutaActual As String
+
+    On Error GoTo ErrorActualizar
+
+    RutaActual = Trim$(Dir1.Path)
+
+    If RutaActual = "" Then Exit Sub
+
+    ChDir RutaActual
+
+    File1.Pattern = "*.NOM"
+    File1.Path = RutaActual
+    File1.Refresh
+
+    Direc_torio = RutaActual
+    Label4.Caption = RutaActual
+
+    GuardarUltimoDirectorio RutaActual
+
+    Close #1
+    empresarial
+
+    Exit Sub
+
+ErrorActualizar:
+    On Error Resume Next
+    Close #7
+End Sub
+
+Private Sub GuardarUltimoDirectorio(ByVal RutaActual As String)
+    On Error Resume Next
+
+    Close #7
+
+    Open "C:\GconTA\perma.dno" For Random As #7 Len = Len(basico)
+
+    If Err.Number = 0 Then
+        fin_basico = LOF(7) / Len(basico)
+        basico.datoarch = RutaActual
+        Put #7, 1, basico
+    End If
+
+    Close #7
+    Err.Clear
+End Sub
+
+Private Sub AbrirDirectorioSeleccionado()
+    Dim RutaSeleccionada As String
+
+    On Error GoTo ErrorDirectorio
+
+    If NavegandoDirectorio Then Exit Sub
+    If Dir1.ListIndex < 0 Then Exit Sub
+
+    RutaSeleccionada = Dir1.List(Dir1.ListIndex)
+
+    If Trim$(RutaSeleccionada) = "" Then Exit Sub
+
+    NavegandoDirectorio = True
+
+    If UCase$(Dir1.Path) <> UCase$(RutaSeleccionada) Then
+        Dir1.Path = RutaSeleccionada
+    End If
+
+    NavegandoDirectorio = False
+
+    Exit Sub
+
+ErrorDirectorio:
+    NavegandoDirectorio = False
+
+    MsgBox "No fue posible acceder al directorio." & vbCrLf & _
+           "Error " & Err.Number & ": " & Err.Description, _
+           vbExclamation, "Directorio"
 End Sub
 
 Private Sub File1_KeyPress(KeyAscii As Integer)
-
     Dim archivoDirectorio As String
     Dim rutaCompleta As String
     Dim numeroError As Long
@@ -579,35 +651,22 @@ Private Sub File1_KeyPress(KeyAscii As Integer)
 
     On Error GoTo ErrorAbrir
 
-    'Cargar el formulario
     Load FormViewer
-
-    'Cargar la información ANTES de mostrarlo
     FormViewer.LoadPayroll rutaCompleta
 
-    'Si ocurrió un problema durante la carga,
-    'no mostramos un visor incompleto
     If Not FormViewer.CargaCorrecta Then
-
         Unload FormViewer
 
         File1.Refresh
         File1.SetFocus
 
         Exit Sub
-
     End If
 
-    'Ocultar principal solamente cuando
-    'la nómina ya fue cargada correctamente
     Me.Hide
 
-    'IMPORTANTE:
-    'El visor será MODAL.
     FormViewer.Show vbModal
 
-    'Cuando FormViewer se cierre,
-    'el código continúa exactamente aquí.
     Me.Show
 
     File1.Refresh
@@ -615,9 +674,7 @@ Private Sub File1_KeyPress(KeyAscii As Integer)
 
     Exit Sub
 
-
 ErrorAbrir:
-
     numeroError = Err.Number
     descripcionError = Err.Description
 
@@ -634,21 +691,53 @@ ErrorAbrir:
     MsgBox "No fue posible abrir la nómina." & vbCrLf & _
            "Error " & numeroError & ": " & descripcionError, _
            vbCritical, "Visor de nómina"
-
 End Sub
+
+' ============================================================
+' EVENTOS DE BOTONES / MENUS
+' ============================================================
+
+Private Sub arDirTar_Click()
+    CambioDirectorio
+    SubT_Mes = DirecT_arifas
+    Dir_imptos = DirecT_arifas
+    Close 9
+End Sub
+
+Private Sub capturarCédulaFiscal_Click()
+    FormCedulaFiscal.Show
+End Sub
+
+Private Sub configNom_Click()
+    Rem nominaConfiguracion.Show
+    EstadisticasPersonal.Show
+End Sub
+
+Private Sub creasub_Click(Index As Integer)
+    Text1.SetFocus
+End Sub
+
+Private Sub Emp_dat_Click(Index As Integer)
+    Load Form3
+    Form3.Show
+End Sub
+
+Private Sub empcom_Click()
+    Load Repre
+    Repre.Show 1
+End Sub
+
 Private Sub NomAcu_Click(Index As Integer)
-  Unload Form1
-  Load Form9
-  Form9.Show
-End Sub
-
-Private Sub Form_Unload(Cancel As Integer)
-    Close: End
+    Unload Form1
+    Load Form9
+    Form9.Show
 End Sub
 
 Private Sub nomcap_Click(Index As Integer)
-  Close 2: Open "personal.dno" For Random As 2 Len = Len(personal)
-  Dm = LOF(2) / Len(personal)
+    Close 2
+    Open "personal.dno" For Random As 2 Len = Len(personal)
+
+    Dm = LOF(2) / Len(personal)
 
     If Dm > 0 Then
         Form1.Hide
@@ -657,71 +746,74 @@ Private Sub nomcap_Click(Index As Integer)
         Form1.Hide
     Else
         Close 2
-        MsgBox "No existe archivo de personal no es posible capturar nomina", vbCritical + vbDefaultButton1, "Nomina"
+        MsgBox "No existe archivo de personal no es posible capturar nomina", _
+               vbCritical + vbDefaultButton1, "Nomina"
     End If
-    
 End Sub
 
 Private Sub percap_Click(Index As Integer)
-  Load Form2
-  Form2.IniciarNuevo
-  Form2.Show
+    Load Form2
+    Form2.IniciarNuevo
+    Form2.Show
 End Sub
 
 Private Sub PerCfdi_Click()
-   PeCfdi.Show
+    PeCfdi.Show
 End Sub
 
 Private Sub peredic_Click(Index As Integer)
-  Load Form4
-  Form4.Show
+    Load Form4
+    Form4.Show
 End Sub
 
 Private Sub perimpr_Click(Index As Integer)
-   Load Form4
-   Form4.Show
+    Load Form4
+    Form4.Show
 End Sub
 
 Private Sub persal_Click(Index As Integer)
-Unload Form1
-Close: End
+    Unload Form1
+    Close
+    End
 End Sub
 
 Private Sub tarancre_Click(Index As Integer)
-   ta_r = 3
-   arch_tr = (Dir_imptos + "CRE116.03")
-   Load Form7
-   Form7.Show
+    ta_r = 3
+    arch_tr = (Dir_imptos + "CRE116.03")
+    Load Form7
+    Form7.Show
 End Sub
+
 Private Sub taranisr_Click(Index As Integer)
-   ta_r = 1
-   arch_tr = (Dir_imptos + "ISR177.03")
-   Load Form5
-   Form5.Show
+    ta_r = 1
+    arch_tr = (Dir_imptos + "ISR177.03")
+    Load Form5
+    Form5.Show
 End Sub
+
 Private Sub taransub_Click(Index As Integer)
-   ta_r = 2
-   arch_tr = (Dir_imptos + "SUB178.03")
-   Load Form5
-   Form5.Show
+    ta_r = 2
+    arch_tr = (Dir_imptos + "SUB178.03")
+    Load Form5
+    Form5.Show
 End Sub
 
 Private Sub tarart_Click(Index As Integer)
-   ta_r = 0
-   Load Form5
-   Form5.Show
+    ta_r = 0
+    Load Form5
+    Form5.Show
 End Sub
 
 Private Sub tarcre_Click(Index As Integer)
-   ta_r = 0
-   Load Form7
-   Form7.Show
+    ta_r = 0
+    Load Form7
+    Form7.Show
 End Sub
 
 Private Sub tarsub_Click(Index As Integer)
-  ta_r = 0
-  Load Form6
-  Form6.Show
+    ta_r = 0
+    Load Form6
+    Form6.Show
 End Sub
 
 Private Sub Text1_KeyPress(KeyAscii As Integer)
@@ -734,139 +826,8 @@ Private Sub Text1_KeyPress(KeyAscii As Integer)
 End Sub
 
 Private Sub Version_Click()
-Load Form19
-Form19.Show
+    Load Form19
+    Form19.Show
 End Sub
 
-Private Sub ConectarBaseDatos()
 
-    On Error Resume Next
-
-    If con.State <> 0 Then
-        con.Close
-    End If
-
-    Err.Clear
-
-    strconnect = "Provider=SQLOLEDB;Data Source=SQL6012.site4now.net;Initial Catalog=db_a4091b_sacmag"
-
-    con.Open strconnect, _
-             "db_a4091b_sacmag_admin", _
-             "Sacmag2020"
-
-    ' Si falla SQL, simplemente continuar
-    Err.Clear
-
-    On Error GoTo 0
-
-End Sub
-Private Sub ActualizarDirectorio()
-
-    Dim RutaActual As String
-
-    On Error GoTo ErrorActualizar
-
-    RutaActual = Trim$(Dir1.Path)
-
-    If RutaActual = "" Then Exit Sub
-
-    '-----------------------------------------
-    ' Cambiar el directorio actual del programa
-    '-----------------------------------------
-    ChDir RutaActual
-
-    '-----------------------------------------
-    ' Actualizar FileListBox
-    '-----------------------------------------
-    File1.Pattern = "*.NOM"
-    File1.Path = RutaActual
-    File1.Refresh
-
-    '-----------------------------------------
-    ' Guardar directorio actual
-    '-----------------------------------------
-    Direc_torio = RutaActual
-
-    '-----------------------------------------
-    ' Mostrar ruta
-    '-----------------------------------------
-    Label4.Caption = RutaActual
-
-    '-----------------------------------------
-    ' Guardar último directorio utilizado
-    '-----------------------------------------
-    On Error Resume Next
-
-    Close #7
-
-    Open "C:\GconTA\perma.dno" _
-        For Random As #7 Len = Len(basico)
-
-    If Err.Number = 0 Then
-
-        fin_basico = LOF(7) / Len(basico)
-
-        basico.datoarch = RutaActual
-
-        Put #7, 1, basico
-
-    End If
-
-    Close #7
-
-    Err.Clear
-
-    On Error GoTo ErrorActualizar
-
-    '-----------------------------------------
-    ' Actualizar información de la empresa
-    '-----------------------------------------
-    Close #1
-
-    empresarial
-
-    Exit Sub
-
-ErrorActualizar:
-
-    On Error Resume Next
-
-    Close #7
-
-End Sub
-Private Sub AbrirDirectorioSeleccionado()
-
-    Dim RutaSeleccionada As String
-
-    On Error GoTo ErrorDirectorio
-
-    If NavegandoDirectorio Then Exit Sub
-
-    If Dir1.ListIndex < 0 Then Exit Sub
-
-    RutaSeleccionada = Dir1.List(Dir1.ListIndex)
-
-    If Trim$(RutaSeleccionada) = "" Then Exit Sub
-
-    NavegandoDirectorio = True
-
-    ' Cambiar realmente al directorio seleccionado
-    If UCase$(Dir1.Path) <> UCase$(RutaSeleccionada) Then
-        Dir1.Path = RutaSeleccionada
-    End If
-
-    NavegandoDirectorio = False
-
-    Exit Sub
-
-ErrorDirectorio:
-
-    NavegandoDirectorio = False
-
-    MsgBox "No fue posible acceder al directorio." & vbCrLf & _
-           "Error " & Err.Number & ": " & Err.Description, _
-           vbExclamation, "Directorio"
-
-End Sub
-
-' comentario

@@ -210,64 +210,86 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
-
-Private Sub Command1_Click()
-On Error GoTo manejadorError
-       empresa.name = Text1.Text
-       empresa.ao = Text2.Text
-       empresa.sm = Text3.Text
-       empresa.fecha = Text4.Text
-       empresa.psub = Text5.Text
-       
-       If cm = 0 Then
-          Open "EMPRESA.dno" For Random As 1 Len = Len(empresa)
-       End If
-       
-       cm = cm + 1
-       Put 1, cm, empresa
-    
-    Form1.Label2.Caption = ("Año : " + Str$(empresa.ao) + Chr(13) + " Salario Minimo $" + Str$(empresa.psub) + Chr(13) + "UMA x dia :$ " + Format(empresa.sm, z1$))
-    
-    Exit Sub
-
-manejadorError:
-    
-End Sub
-
-Private Sub empsal_Click(Index As Integer)
-        Unload Form3
-        Load Form1
-        Form1.Show
-End Sub
+' ============================================================
+' EMPRESA
+' ============================================================
 
 Private Sub Form_Load()
     If cm > 0 Then
-       Get 1, cm, empresa
-       Text1.Text = empresa.name
-       Text2.Text = empresa.ao
-       Text3.Text = empresa.sm
-       Text4.Text = empresa.fecha
-       Text5.Text = empresa.psub
+        Get 1, cm, empresa
+
+        Text1.Text = empresa.name
+        Text2.Text = empresa.ao
+        Text3.Text = empresa.sm
+        Text4.Text = empresa.fecha
+        Text5.Text = empresa.psub
     End If
 End Sub
 
+Private Sub Command1_Click()
+    On Error GoTo manejadorError
+
+    empresa.name = Text1.Text
+    empresa.ao = Text2.Text
+    empresa.sm = Text3.Text
+    empresa.fecha = Text4.Text
+    empresa.psub = Text5.Text
+
+    If cm = 0 Then
+        Open "EMPRESA.dno" For Random As 1 Len = Len(empresa)
+    End If
+
+    cm = cm + 1
+    Put 1, cm, empresa
+
+    ActualizarDatosEmpresaPrincipal
+
+    Exit Sub
+
+manejadorError:
+End Sub
+
+Private Sub empsal_Click(Index As Integer)
+    Unload Form3
+    Load Form1
+    Form1.Show
+End Sub
+
+' ============================================================
+' FORMATO DE CAMPOS
+' ============================================================
+
 Private Sub Text3_KeyPress(KeyAscii As Integer)
-  If KeyAscii = 13 Then
+    If KeyAscii = 13 Then
         mientras = Text3.Text
+
         If mientras > 0 Then
-              Text3.Text = Format(mientras, z1$)
+            Text3.Text = Format(mientras, z1$)
         End If
-  End If
+    End If
 End Sub
 
 Private Sub Text5_KeyPress(KeyAscii As Integer)
-      If KeyAscii = 13 Then
+    If KeyAscii = 13 Then
         mientras = Text5.Text
-        If mientras > 0 Then
-              Text5.Text = Format(mientras, "#0.0000")
-        End If
-  End If
 
+        If mientras > 0 Then
+            Text5.Text = Format(mientras, "#0.0000")
+        End If
+    End If
 End Sub
 
-' comentario
+' ============================================================
+' APOYO
+' ============================================================
+
+Private Sub ActualizarDatosEmpresaPrincipal()
+    Form1.Label2.Caption = _
+        "Año : " + Str$(empresa.ao) + Chr(13) + _
+        " Salario Minimo $" + Str$(empresa.psub) + Chr(13) + _
+        "UMA x dia :$ " + Format(empresa.sm, z1$)
+End Sub
+
+
+
+

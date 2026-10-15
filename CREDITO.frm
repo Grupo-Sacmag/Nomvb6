@@ -69,52 +69,190 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+' ============================================================
+' GUARDADO DE CREDITO AL SALARIO
+' ============================================================
 
 Private Sub ArGdr1_Click()
-   yavas = 0
+    yavas = 0
+
     For i = 1 To 14
-       connom1.Row = i
-       connom1.Col = 1
-       If Val(connom1.Text) > 0 Then
-             credito.crede = connom1.Text
-             yavas = 1
-             Else
-             subsidio.liminfs = 0
-       End If
-       connom1.Col = 2
-       If Val(connom1.Text) > 0 Then
+        connom1.Row = i
+
+        connom1.col = 1
+        If Val(connom1.Text) > 0 Then
+            credito.crede = connom1.Text
+            yavas = 1
+        Else
+            subsidio.liminfs = 0
+        End If
+
+        connom1.col = 2
+        If Val(connom1.Text) > 0 Then
             credito.crea = connom1.Text
             yavas = 1
-            Else
+        Else
             subsidio.liminfs = 0
-       End If
-       connom1.Col = 3
-       
-       If Val(connom1.Text) > 0 Then
+        End If
+
+        connom1.col = 3
+        If Val(connom1.Text) > 0 Then
             credito.cresam = connom1.Text
-            
             yavas = 1
-            Else
+        Else
             subsidio.cuotafs = 0
-       End If
-       If yavas > 0 Then
-             Put #5, i, credito: yavas = 0
-             Else: i = 14
-       End If
-     Next i
+        End If
+
+        If yavas > 0 Then
+            Put #5, i, credito
+            yavas = 0
+        Else
+            i = 14
+        End If
+    Next i
 End Sub
 
+' ============================================================
+' CARGA DEL FORMULARIO
+' ============================================================
+
+Private Sub Form_Load()
+    PrepararFormulario
+    AbrirArchivoCredito
+    ConfigurarGrid
+    CargarCreditoEnGrid
+
+    connom1.Row = 1
+    connom1.col = 1
+    connom1.Appearance = flex3D
+End Sub
+
+Private Sub PrepararFormulario()
+    Width = Screen.Width * 0.65
+    Height = Screen.Height * 0.78
+    Left = (Screen.Width - Width) / 2
+    Top = (Screen.Height - Height) / 2
+End Sub
+
+Private Sub AbrirArchivoCredito()
+    If ta_r = 0 Then
+        Close 5
+        Open SubT_Mes + "TABLA.CRE" For Random As #5 Len = Len(credito)
+    Else
+        Open arch_tr For Random As #5 Len = Len(credito)
+        ta_r = 0
+    End If
+
+    Form7.Caption = SubT_Mes + "Tarifa articulo Credito al salario"
+    cem = LOF(5) / Len(credito)
+End Sub
+
+Private Sub ConfigurarGrid()
+    connom1.ColWidth(0) = 330
+
+    connom1.col = 0
+    connom1.Row = 0
+    connom1.Text = "#"
+    connom1.CellAlignment = 4
+
+    connom1.col = 1
+    connom1.CellAlignment = 4
+    connom1.Text = "Lim.Inferior"
+    connom1.ColWidth(1) = 1500
+
+    connom1.col = 2
+    connom1.CellAlignment = 4
+    connom1.Text = "Lim.Superior"
+    connom1.ColWidth(2) = 1500
+
+    connom1.col = 3
+    connom1.CellAlignment = 4
+    connom1.Text = "Cuota Fija"
+    connom1.ColWidth(3) = 1500
+End Sub
+
+Private Sub CargarCreditoEnGrid()
+    If cem > 0 Then
+        For r = 1 To cem
+            Get #5, r, credito
+
+            connom1.col = 0
+            connom1.Row = r
+            connom1.Text = r
+
+            connom1.col = 1
+            connom1.CellAlignment = 7
+            connom1.Text = Format(credito.crede, "###,##0.00")
+
+            connom1.col = 2
+            connom1.CellAlignment = 7
+            connom1.Text = Format(credito.crea, "###,##0.00")
+
+            connom1.col = 3
+            connom1.CellAlignment = 7
+            connom1.Text = Format(credito.cresam, "###,##0.00")
+        Next r
+    Else
+        For r = 1 To 14
+            connom1.col = 0
+            connom1.Row = r
+            connom1.Text = r
+        Next r
+    End If
+End Sub
+
+Private Sub Form_Resize()
+    Form7.Width = connom1.Width + 1400
+    Form7.Height = connom1.Height + 2400
+End Sub
+
+Private Sub salcre_Click(Index As Integer)
+    Close
+    Unload Form7
+End Sub
+
+' ============================================================
+' EVENTOS DEL GRID
+' ============================================================
+
+Private Sub ConNom1_EnterCell()
+    If connom1.col > 0 And connom1.Row > 0 Then
+        connom1.CellBackColor = &H80FF80
+    End If
+End Sub
+
+Private Sub ConNom1_KeyPress(KeyAscii As Integer)
+    Text1.Text = Chr$(KeyAscii)
+    Text1.SetFocus
+End Sub
+
+Private Sub ConNom1_LeaveCell()
+    If connom1.col > 0 And connom1.Row > 0 Then
+        connom1.CellBackColor = vbWhite
+    End If
+End Sub
+
+Private Sub ConNom1_RowColChange()
+    Text1.Text = connom1.Text
+End Sub
+
+' ============================================================
+' IMPRESION
+' ============================================================
+
 Private Sub creimp_Click(Index As Integer)
-   tam_largo = Printer.Height
+    tam_largo = Printer.Height
     tam_ancho = Printer.Width
-    
+
     Printer.Font.Size = 12
     Printer.CurrentY = tam_largo * 0.33
-    Rem Printer.Print Tab(40); "Credito al Salario."
     Printer.Print Tab(30); Form7.Caption
     Printer.Print
+
     guarda = Printer.CurrentY
+
     Printer.Line ((2500 + 1200), Printer.CurrentY)-((2500 + 5000), (Printer.CurrentY + 600)), , B
+
     Printer.Font.Size = 8
     Printer.CurrentY = guarda
     Printer.Print Tab(50); "Lim.Inf";
@@ -122,136 +260,49 @@ Private Sub creimp_Click(Index As Integer)
     Printer.Print Tab(80); "Credito"
     Printer.Print
     Printer.Print
+
     For r = 1 To 14
-      For L = 1 To 3
-         If connom1.TextMatrix(r, L) <> "" Then
+        For L = 1 To 3
+            If connom1.TextMatrix(r, L) <> "" Then
                 bala = connom1.TextMatrix(r, L)
-                valor$ = Format(bala, "##,###,##0.00"): uso$ = "##,###,##0.00"
-                pone = 0: colocar pone, valor$, uso$
+                valor$ = Format(bala, "##,###,##0.00")
+                uso$ = "##,###,##0.00"
+                pone = 0
+
+                colocar pone, valor$, uso$
+
                 Printer.CurrentX = (2500 + (1200 * L)) + pone
                 Printer.Print valor$;
-         End If
-      Next L
-      Printer.Print
+            End If
+        Next L
+
+        Printer.Print
     Next r
+
     Printer.EndDoc
 End Sub
 
-Private Sub Form_Load()
-    Width = Screen.Width * 0.65 ' Establecer el ancho del formulario.
-    Height = Screen.Height * 0.78   ' Establecer el alto del formulario.
-    Left = (Screen.Width - Width) / 2   ' Centrar el formulario horizontalmente.
-    Top = (Screen.Height - Height) / 2  ' Centrar el formulario verticalmente.
+' ============================================================
+' EDICION CON TEXT1
+' ============================================================
 
-If ta_r = 0 Then
-      Close 5:  Open SubT_Mes + "TABLA.CRE" For Random As #5 Len = Len(credito)
-      
-   Else
-        Open arch_tr For Random As #5 Len = Len(credito)
-        ta_r = 0
-End If
-Form7.Caption = SubT_Mes + "Tarifa articulo Credito al salario"
-cem = LOF(5) / Len(credito)
-connom1.ColWidth(0) = 330
-connom1.Col = 0
-connom1.Row = 0
-connom1.Text = "#"
-connom1.CellAlignment = 4
-connom1.Col = 1
-connom1.CellAlignment = 4
-connom1.Text = "Lim.Inferior"
-connom1.ColWidth(1) = 1500
-connom1.Col = 2
-connom1.CellAlignment = 4
-connom1.Text = "Lim.Superior"
-connom1.ColWidth(2) = 1500
-connom1.Col = 3
-connom1.CellAlignment = 4
-connom1.Text = "Cuota Fija"
-connom1.ColWidth(3) = 1500
-If cem > 0 Then
-    For r = 1 To cem: Get #5, r, credito
-      connom1.Col = 0
-      connom1.Row = r
-      connom1.Text = r
-      connom1.Col = 1
-      connom1.CellAlignment = 7
-      connom1.Text = Format(credito.crede, "###,##0.00")
-      connom1.Col = 2
-      connom1.CellAlignment = 7
-      connom1.Text = Format(credito.crea, "###,##0.00")
-      connom1.Col = 3
-      connom1.CellAlignment = 7
-      connom1.Text = Format(credito.cresam, "###,##0.00")
-
-    Next r
-      Else
-        For r = 1 To 14
-           connom1.Col = 0
-           connom1.Row = r
-           connom1.Text = r
-        Next r
-    End If
-     connom1.Row = 1
-     connom1.Col = 1
-     connom1.Appearance = flex3D
-
-End Sub
-
-
-
-Private Sub Form_Resize()
-    Form7.Width = connom1.Width + 1400
-    Form7.Height = connom1.Height + 2400
-
-End Sub
-
-Private Sub salcre_Click(Index As Integer)
-    
-     Close:
-     Unload Form7
-     Rem Load Form1
-     Rem Form1.Show
-End Sub
-Private Sub ConNom1_EnterCell()
-    If connom1.Col > 0 And connom1.Row > 0 Then
-        connom1.CellBackColor = &H80FF80
-    End If
-End Sub
-
-
-Private Sub ConNom1_KeyPress(KeyAscii As Integer)
-            Text1.Text = Chr$(KeyAscii)
-            Text1.SetFocus
-End Sub
-
-Private Sub ConNom1_LeaveCell()
-   If connom1.Col > 0 And connom1.Row > 0 Then
-        connom1.CellBackColor = vbWhite
-   End If
-End Sub
-
-Private Sub ConNom1_RowColChange()
-   Text1.Text = connom1.Text
-End Sub
 Private Sub Text1_Change()
     connom1.Text = Text1.Text
 End Sub
 
-
 Private Sub Text1_GotFocus()
-     SendKeys "{end}"
+    SendKeys "{end}"
 End Sub
 
 Private Sub Text1_KeyPress(KeyAscii As Integer)
-   Select Case KeyAscii
-       Case 13
-         connom1.Text = Format(Val(connom1.Text), "###,##0.00")
-         connom1.SetFocus
-       Case 27
-         connom1.Text = ""
-         connom1.SetFocus
-   End Select
+    Select Case KeyAscii
+        Case 13
+            connom1.Text = Format(Val(connom1.Text), "###,##0.00")
+            connom1.SetFocus
+
+        Case 27
+            connom1.Text = ""
+            connom1.SetFocus
+    End Select
 End Sub
 
-' comentario

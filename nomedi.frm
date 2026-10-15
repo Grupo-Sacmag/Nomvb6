@@ -171,6 +171,11 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Dim ValorAnt
 Dim ModoEdicion As Boolean
+
+' ============================================================
+' GRID PRINCIPAL / EDICION DE CELDAS
+' ============================================================
+
 Sub RecPra()
     ListPer.TextMatrix(ListPer.Row, 1) = Trim(personal.ape1) + " " + Trim(personal.ape2) + " " + Trim(personal.nom)
     ListPer.TextMatrix(ListPer.Row, 2) = Trim(personal.RFC)
@@ -200,7 +205,7 @@ Sub ArchCorr()
   Open "PerOtre.dno" For Random As 3 Len = Len(Otros_Rgtros)
   Get 3, rgtro, Otros_Rgtros
   
-    Select Case ListPer.Col
+    Select Case ListPer.col
         Case 0, 1
             Rem nada
         Case 2
@@ -335,6 +340,11 @@ salte6:
             ListPer.Text = ValorAnt
         End Select
 End Sub
+
+' ============================================================
+' IMPRESION DE LISTADOS
+' ============================================================
+
 Sub pertit()
     fontviejo = Printer.FontSize
     Printer.FontSize = 10
@@ -418,29 +428,39 @@ Sub linea()
 proximo:
 End Sub
 
+
+' ============================================================
+' ORDENAMIENTO DEL GRID
+' ============================================================
+
 Private Sub ArOrAlf_Click()
-    colanti = ListPer.Col
+    colanti = ListPer.col
     renati = ListPer.Row
     ListPer.Row = 1
-    ListPer.Col = 1
+    ListPer.col = 1
     ListPer.RowSel = ListPer.Rows - 1
     ListPer.Sort = 1
-    ListPer.Col = colanti
+    ListPer.col = colanti
     ListPer.Row = renati
 
 End Sub
 
 Private Sub ArOrNum_Click()
-    colanti = ListPer.Col
+    colanti = ListPer.col
     renati = ListPer.Row
     ListPer.Row = 1
-    ListPer.Col = 0
+    ListPer.col = 0
     ListPer.RowSel = ListPer.Rows - 1
     ListPer.Sort = 3
-    ListPer.Col = colanti
+    ListPer.col = colanti
     ListPer.Row = renati
     ListPer.SetFocus
 End Sub
+
+
+' ============================================================
+' MODO EDICION / RESPALDO Y CANCELACION
+' ============================================================
 
 Private Sub BtnCancelarCambios_Click()
     If MsgBox("Esto descartará TODOS los cambios hechos desde que habilitaste edición. ¿Continuar?", vbYesNo + vbExclamation) = vbYes Then
@@ -465,6 +485,11 @@ Private Sub BtnHabilitarEdicion_Click()
     ActualizarBotones
     MsgBox "Edición habilitada. Los cambios se guardan al vuelo por celda, pero ahora puedes cancelar todo con 'Cancelar cambios'.", vbInformation
 End Sub
+
+
+' ============================================================
+' CALCULO MASIVO DE SALARIO INTEGRADO
+' ============================================================
 
 Private Sub calcularIntegrado_Click()
 Dim i As Integer
@@ -535,6 +560,11 @@ ErrHandler:
     MsgBox "Error en calcularIntegrado: " & Err.Description, vbCritical, "Error"
 End Sub
 
+
+' ============================================================
+' COMANDOS GENERALES / COPIAR / PEGAR / SALIR
+' ============================================================
+
 Private Sub Command1_Click()
 Form_Load
 End Sub
@@ -544,7 +574,7 @@ Private Sub EdCopiar_Click()
    Clipboard.Clear
    
     For i = ListPer.Row To ListPer.RowSel
-        For f = ListPer.Col To ListPer.ColSel
+        For f = ListPer.col To ListPer.ColSel
             Temporal1 = Temporal1 + ListPer.TextMatrix(i, f)
             If f < ListPer.ColSel Then
                 Temporal1 = Temporal1 & Chr(9)
@@ -557,7 +587,7 @@ Private Sub EdCopiar_Click()
     Clipboard.SetText Temporal1
     ListPer.FixedCols = 2
     ListPer.FixedRows = 1
-    ListPer.Row = 1: ListPer.Col = 2
+    ListPer.Row = 1: ListPer.col = 2
     TexEdicion.Text = ListPer.Text
 
 End Sub
@@ -635,7 +665,7 @@ End Sub
 Private Sub EditSelTot_Click()
     Clipboard.Clear
     ListPer.Row = 0
-    ListPer.Col = 0
+    ListPer.col = 0
     ListPer.RowSel = ListPer.Rows - 1
     ListPer.ColSel = ListPer.Cols - 1
 End Sub
@@ -647,7 +677,7 @@ Private Sub EdPegar_Click()
   End If
   Dim temporal, DeAqui As Integer, RetornoCarro As Long, InicioCopia As Long
   temporal = Clipboard.GetText(vbCFText)
-  RetornoCarro = ListPer.Col
+  RetornoCarro = ListPer.col
   InicioCopia = ListPer.Row
 If temporal <> "" Then
   Clipboard.Clear
@@ -657,7 +687,7 @@ For i = 1 To Len(temporal)
           Case Chr(9)
           TexEdicion.Text = Mid(temporal, DeAqui, (i - DeAqui))
           ListPer.Text = Mid(temporal, DeAqui, (i - DeAqui))
-          ListPer.Col = ListPer.Col + 1
+          ListPer.col = ListPer.col + 1
           DeAqui = i + 1
           Case Chr(13)
           TexEdicion.Text = Mid(temporal, DeAqui, (i - DeAqui))
@@ -666,13 +696,13 @@ For i = 1 To Len(temporal)
           ListPer.Row = ListPer.Row + 1
           DeAqui = i + 1
           Case Chr(10)
-          ListPer.Col = RetornoCarro
+          ListPer.col = RetornoCarro
           DeAqui = i + 1
           Case Else
           Rem nada
     End Select
  Next i
- ListPer.Row = InicioCopia: ListPer.Col = RetornoCarro
+ ListPer.Row = InicioCopia: ListPer.col = RetornoCarro
 End If
 End Sub
 
@@ -680,6 +710,11 @@ Private Sub EdSup_Click()
  ListPer.FixedCols = 0
  ListPer.FixedRows = 0
 End Sub
+
+
+' ============================================================
+' CARGA INICIAL DEL FORMULARIO
+' ============================================================
 
 Private Sub Form_Load()
 Dim oRS As New ADODB.Recordset
@@ -731,13 +766,13 @@ On Error Resume Next
 
         dat.Rows = oRS.RecordCount + 1
         dat.Cols = oRS.Fields.Count
-        dat.Row = 0: dat.Col = 0
-        dat.Col = 0: dat.CellAlignment = 4: dat.ColWidth(0) = 2800: dat.Text = "ID NÓMINA"
-        dat.Col = 1: dat.CellAlignment = 4: dat.ColWidth(1) = 2800: dat.Text = "RFC"
-        dat.Col = 2: dat.CellAlignment = 4: dat.ColWidth(2) = 2800: dat.Text = "CURP"
-        dat.Col = 3: dat.CellAlignment = 4: dat.ColWidth(3) = 2800: dat.Text = "NOMBRE"
-        dat.Col = 4: dat.CellAlignment = 4: dat.ColWidth(4) = 2800: dat.Text = "APELLIDO P"
-        dat.Col = 5: dat.CellAlignment = 4: dat.ColWidth(5) = 2800: dat.Text = "APELLIDO M"
+        dat.Row = 0: dat.col = 0
+        dat.col = 0: dat.CellAlignment = 4: dat.ColWidth(0) = 2800: dat.Text = "ID NÓMINA"
+        dat.col = 1: dat.CellAlignment = 4: dat.ColWidth(1) = 2800: dat.Text = "RFC"
+        dat.col = 2: dat.CellAlignment = 4: dat.ColWidth(2) = 2800: dat.Text = "CURP"
+        dat.col = 3: dat.CellAlignment = 4: dat.ColWidth(3) = 2800: dat.Text = "NOMBRE"
+        dat.col = 4: dat.CellAlignment = 4: dat.ColWidth(4) = 2800: dat.Text = "APELLIDO P"
+        dat.col = 5: dat.CellAlignment = 4: dat.ColWidth(5) = 2800: dat.Text = "APELLIDO M"
 
         vardatarows = oRS.GetRows()
 
@@ -801,6 +836,11 @@ On Error Resume Next
 Exit Sub
 End Sub
 
+
+' ============================================================
+' REPOSICION Y EVENTOS DEL GRID
+' ============================================================
+
 Sub REPONE()
 Dim Repuse
     Get 2, r, personal
@@ -841,7 +881,7 @@ errorManejador:
 End Sub
 
 Private Sub listper_EnterCell()
-    If ListPer.Col > 1 And ListPer.Row > 0 Then
+    If ListPer.col > 1 And ListPer.Row > 0 Then
         ListPer.CellBackColor = &H80FF80
     End If
 End Sub
@@ -879,7 +919,7 @@ Private Sub ListPer_KeyPress(KeyAscii As Integer)
 End Sub
 
 Private Sub listper_LeaveCell()
-    If ListPer.Col > 1 And ListPer.Row > 0 Then
+    If ListPer.col > 1 And ListPer.Row > 0 Then
         ListPer.Text = UCase(TexEdicion.Text)
         ListPer.CellBackColor = vbWhite
     End If
@@ -914,6 +954,11 @@ Private Sub TexEdicion_KeyPress(KeyAscii As Integer)
             TexEdicion.Text = ListPer.Text
     End Select
 End Sub
+
+
+' ============================================================
+' SINCRONIZACION CON BASE DE DATOS REMOTA
+' ============================================================
 
 Public Sub actualizarSaldos()
     If EsEmpresaLocal(emp) Then
@@ -1021,13 +1066,13 @@ Dim oRS As New ADODB.Recordset
 
         dat.Rows = oRS.RecordCount + 1
         dat.Cols = oRS.Fields.Count
-        dat.Row = 0: dat.Col = 0
-        dat.Col = 0: dat.CellAlignment = 4: dat.ColWidth(0) = 2800: dat.Text = "ID NÓMINA"
-        dat.Col = 1: dat.CellAlignment = 4: dat.ColWidth(1) = 2800: dat.Text = "RFC"
-        dat.Col = 2: dat.CellAlignment = 4: dat.ColWidth(2) = 2800: dat.Text = "CURP"
-        dat.Col = 3: dat.CellAlignment = 4: dat.ColWidth(3) = 2800: dat.Text = "NOMBRE"
-        dat.Col = 4: dat.CellAlignment = 4: dat.ColWidth(4) = 2800: dat.Text = "APELLIDO P"
-        dat.Col = 5: dat.CellAlignment = 4: dat.ColWidth(5) = 2800: dat.Text = "APELLIDO M"
+        dat.Row = 0: dat.col = 0
+        dat.col = 0: dat.CellAlignment = 4: dat.ColWidth(0) = 2800: dat.Text = "ID NÓMINA"
+        dat.col = 1: dat.CellAlignment = 4: dat.ColWidth(1) = 2800: dat.Text = "RFC"
+        dat.col = 2: dat.CellAlignment = 4: dat.ColWidth(2) = 2800: dat.Text = "CURP"
+        dat.col = 3: dat.CellAlignment = 4: dat.ColWidth(3) = 2800: dat.Text = "NOMBRE"
+        dat.col = 4: dat.CellAlignment = 4: dat.ColWidth(4) = 2800: dat.Text = "APELLIDO P"
+        dat.col = 5: dat.CellAlignment = 4: dat.ColWidth(5) = 2800: dat.Text = "APELLIDO M"
 
         vardatarows = oRS.GetRows()
         For i = 1 To dat.Rows - 1
@@ -1098,19 +1143,19 @@ Dim oRS As New ADODB.Recordset
     End If
 
     ListPer.Cols = 13: ListPer.Rows = 1: ListPer.Row = 0
-    ListPer.Col = 0: ListPer.CellAlignment = 4: ListPer.ColWidth(0) = 400: ListPer.Text = "#"
-    ListPer.Col = 1: ListPer.CellAlignment = 4: ListPer.ColWidth(1) = 3200: ListPer.Text = "Nombre"
-    ListPer.Col = 2: ListPer.CellAlignment = 4: ListPer.ColWidth(2) = 2200: ListPer.Text = "RFC"
-    ListPer.Col = 3: ListPer.CellAlignment = 4: ListPer.ColWidth(3) = 2200: ListPer.Text = "CURP"
-    ListPer.Col = 4: ListPer.CellAlignment = 4: ListPer.ColWidth(4) = 1600: ListPer.Text = "IMSS"
-    ListPer.Col = 5: ListPer.CellAlignment = 4: ListPer.ColWidth(5) = 1200: ListPer.Text = "Fcha.Alta"
-    ListPer.Col = 6: ListPer.CellAlignment = 4: ListPer.ColWidth(6) = 1200: ListPer.Text = "Fcha.Baja"
-    ListPer.Col = 7: ListPer.CellAlignment = 4: ListPer.ColWidth(7) = 1200: ListPer.Text = "Salario dia"
-    ListPer.Col = 8: ListPer.CellAlignment = 4: ListPer.ColWidth(8) = 1200: ListPer.Text = "O.F. dia"
-    ListPer.Col = 9: ListPer.CellAlignment = 4: ListPer.ColWidth(9) = 1200: ListPer.Text = "Otros diario"
-    ListPer.Col = 10: ListPer.CellAlignment = 4: ListPer.ColWidth(10) = 1200: ListPer.Text = "Integrado"
-    ListPer.Col = 11: ListPer.CellAlignment = 4: ListPer.ColWidth(11) = 2200: ListPer.Text = "Tarjeta Bnx"
-    ListPer.Col = 12: ListPer.CellAlignment = 4: ListPer.ColWidth(12) = 2200: ListPer.Text = "Sueldo DEON"
+    ListPer.col = 0: ListPer.CellAlignment = 4: ListPer.ColWidth(0) = 400: ListPer.Text = "#"
+    ListPer.col = 1: ListPer.CellAlignment = 4: ListPer.ColWidth(1) = 3200: ListPer.Text = "Nombre"
+    ListPer.col = 2: ListPer.CellAlignment = 4: ListPer.ColWidth(2) = 2200: ListPer.Text = "RFC"
+    ListPer.col = 3: ListPer.CellAlignment = 4: ListPer.ColWidth(3) = 2200: ListPer.Text = "CURP"
+    ListPer.col = 4: ListPer.CellAlignment = 4: ListPer.ColWidth(4) = 1600: ListPer.Text = "IMSS"
+    ListPer.col = 5: ListPer.CellAlignment = 4: ListPer.ColWidth(5) = 1200: ListPer.Text = "Fcha.Alta"
+    ListPer.col = 6: ListPer.CellAlignment = 4: ListPer.ColWidth(6) = 1200: ListPer.Text = "Fcha.Baja"
+    ListPer.col = 7: ListPer.CellAlignment = 4: ListPer.ColWidth(7) = 1200: ListPer.Text = "Salario dia"
+    ListPer.col = 8: ListPer.CellAlignment = 4: ListPer.ColWidth(8) = 1200: ListPer.Text = "O.F. dia"
+    ListPer.col = 9: ListPer.CellAlignment = 4: ListPer.ColWidth(9) = 1200: ListPer.Text = "Otros diario"
+    ListPer.col = 10: ListPer.CellAlignment = 4: ListPer.ColWidth(10) = 1200: ListPer.Text = "Integrado"
+    ListPer.col = 11: ListPer.CellAlignment = 4: ListPer.ColWidth(11) = 2200: ListPer.Text = "Tarjeta Bnx"
+    ListPer.col = 12: ListPer.CellAlignment = 4: ListPer.ColWidth(12) = 2200: ListPer.Text = "Sueldo DEON"
 
     If Dm > 0 Then
         For r = 1 To Dm: Get 2, r, personal: Get 3, r, Otros_Rgtros: Get 4, r, Clbnx: Get 15, r, DEON
@@ -1157,6 +1202,11 @@ Exit Sub
 
 
 End Sub
+
+
+' ============================================================
+' CALCULO DE IMPUESTO ISR
+' ============================================================
 
 Public Sub calcularYAsignarImpuesto()
     Dim i As Integer
@@ -1214,6 +1264,11 @@ Private Sub isrCalculo_Click()
     calcularYAsignarImpuesto
 End Sub
 
+
+' ============================================================
+' FILTRO DE BUSQUEDA
+' ============================================================
+
 Private Sub Text1_KeyPress(KeyAscii As Integer)
     ' 1. Solo se activa si la tecla presionada es Enter
     
@@ -1247,6 +1302,11 @@ Private Sub Text1_KeyPress(KeyAscii As Integer)
     End If
 End Sub
 
+
+' ============================================================
+' ARCHIVOS DE RESPALDO Y ESTADO DE BOTONES
+' ============================================================
+
 Private Sub RespaldarArchivos()
     Close 1, 2, 3, 4, 15   ' asegura que nada quede abierto
     FileCopy "personal.dno", "personal.bak"
@@ -1270,6 +1330,11 @@ Private Sub ActualizarBotones()
     Form4.Caption = IIf(ModoEdicion, "Edición de personal - MODO EDICIÓN", "Edición de personal - Solo lectura")
 End Sub
 
+
+' ============================================================
+' CARGA DEL GRID DESDE ARCHIVOS LOCALES
+' ============================================================
+
 Private Sub CargarGrid()
 
     Close 2, 3, 4, 15
@@ -1292,19 +1357,19 @@ Private Sub CargarGrid()
     End If
 
     ListPer.Cols = 13: ListPer.Rows = 1: ListPer.Row = 0
-    ListPer.Col = 0: ListPer.CellAlignment = 4: ListPer.ColWidth(0) = 400: ListPer.Text = "#"
-    ListPer.Col = 1: ListPer.CellAlignment = 4: ListPer.ColWidth(1) = 3200: ListPer.Text = "Nombre"
-    ListPer.Col = 2: ListPer.CellAlignment = 4: ListPer.ColWidth(2) = 2200: ListPer.Text = "RFC"
-    ListPer.Col = 3: ListPer.CellAlignment = 4: ListPer.ColWidth(3) = 2200: ListPer.Text = "CURP"
-    ListPer.Col = 4: ListPer.CellAlignment = 4: ListPer.ColWidth(4) = 1600: ListPer.Text = "IMSS"
-    ListPer.Col = 5: ListPer.CellAlignment = 4: ListPer.ColWidth(5) = 1200: ListPer.Text = "Fcha.Alta"
-    ListPer.Col = 6: ListPer.CellAlignment = 4: ListPer.ColWidth(6) = 1200: ListPer.Text = "Fcha.Baja"
-    ListPer.Col = 7: ListPer.CellAlignment = 4: ListPer.ColWidth(7) = 1200: ListPer.Text = "Salario dia"
-    ListPer.Col = 8: ListPer.CellAlignment = 4: ListPer.ColWidth(8) = 1200: ListPer.Text = "O.F. dia"
-    ListPer.Col = 9: ListPer.CellAlignment = 4: ListPer.ColWidth(9) = 1200: ListPer.Text = "Otros diario"
-    ListPer.Col = 10: ListPer.CellAlignment = 4: ListPer.ColWidth(10) = 1200: ListPer.Text = "Integrado"
-    ListPer.Col = 11: ListPer.CellAlignment = 4: ListPer.ColWidth(11) = 2200: ListPer.Text = "Tarjeta Bnx"
-    ListPer.Col = 12: ListPer.CellAlignment = 4: ListPer.ColWidth(12) = 2200: ListPer.Text = "Impuesto (ISR)"
+    ListPer.col = 0: ListPer.CellAlignment = 4: ListPer.ColWidth(0) = 400: ListPer.Text = "#"
+    ListPer.col = 1: ListPer.CellAlignment = 4: ListPer.ColWidth(1) = 3200: ListPer.Text = "Nombre"
+    ListPer.col = 2: ListPer.CellAlignment = 4: ListPer.ColWidth(2) = 2200: ListPer.Text = "RFC"
+    ListPer.col = 3: ListPer.CellAlignment = 4: ListPer.ColWidth(3) = 2200: ListPer.Text = "CURP"
+    ListPer.col = 4: ListPer.CellAlignment = 4: ListPer.ColWidth(4) = 1600: ListPer.Text = "IMSS"
+    ListPer.col = 5: ListPer.CellAlignment = 4: ListPer.ColWidth(5) = 1200: ListPer.Text = "Fcha.Alta"
+    ListPer.col = 6: ListPer.CellAlignment = 4: ListPer.ColWidth(6) = 1200: ListPer.Text = "Fcha.Baja"
+    ListPer.col = 7: ListPer.CellAlignment = 4: ListPer.ColWidth(7) = 1200: ListPer.Text = "Salario dia"
+    ListPer.col = 8: ListPer.CellAlignment = 4: ListPer.ColWidth(8) = 1200: ListPer.Text = "O.F. dia"
+    ListPer.col = 9: ListPer.CellAlignment = 4: ListPer.ColWidth(9) = 1200: ListPer.Text = "Otros diario"
+    ListPer.col = 10: ListPer.CellAlignment = 4: ListPer.ColWidth(10) = 1200: ListPer.Text = "Integrado"
+    ListPer.col = 11: ListPer.CellAlignment = 4: ListPer.ColWidth(11) = 2200: ListPer.Text = "Tarjeta Bnx"
+    ListPer.col = 12: ListPer.CellAlignment = 4: ListPer.ColWidth(12) = 2200: ListPer.Text = "Impuesto (ISR)"
 
     If Dm > 0 Then
         For r = 1 To Dm: Get 2, r, personal: Get 3, r, Otros_Rgtros: Get 4, r, Clbnx: Get 15, r, DEON
@@ -1354,3 +1419,5 @@ Sig_te:
 
 End Sub
 ' comentario
+
+

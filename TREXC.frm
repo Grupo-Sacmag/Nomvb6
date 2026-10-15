@@ -144,85 +144,160 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+' ============================================================
+' CONFIGURACION DEL GRID PRINCIPAL
+' ============================================================
+
 Sub Col_Def()
-   Ex.Clear: Ex.Rows = 1: Ex.Cols = 10: Ex.FixedCols = 0
-   Ex.Text = "No."
-   Ex.Col = 0: Ex.CellAlignment = 4: Ex.ColWidth(0) = 1800: Ex.Text = "Num.Cta"
-   Ex.Col = 1: Ex.CellAlignment = 4: Ex.ColWidth(1) = 1200: Ex.Text = "Nombre"
-   Ex.Col = 2: Ex.CellAlignment = 4: Ex.ColWidth(2) = 1200: Ex.Text = "Apell.Paterno"
-   Ex.Col = 3: Ex.CellAlignment = 4: Ex.ColWidth(3) = 1200: Ex.Text = "Apell.Materno"
-   Ex.Col = 4: Ex.CellAlignment = 4: Ex.ColWidth(4) = 800: Ex.Text = "Importe"
-   Ex.Col = 5: Ex.CellAlignment = 4: Ex.ColWidth(5) = 800: Ex.Text = "Trabajador"
-   Ex.Col = 6: Ex.CellAlignment = 4: Ex.ColWidth(6) = 800: Ex.Text = "Ref.Alfanum"
-   Ex.Col = 7: Ex.CellAlignment = 4: Ex.ColWidth(7) = 800: Ex.Text = "Concepto Pago"
-   Ex.Col = 8: Ex.CellAlignment = 4: Ex.ColWidth(8) = 800: Ex.Text = "MIsmoDia"
-   Ex.Col = 9: Ex.CellAlignment = 4: Ex.ColWidth(9) = 600: Ex.Text = "Cons."
+    Ex.Clear
+    Ex.Rows = 1
+    Ex.Cols = 10
+    Ex.FixedCols = 0
+
+    Ex.Text = "No."
+
+    Ex.col = 0
+    Ex.CellAlignment = 4
+    Ex.ColWidth(0) = 1800
+    Ex.Text = "Num.Cta"
+
+    Ex.col = 1
+    Ex.CellAlignment = 4
+    Ex.ColWidth(1) = 1200
+    Ex.Text = "Nombre"
+
+    Ex.col = 2
+    Ex.CellAlignment = 4
+    Ex.ColWidth(2) = 1200
+    Ex.Text = "Apell.Paterno"
+
+    Ex.col = 3
+    Ex.CellAlignment = 4
+    Ex.ColWidth(3) = 1200
+    Ex.Text = "Apell.Materno"
+
+    Ex.col = 4
+    Ex.CellAlignment = 4
+    Ex.ColWidth(4) = 800
+    Ex.Text = "Importe"
+
+    Ex.col = 5
+    Ex.CellAlignment = 4
+    Ex.ColWidth(5) = 800
+    Ex.Text = "Trabajador"
+
+    Ex.col = 6
+    Ex.CellAlignment = 4
+    Ex.ColWidth(6) = 800
+    Ex.Text = "Ref.Alfanum"
+
+    Ex.col = 7
+    Ex.CellAlignment = 4
+    Ex.ColWidth(7) = 800
+    Ex.Text = "Concepto Pago"
+
+    Ex.col = 8
+    Ex.CellAlignment = 4
+    Ex.ColWidth(8) = 800
+    Ex.Text = "MIsmoDia"
+
+    Ex.col = 9
+    Ex.CellAlignment = 4
+    Ex.ColWidth(9) = 600
+    Ex.Text = "Cons."
 End Sub
-  
+
 Private Sub Form_Load()
     Col_Def
 End Sub
 
+' ============================================================
+' COPIAR / SELECCIONAR
+' ============================================================
+
 Private Sub EdCopiar_Click()
- Dim Temporal1
- Clipboard.Clear
-   
-   difer = Ex.RowSel - Ex.Row
-   For i = Ex.Row To Ex.RowSel
-      
-      For f = Ex.Col To Ex.ColSel
+    Dim Temporal1
+
+    Clipboard.Clear
+
+    difer = Ex.RowSel - Ex.Row
+
+    For i = Ex.Row To Ex.RowSel
+        For f = Ex.col To Ex.ColSel
             Temporal1 = Temporal1 + Ex.TextMatrix(i, f)
+
             If f < Ex.ColSel Then
                 Temporal1 = Temporal1 & Chr(9)
             End If
-      Next f
-      Temporal1 = Temporal1 & Chr(13) & Chr(10)
-      
-   Next i
-    Clipboard.SetText Temporal1
+        Next f
 
+        Temporal1 = Temporal1 & Chr(13) & Chr(10)
+    Next i
+
+    Clipboard.SetText Temporal1
 End Sub
 
 Private Sub EdSel_Click()
-Clipboard.Clear
-    Ex.Row = 1: Ex.Col = 0
+    Clipboard.Clear
+
+    Ex.Row = 1
+    Ex.col = 0
     Ex.RowSel = Ex.Rows - 1
     Ex.ColSel = Ex.Cols - 2
 End Sub
 
-Private Sub GenBnx_Click()
-Ex2.TextMatrix(0, 1) = "M"
-Ex2.TextMatrix(0, 2) = "BAN"
-Ex2.TextMatrix(0, 3) = "TC"
-Ex2.TextMatrix(0, 4) = "PRO"
-Ex2.TextMatrix(0, 5) = "IN"
-Ex2.TextMatrix(0, 6) = "SUC"
-Ex2.TextMatrix(0, 7) = "CUENTA"
-Ex2.TextMatrix(0, 8) = "PER"
-Ex2.TextMatrix(0, 9) = "NOMBRE"
-Ex2.TextMatrix(0, 10) = "ALIAS"
-Ex2.TextMatrix(0, 11) = "M"
-Ex2.TextMatrix(0, 12) = "IMPORTE"
-Ex2.TextMatrix(0, 13) = "P"
-Ex2.TextMatrix(0, 14) = "RFC"
-Ex2.ColWidth(0) = 0
-Ex2.ColWidth(1) = 250
-Ex2.ColWidth(2) = 480
-Ex2.ColWidth(3) = 300
-Ex2.ColWidth(4) = 480
-Ex2.ColWidth(5) = 300
-Ex2.ColWidth(6) = 480
-Ex2.ColWidth(7) = 1550
-Ex2.ColWidth(8) = 300
-Ex2.ColWidth(9) = 4000
-Ex2.ColWidth(10) = 2200
-Ex2.ColWidth(11) = 380
-Ex2.ColWidth(12) = 1000
-Ex2.ColWidth(13) = 250
-Ex2.ColWidth(14) = 500
+' ============================================================
+' GENERACION DE FORMATO BNX / BANORTE
+' ============================================================
 
-   Ex2.Rows = Ex.Rows
-   Dim fin As Integer
+Private Sub GenBnx_Click()
+    ConfigurarGridBNX
+    LlenarGridBNX
+End Sub
+
+Private Sub ConfigurarGridBNX()
+    Ex2.TextMatrix(0, 1) = "M"
+    Ex2.TextMatrix(0, 2) = "BAN"
+    Ex2.TextMatrix(0, 3) = "TC"
+    Ex2.TextMatrix(0, 4) = "PRO"
+    Ex2.TextMatrix(0, 5) = "IN"
+    Ex2.TextMatrix(0, 6) = "SUC"
+    Ex2.TextMatrix(0, 7) = "CUENTA"
+    Ex2.TextMatrix(0, 8) = "PER"
+    Ex2.TextMatrix(0, 9) = "NOMBRE"
+    Ex2.TextMatrix(0, 10) = "ALIAS"
+    Ex2.TextMatrix(0, 11) = "M"
+    Ex2.TextMatrix(0, 12) = "IMPORTE"
+    Ex2.TextMatrix(0, 13) = "P"
+    Ex2.TextMatrix(0, 14) = "RFC"
+
+    Ex2.ColWidth(0) = 0
+    Ex2.ColWidth(1) = 250
+    Ex2.ColWidth(2) = 480
+    Ex2.ColWidth(3) = 300
+    Ex2.ColWidth(4) = 480
+    Ex2.ColWidth(5) = 300
+    Ex2.ColWidth(6) = 480
+    Ex2.ColWidth(7) = 1550
+    Ex2.ColWidth(8) = 300
+    Ex2.ColWidth(9) = 4000
+    Ex2.ColWidth(10) = 2200
+    Ex2.ColWidth(11) = 380
+    Ex2.ColWidth(12) = 1000
+    Ex2.ColWidth(13) = 250
+    Ex2.ColWidth(14) = 500
+
+    Ex2.Rows = Ex.Rows
+End Sub
+
+Private Sub LlenarGridBNX()
+    Dim fin As Integer
+    Dim nombre As String * 55
+    Dim alias As String * 20
+    Dim RFC As String * 18
+    Dim EMAIL As String * 40
+    Dim CEL As String * 10
+
     For fin = 1 To Ex2.Rows - 1
         Ex2.TextMatrix(fin, 1) = "A"
         Ex2.TextMatrix(fin, 2) = "0000"
@@ -232,33 +307,40 @@ Ex2.ColWidth(14) = 500
         Ex2.TextMatrix(fin, 6) = "00000000"
         Ex2.TextMatrix(fin, 7) = Ex.TextMatrix(fin, 0)
         Ex2.TextMatrix(fin, 8) = "01"
-        Dim nombre As String * 55
+
         nombre = Ex.TextMatrix(fin, 1) + " " + Ex.TextMatrix(fin, 2) + " " + Ex.TextMatrix(fin, 3)
         Ex2.TextMatrix(fin, 9) = nombre
-        Dim alias As String * 20
+
         alias = Ex.TextMatrix(fin, 1) + " " + Ex.TextMatrix(fin, 2) + " " + Ex.TextMatrix(fin, 3)
         Ex2.TextMatrix(fin, 10) = alias
+
         Ex2.TextMatrix(fin, 11) = "001"
         Ex2.TextMatrix(fin, 12) = "00000000099999"
         Ex2.TextMatrix(fin, 13) = "D"
-        Dim RFC As String * 18
+
         RFC = "                  "
         Ex2.TextMatrix(fin, 14) = RFC
+
         Ex2.TextMatrix(fin, 15) = "04"
-        Dim EMAIL As String * 40
+
         EMAIL = "                                        "
         Ex2.TextMatrix(fin, 16) = EMAIL
-        Dim CEL As String * 10
+
         CEL = "0000000000"
         Ex2.TextMatrix(fin, 17) = CEL
         Ex2.TextMatrix(fin, 18) = "04"
     Next fin
 End Sub
 
+' ============================================================
+' EXPORTACION TXT
+' ============================================================
+
 Private Sub GenTxt_Click()
-Dim ret As Boolean
+    Dim ret As Boolean
 
     ret = Exportar_FlexGrid_txt(Ex2, "archivogbnx.txt", vbTab)
+
     If ret Then
         MsgBox "Archivo generado como archivogbnx.txt", vbInformation
     End If
@@ -268,48 +350,53 @@ Public Function Exportar_FlexGrid_txt(FlexGrid As Object, _
                                       Path_Txt As String, _
                                       Delimitador As Variant) As Boolean
     On Error GoTo Err_Funcion
+
     Dim fila As Integer
     Dim columna As Integer
     Dim Free_File As Integer
-    ' Número de  archivo libre para crear el archivo de texto
-    Free_File = FreeFile
-    ' Abre y crea el  archivo
-    Open Path_Txt For Output As #Free_File
-    ' Encabezado del archivo
     Dim secuencial As String * 4
     Dim fecha As String * 10
     Dim hora As String * 5
     Dim cliente As String * 12
     Dim nombre As String * 36
     Dim usuario As String * 12
-    
+
+    Free_File = FreeFile
+
+    Open Path_Txt For Output As #Free_File
+
     secuencial = Text1.Text
     fecha = Text2.Text
     hora = "     "
     cliente = Text3.Text
     nombre = Text4.Text
     usuario = Text5.Text
-    
+
     cadena = secuencial + fecha + hora + cliente + nombre + usuario
+
     Print #Free_File, cadena;
     Print #Free_File, ""
 
-    For fila = 1 To _
-        FlexGrid.Rows - 1
+    For fila = 1 To FlexGrid.Rows - 1
         FlexGrid.Row = fila
-        For columna = 0 To _
-            18
-            FlexGrid.Col = columna
+
+        For columna = 0 To 18
+            FlexGrid.col = columna
             Print #Free_File, FlexGrid.Text;
-        Next
+        Next columna
+
         Print #Free_File, ""
-    Next
+    Next fila
+
     Close
+
     Exportar_FlexGrid_txt = True
+
     Exit Function
+
 Err_Funcion:
     Close #Free_File
     MsgBox Err.Description, vbCritical
 End Function
 
-' comentario
+

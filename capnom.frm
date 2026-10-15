@@ -137,6 +137,7 @@ Begin VB.Form Form8
       Left            =   3360
       TabIndex        =   7
       Top             =   600
+      Visible         =   0   'False
       Width           =   2295
    End
    Begin VB.ComboBox Combo1 
@@ -886,6 +887,8 @@ Private Sub Borrarblancos_Click(Index As Integer)
 End Sub
 
 Private Sub Form_Load()
+
+    InicializarColumnas tnOrdinaria
     Mnunomobr.Item(0).Visible = True
     Mnunomobr.Item(0).Caption = "Nomina Total"
     Mnunomobr.Item(1).Visible = True
@@ -1345,20 +1348,20 @@ Private Sub CapDetImp_Click()
       TituloCompl
       r1 = 1
       For r = 1 To ConNom1.Rows - 2
-       If ConNom1.TextMatrix(r, 0) <> "" Then
-            rgtro = ConNom1.TextMatrix(r, 0)
+       If ConNom1.TextMatrix(r, C_NUM) <> "" Then
+            rgtro = ConNom1.TextMatrix(r, C_NUM)
             If rgtro > 0 Then
               Get 14, rgtro, nom_com
               pone = 0: colocar pone, Format(rgtro, "####0"), "####0"
               Printer.Print Tab(8);
               Printer.CurrentX = Printer.CurrentX + pone
               Printer.Print Format(rgtro, "####0");
-              Printer.Print Tab(15); Left(ConNom1.TextMatrix(r, 1), 28);
-              pone = 0: colocar pone, ConNom1.TextMatrix(r, 11), z1$
-              sumv(2) = sumv(2) + ConNom1.TextMatrix(r, 11)
+              Printer.Print Tab(15); Left(ConNom1.TextMatrix(r, C_NOMBRE), 28);
+              pone = 0: colocar pone, ConNom1.TextMatrix(r, C_TOTING), z1$
+              sumv(2) = sumv(2) + ConNom1.TextMatrix(r, C_TOTING)
               Printer.Print Tab(55);
               Printer.CurrentX = Printer.CurrentX + pone
-              Printer.Print Format(ConNom1.TextMatrix(r, 11), z1$);
+              Printer.Print Format(ConNom1.TextMatrix(r, C_TOTING), z1$);
               pone = 0: colocar pone, Format(nom_com.ImpTot, z1), z1$
               sumv(3) = sumv(3) + nom_com.ImpTot
               Printer.Print Tab(70);
@@ -1684,12 +1687,12 @@ Private Sub Importar_Click()
 Dim oRS As New ADODB.Recordset
 Dim oConn As New ADODB.Connection
 
-    Excel.CancelError = True
+    excel.CancelError = True
     On Error GoTo ErrHandler
-    Excel.ShowOpen
+    excel.ShowOpen
     
-    If (Excel.FileName <> "") Then
-        oConn.Open "Provider=Microsoft.ACE.OLEDB.12.0;" & "data source=  '" + Excel.FileName + "' ; " & "Extended Properties= ""Excel 8.0;HDR=Yes"""
+    If (excel.FileName <> "") Then
+        oConn.Open "Provider=Microsoft.ACE.OLEDB.12.0;" & "data source=  '" + excel.FileName + "' ; " & "Extended Properties= ""Excel 8.0;HDR=Yes"""
         Set oRS = New ADODB.Recordset
             oRS.CursorLocation = adUseClient
             oRS.CursorType = adOpenStatic
@@ -2347,8 +2350,6 @@ Sub verifica(yavas)
     If nomina.fonacot <> 0 Then yavas = 1
     If nomina.telefono <> 0 Then yavas = 1
     If nomina.otraded <> 0 Then yavas = 1
-    If nomina.hsnor <> 0 Then yavas = 1
-    If nomina.hstri <> 0 Then yavas = 1
   
 End Sub
 
@@ -2717,18 +2718,18 @@ End Sub
 Sub datoper()
 On Error GoTo handler
       ruta = ConNom1.Col
-      
+
     If ConNom1.Text = "" Then
         dato_ent = 0
     Else
         dato_ent = ConNom1.Text
     End If
-    
-      ConNom1.Col = 21: If ConNom1.Text <> "" Then si_impto = ConNom1.Text Else si_impto = 0
-      ConNom1.Col = 22: If ConNom1.Text <> "" Then si_imss = ConNom1.Text Else si_imss = 0
+
+      ConNom1.Col = C_FLAG_ISR: If ConNom1.Text <> "" Then si_impto = ConNom1.Text Else si_impto = 0
+      ConNom1.Col = C_FLAG_IMSS: If ConNom1.Text <> "" Then si_imss = ConNom1.Text Else si_imss = 0
       dato_sal = 0: rgtro = 0
-      ConNom1.Col = 0
-      
+      ConNom1.Col = C_NUM
+
       If ConNom1.Text <> "" Then
           regtro = ConNom1.Text
           Get 2, regtro, personal
@@ -2745,6 +2746,8 @@ Close 2: Close 8
     Open "maestro.dno" For Random As 8 Len = Len(maestro)
     ddm = LOF(8) / Len(maestro)
 End Sub
+
+
 Sub checanum(camcol, datoret As Currency)
    
    antecol = ConNom1.Col
@@ -2757,237 +2760,255 @@ Sub checanum(camcol, datoret As Currency)
    ConNom1.Col = antecol
 End Sub
 Sub checar()
-Rem On Error GoTo manejador
-  datoper
-  If regtro > 0 Then
-    Select Case ConNom1.Col
-         Case 2
+    Dim esLiq As Boolean
+    Dim utilidad As Currency
+
+    esLiq = (g_TipoNominaActiva = tnLiquidacionFiniquito)
+
+    datoper
+    If regtro > 0 Then
+      Select Case ConNom1.Col
+
+         '---------------------------------------------------------- dias
+         Case C_DIAS
               diat = dato_ent
               If diat > 0 Then
-              ConNom1.Text = Format(diat, "##0.00")
-              ConNom1.Col = 3
-              ConNom1.Text = Format(diat * personal.ingr, z1$)
+                  ConNom1.Text = Format(diat, "##0.00")
+                  ConNom1.Col = C_SUELDO
+                  ConNom1.Text = Format(diat * personal.ingr, z1$)
               Else
-              ConNom1.Text = ""
-              ConNom1.Col = 3
-              ConNom1.Text = ""
-              ConNom1.Col = 7
-              ConNom1.Text = ""
-              ConNom1.Col = 8
-              ConNom1.Text = ""
+                  ConNom1.Text = ""
+                  ConNom1.Col = C_SUELDO
+                  ConNom1.Text = ""
+                  If Not esLiq Then
+                      ConNom1.Col = C_CONC7
+                      ConNom1.Text = ""
+                      ConNom1.Col = C_CONC8
+                      ConNom1.Text = ""
+                  End If
               End If
-           If personal.viat > 0 Then
-              ConNom1.Col = 7
-              ConNom1.Text = Format(diat * personal.viat, z1$)
-           End If
-           If personal.otras > 0 Then
-              ConNom1.Col = 9
-              ConNom1.Text = Format(diat * personal.otras, z1$)
-           End If
-           ConNom1.Col = ruta
-         Case 3
+              If Not esLiq Then
+                  If personal.viat > 0 Then
+                      ConNom1.Col = C_CONC7
+                      ConNom1.Text = Format(diat * personal.viat, z1$)
+                  End If
+                  If personal.otras > 0 Then
+                      ConNom1.Col = C_OTRAS
+                      ConNom1.Text = Format(diat * personal.otras, z1$)
+                  End If
+              End If
+              ConNom1.Col = ruta
+
+         '-------------------------------------------------------- sueldo
+         Case C_SUELDO
               MsgBox "El sueldo se modifica editando su archivo de personal", vbCritical, "Captura de Nomina"
               Text2.Text = valcelant
-         Case 4 To 6
+
+         '------------------------------ hs.Norm / hs.Dobles / hs.Triples
+         ' (en Liq estas constantes valen -1 y el Case nunca se activa)
+         Case C_CONC4 To C_CONC6
               hs_ext = personal.ingr / 8
-              
-            If N_ormal = 0 Then
-              Select Case ruta
-                 Case 4 To 6
-                    dato_sal = dato_ent * hs_ext
-                    ConNom1.Col = ruta
-                    ConNom1.Text = Format(dato_sal, z1$)
-              End Select
-            Else
-              Select Case ruta
-                 Case 4
-                    dato_sal = dato_ent
-                    ConNom1.Col = ruta
-                    ConNom1.Text = Format(dato_sal, z1$)
-                 Case 5
-                    If N_ormal = 1 And ConNom1.Col = 5 Then
-                        If dato_ent > exento Then
-                            dato_sal = dato_ent - exento
-                            ConNom1.TextMatrix(ConNom1.Row, 10) = Format(exento, z1)
-                            Text2.Text = dato_sal
-                            ConNom1.TextMatrix(ConNom1.Row, 5) = Format(dato_sal, z1)
-                        Else
-                            ConNom1.TextMatrix(ConNom1.Row, 10) = Format(dato_ent, z1)
-                            Text2.Text = 0
-                            ConNom1.TextMatrix(ConNom1.Row, 5) = Format(0, z1)
+
+              If N_ormal = 0 Then
+                  dato_sal = dato_ent * hs_ext
+                  ConNom1.Col = ruta
+                  ConNom1.Text = Format(dato_sal, z1$)
+              Else
+                  Select Case ruta
+                     Case C_CONC4
+                        dato_sal = dato_ent
+                        ConNom1.Col = ruta
+                        ConNom1.Text = Format(dato_sal, z1$)
+                     Case C_CONC5
+                        If N_ormal = 1 And ConNom1.Col = C_CONC5 Then
+                            If dato_ent > exento Then
+                                dato_sal = dato_ent - exento
+                                ConNom1.TextMatrix(ConNom1.Row, C_EXENTA) = Format(exento, z1)
+                                Text2.Text = dato_sal
+                                ConNom1.TextMatrix(ConNom1.Row, C_CONC5) = Format(dato_sal, z1)
+                            Else
+                                ConNom1.TextMatrix(ConNom1.Row, C_EXENTA) = Format(dato_ent, z1)
+                                Text2.Text = 0
+                                ConNom1.TextMatrix(ConNom1.Row, C_CONC5) = Format(0, z1)
+                            End If
                         End If
-                     End If
-                 Case 6
-                    Dim utilidad As Currency
-                    
-                    dato_sal = dato_ent
-                    ConNom1.Col = ruta
-                    ConNom1.Text = Format(dato_sal, z1$)
-                    
-                    utilidad = ConNom1.TextMatrix(ConNom1.Row, 6)
-                    utilidad = utilidad - exento
-                    ConNom1.TextMatrix(ConNom1.Row, 6) = Format(utilidad, z1)
-                    ConNom1.TextMatrix(ConNom1.Row, 10) = Format(exento, z1)
-                    
-                    If utilidad < 0 Then
-                        ConNom1.TextMatrix(ConNom1.Row, 6) = Format(0.01, z1)
-                        ConNom1.TextMatrix(ConNom1.Row, 10) = Format(dato_sal, z1)
-                    End If
-                 End Select
-           End If
-         
-         Case 7, 9
-              aoingr = Val(Mid$(personal.fal, 7, 4))
-              If aoingr < 1900 Then
-                  antig = 1
-                  Else
-                  antig = CalcularAntiguedad(personal.fal)
+                     Case C_CONC6
+                        dato_sal = dato_ent
+                        ConNom1.Col = ruta
+                        ConNom1.Text = Format(dato_sal, z1$)
+
+                        utilidad = ConNom1.TextMatrix(ConNom1.Row, C_CONC6)
+                        utilidad = utilidad - exento
+                        ConNom1.TextMatrix(ConNom1.Row, C_CONC6) = Format(utilidad, z1)
+                        ConNom1.TextMatrix(ConNom1.Row, C_EXENTA) = Format(exento, z1)
+
+                        If utilidad < 0 Then
+                            ConNom1.TextMatrix(ConNom1.Row, C_CONC6) = Format(0.01, z1)
+                            ConNom1.TextMatrix(ConNom1.Row, C_EXENTA) = Format(dato_sal, z1)
+                        End If
+                  End Select
               End If
-               facto = 0
-               factor antig, facto
-               
-               dato_sal = 0
-               checanum 2, dato_sal
-               Select Case ruta
-                  Case 7
-                     If dato_ent = 0 Or dato_sal = 0 Then
-                        personal.viat = 0
+
+         '------------------------------------- O.F./BONO  y  Otras
+         Case C_CONC7, C_OTRAS
+              If esLiq Then
+                  ' Liq: captura libre, sin avisos y SIN tocar personal.dno
+                  ConNom1.Col = ruta
+                  If dato_ent <> 0 Then
+                      ConNom1.Text = Format(dato_ent, z1$)
+                  Else
+                      ConNom1.Text = ""
+                  End If
+              Else
+                  aoingr = Val(Mid$(personal.fal, 7, 4))
+                  If aoingr < 1900 Then
+                      antig = 1
+                  Else
+                      antig = CalcularAntiguedad(personal.fal)
+                  End If
+                  facto = 0
+                  factor antig, facto
+
+                  dato_sal = 0
+                  checanum C_DIAS, dato_sal
+                  Select Case ruta
+                     Case C_CONC7
+                        If dato_ent = 0 Or dato_sal = 0 Then
+                            personal.viat = 0
                         Else
-                        personal.viat = dato_ent / dato_sal
-                      End If
-                  Case 9
-                     If dato_ent = 0 Or dato_sal = 0 Then
-                        personal.otras = 0
+                            personal.viat = dato_ent / dato_sal
+                        End If
+                     Case C_OTRAS
+                        If dato_ent = 0 Or dato_sal = 0 Then
+                            personal.otras = 0
                         Else
-                        personal.otras = dato_ent / dato_sal
-                      End If
-               End Select
-               
-               personal.integrado = (personal.ingr * facto) + personal.viat + personal.otras
-               If personal.integrado > (empresa.sm * 25) Then personal.integrado = (empresa.sm * 25)
-               MsgBox "El salario integrado en el archivo de personal fue cambiado", vbexclamacion
-               Put 2, regtro, personal
-               ConNom1.Col = ruta: ConNom1.Text = Format(dato_ent, z1$)
-               Case 12
-               respuesta = MsgBox("Si modifica esta celda ya no se efectuara el calculo de la retencion", vbYesNo + vbExclamation + vbDefaultButton2, "Mensaje de Nomina")
-               If respuesta = vbYes Then
-                        si_impto = 1
-                        ConNom1.Text = Format(dato_ent, z1$)
-                        ConNom1.Col = 21: ConNom1.Text = 1
-                        ConNom1.Col = 13: ConNom1.Text = ""
-                        ConNom1.Col = ruta
-                        Else
-                        si_impto = 0
-                        ConNom1.Col = 21: ConNom1.Text = 1
-                        ConNom1.Col = ruta
-                        ConNom1.Text = Format(valcelant, z1$)
-               End If
-               Case 13
-               respuesta = MsgBox("Si modifica esta celda ya no se efectuara el calculo de la retencion", vbYesNo + vbExclamation + vbDefaultButton2, "Mensaje de Nomina")
-               If respuesta = vbYes Then
-                        si_impto = 1
-                        ConNom1.Text = Format(dato_ent, z1$)
-                        ConNom1.Col = 21: ConNom1.Text = 1
-                        ConNom1.Col = 12: ConNom1.Text = ""
-                        ConNom1.Col = ruta
-                        Else
-                        si_impto = 0
-                        ConNom1.Col = 21: ConNom1.Text = 0
-                        ConNom1.Col = ruta
-                        ConNom1.Text = Format(valcelant, z1$)
-               End If
-               Case 14
-               respuesta = MsgBox("Si modifica esta celda ya no se efectuara el calculo de la retencion", vbYesNo + vbExclamation + vbDefaultButton2, "Mensaje de Nomina")
-               If respuesta = vbYes Then
-                        si_imss = 1
-                        ConNom1.Text = Format(dato_ent, z1$)
-                        ConNom1.Col = 22: ConNom1.Text = 1
-                        ConNom1.Col = ruta
-                        Else
-                        si_imss = 0
-                        ConNom1.Col = 22: ConNom1.Text = 0
-                        ConNom1.Col = ruta
-                        ConNom1.Text = Format(valcelant, z1$)
-               End If
-               Case 24
-                    Close 12
-                    
-                    Open "bnxcla.dno" For Random As 12 Len = Len(Clbnx)
-                    fincl = LOF(12) / Len(Clbnx)
-                    If fincl < 1 Then
-                    
-                        For W = 1 To Dm: Get 12, W, Clbnx
-                            Clbnx.Q1 = "0"
-                            Put 12, W, Clbnx
-                        Next W
-                    End If
-                     If ConNom1.Text = "" Then
-                        Clbnx.Q1 = 0
-                        Else
-                        Clbnx.Q1 = LTrim(ConNom1.Text)
-                    End If
-                    regtro = ConNom1.TextMatrix(ConNom1.Row, 0)
-                    Put 12, regtro, Clbnx
-                    Close 12
-               Case Else
-               ConNom1.Col = ruta
-               If dato_ent <> 0 Then
-                    ConNom1.Text = Format(dato_ent, z1$)
-                    Else
-                    ConNom1.Text = ""
-               End If
-               End Select
-        If ConNom1.TextMatrix(ConNom1.Row, 23) = "1" Then si_imss = 1
-        li = ConNom1.Row
-        
-        sumah si_impto, si_imss
-        
-   End If
-   
-   Exit Sub
-Rem manejador:
-    Rem MsgBox (Err.Description)
+                            personal.otras = dato_ent / dato_sal
+                        End If
+                  End Select
+
+                  personal.integrado = (personal.ingr * facto) + personal.viat + personal.otras
+                  If personal.integrado > (empresa.sm * 25) Then personal.integrado = (empresa.sm * 25)
+                  MsgBox "El salario integrado en el archivo de personal fue cambiado", vbExclamation
+                  Put 2, regtro, personal
+                  ConNom1.Col = ruta: ConNom1.Text = Format(dato_ent, z1$)
+              End If
+
+         '------------------------------------------------------ ISPT
+         Case C_ISPT
+              respuesta = MsgBox("Si modifica esta celda ya no se efectuara el calculo de la retencion", vbYesNo + vbExclamation + vbDefaultButton2, "Mensaje de Nomina")
+              If respuesta = vbYes Then
+                  si_impto = 1
+                  ConNom1.Text = Format(dato_ent, z1$)
+                  ConNom1.Col = C_FLAG_ISR: ConNom1.Text = 1
+                  ConNom1.Col = C_SUBEMP: ConNom1.Text = ""
+                  ConNom1.Col = ruta
+              Else
+                  si_impto = 0
+                  ConNom1.Col = C_FLAG_ISR: ConNom1.Text = 1
+                  ConNom1.Col = ruta
+                  ConNom1.Text = Format(valcelant, z1$)
+              End If
+
+         '------------------------------------------------ Sub.P/Empl.
+         Case C_SUBEMP
+              respuesta = MsgBox("Si modifica esta celda ya no se efectuara el calculo de la retencion", vbYesNo + vbExclamation + vbDefaultButton2, "Mensaje de Nomina")
+              If respuesta = vbYes Then
+                  si_impto = 1
+                  ConNom1.Text = Format(dato_ent, z1$)
+                  ConNom1.Col = C_FLAG_ISR: ConNom1.Text = 1
+                  ConNom1.Col = C_ISPT: ConNom1.Text = ""
+                  ConNom1.Col = ruta
+              Else
+                  si_impto = 0
+                  ConNom1.Col = C_FLAG_ISR: ConNom1.Text = 0
+                  ConNom1.Col = ruta
+                  ConNom1.Text = Format(valcelant, z1$)
+              End If
+
+         '------------------------------------------------------- IMSS
+         Case C_IMSS
+              respuesta = MsgBox("Si modifica esta celda ya no se efectuara el calculo de la retencion", vbYesNo + vbExclamation + vbDefaultButton2, "Mensaje de Nomina")
+              If respuesta = vbYes Then
+                  si_imss = 1
+                  ConNom1.Text = Format(dato_ent, z1$)
+                  ConNom1.Col = C_FLAG_IMSS: ConNom1.Text = 1
+                  ConNom1.Col = ruta
+              Else
+                  si_imss = 0
+                  ConNom1.Col = C_FLAG_IMSS: ConNom1.Text = 0
+                  ConNom1.Col = ruta
+                  ConNom1.Text = Format(valcelant, z1$)
+              End If
+
+         '----------------------------------------------------- Banamex
+         Case C_BANAMEX
+              Close 12
+
+              Open "bnxcla.dno" For Random As 12 Len = Len(Clbnx)
+              fincl = LOF(12) / Len(Clbnx)
+              If fincl < 1 Then
+
+                  For W = 1 To Dm: Get 12, W, Clbnx
+                      Clbnx.Q1 = "0"
+                      Put 12, W, Clbnx
+                  Next W
+              End If
+              If ConNom1.Text = "" Then
+                  Clbnx.Q1 = 0
+              Else
+                  Clbnx.Q1 = LTrim(ConNom1.Text)
+              End If
+              regtro = ConNom1.TextMatrix(ConNom1.Row, C_NUM)
+              Put 12, regtro, Clbnx
+              Close 12
+
+         '---------------------- resto de columnas (incluye los conceptos
+         '---------------------- de Liq, la Exenta y los totales)
+         Case Else
+              ConNom1.Col = ruta
+              If dato_ent <> 0 Then
+                  ConNom1.Text = Format(dato_ent, z1$)
+              Else
+                  ConNom1.Text = ""
+              End If
+      End Select
+
+      If ConNom1.TextMatrix(ConNom1.Row, C_FLAG_ESP) = "1" Then si_imss = 1
+      li = ConNom1.Row
+
+      sumah si_impto, si_imss
+
+    End If
+
+    Exit Sub
 End Sub
+
 
 Sub sumavert()
 Dim Vw As Integer
     ProgressBar1.Min = 0: ProgressBar1.Max = ConNom1.Rows: ProgressBar1.Value = 0: ProgressBar1.Visible = True
     colanti = ConNom1.Col: renati = ConNom1.Row
     sum(1) = 0: sum(2) = 0: sum(3) = 0: Vw = 0
-    
-    For late = 3 To 20
+
+    For late = 3 To C_NETO
         sumv(late) = 0
     Next late
-    Dim sumv25 As Currency, sumv26 As Currency
-    sumv25 = 0: sumv26 = 0
-        
-    For li = FILA_INICIO_DATOS To limite
-        Vw = Vw + 1
+
+    For li = 1 To limite: Vw = Vw + 1
         ProgressBar1.Value = li
-        
-        For late = 3 To 20
+        ConNom1.Row = li
+        For late = 3 To C_NETO
             ii = late
-            If Trim$(ConNom1.TextMatrix(li, ii)) <> "" Then
-                If IsNumeric(ConNom1.TextMatrix(li, ii)) Then
-                    sumv(late) = sumv(late) + CCur(ConNom1.TextMatrix(li, ii))
-                End If
+            If ConNom1.TextMatrix(li, ii) <> "" Then
+                sumv(late) = sumv(late) + ConNom1.TextMatrix(li, ii)
             End If
         Next late
-
-        If g_TipoNominaActiva = tnLiquidacionFiniquito Then
-            If Trim$(ConNom1.TextMatrix(li, 25)) <> "" And IsNumeric(ConNom1.TextMatrix(li, 25)) Then
-                sumv25 = sumv25 + CCur(ConNom1.TextMatrix(li, 25))
-            End If
-            If Trim$(ConNom1.TextMatrix(li, 26)) <> "" And IsNumeric(ConNom1.TextMatrix(li, 26)) Then
-                sumv26 = sumv26 + CCur(ConNom1.TextMatrix(li, 26))
-            End If
-        End If
     Next li
-    
+
     li = limite + 1
-    ConNom1.TextMatrix(li, 1) = "Empleados... " + Str(Vw) + " S u m a s ....."
-    
-    For late = 3 To 20
+    ConNom1.TextMatrix(li, C_NOMBRE) = "Empleados... " + Str(Vw) + " S u m a s ....."
+
+    For late = 3 To C_NETO
         ii = late
         If sumv(late) <> 0 Then
             ConNom1.TextMatrix(li, ii) = Format(sumv(late), z1$)
@@ -2995,32 +3016,38 @@ Dim Vw As Integer
             ConNom1.TextMatrix(li, ii) = ""
         End If
     Next late
-    
-    If g_TipoNominaActiva = tnLiquidacionFiniquito Then
-        If sumv25 <> 0 Then ConNom1.TextMatrix(li, 25) = Format$(sumv25, z1$) Else ConNom1.TextMatrix(li, 25) = ""
-        If sumv26 <> 0 Then ConNom1.TextMatrix(li, 26) = Format$(sumv26, z1$) Else ConNom1.TextMatrix(li, 26) = ""
-    End If
-    
+
     ConNom1.Col = colanti: ConNom1.Row = renati
     ProgressBar1.Visible = False
 End Sub
 
+
 Sub sumah(si_impto1 As Integer, si_imss1 As Integer)
+    Dim cPV As Long
+
     sum(1) = 0
     sum(2) = 0
     sum(3) = 0
     colanti = ConNom1.Col
-    
-    For late = 3 To 9
+
+    ' Columna de prima vacacional (para integrar el IMSS)
+    If g_TipoNominaActiva = tnLiquidacionFiniquito Then
+        cPV = C_LQ_PRIMAVAC
+    Else
+        cPV = C_CONC8
+    End If
+
+    ' Base de ISR: Sueldo .. Otras (la exenta NO entra)
+    For late = C_PERC_INI To C_PERC_FIN
         If ConNom1.TextMatrix(li, late) <> "" Then
             sum(1) = sum(1) + ConNom1.TextMatrix(li, late)
         End If
     Next late
-    
-    rgtro = ConNom1.TextMatrix(li, 0)
-    
+
+    rgtro = ConNom1.TextMatrix(li, C_NUM)
+
     Acum_Doble
-    
+
     If si_impto1 = 0 Then
         impto = 0
         cr_sal = 0
@@ -3035,7 +3062,7 @@ Sub sumah(si_impto1 As Integer, si_imss1 As Integer)
                 impto = 0
                 calculoRetencion sum(1), impto, 1, regtro
             Else
-                rgtro = ConNom1.TextMatrix(li, 0)
+                rgtro = ConNom1.TextMatrix(li, C_NUM)
                 aoalta = Val(Mid(personal.fal, 7, 4))
                 If (aoalta = empresa.ao) And (Tot_dias < 330) Then
                     impto = 0
@@ -3047,67 +3074,67 @@ Sub sumah(si_impto1 As Integer, si_imss1 As Integer)
                 End If
             End If
         End If
-        
+
 BRTodo:
         If impto <> 0 And Option3 = True Then
-            ConNom1.TextMatrix(li, 12) = Format(impto, z1$)
+            ConNom1.TextMatrix(li, C_ISPT) = Format(impto, z1$)
         Else
-            ConNom1.TextMatrix(li, 12) = Format(impto, z1$)
+            ConNom1.TextMatrix(li, C_ISPT) = Format(impto, z1$)
             If Tot_dias > 330 And cal_anual = 1 Then
             GoTo saltaAnual:
         End If
-            
+
             If impto <> 0 And Option4 = True Then
                 mesNomina1 = Trim(Left(Combo1.Text, 3))
-                AñoNomina1 = Right(Trim(Label7.Caption), 4)
+                AnoNomina1 = Right(Trim(Label7.Caption), 4)
                 Close 39
-                Open CStr(Trim(Form1.Dir1)) + "\" + mesNomina1 + "1" + AñoNomina1 + ".NOM" For Random As 39 Len = Len(nomina)
+                Open CStr(Trim(Form1.Dir1)) + "\" + mesNomina1 + "1" + AnoNomina1 + ".NOM" For Random As 39 Len = Len(nomina)
                 Get 39, regtro, nomina
                 ImpuestoAnteriorRetenido = nomina.ispt
-                ConNom1.TextMatrix(li, 12) = Format((impto - ImpuestoAnteriorRetenido), z1$)
+                ConNom1.TextMatrix(li, C_ISPT) = Format((impto - ImpuestoAnteriorRetenido), z1$)
                 Close 39
             End If
 saltaAnual:
         End If
-        If impto = 0 Then ConNom1.TextMatrix(li, 12) = ""
-    
+        If impto = 0 Then ConNom1.TextMatrix(li, C_ISPT) = ""
+
     End If
-    
+
     If si_imss1 = 0 Then
-        checanum 2, dato_sal
-        If IsNumeric(ConNom1.TextMatrix(li, 2)) Then
-            diaseg = ConNom1.TextMatrix(li, 2)
+        checanum C_DIAS, dato_sal
+        If IsNumeric(ConNom1.TextMatrix(li, C_DIAS)) Then
+            diaseg = ConNom1.TextMatrix(li, C_DIAS)
         End If
         seguro = 0
-        If IsNumeric(ConNom1.TextMatrix(li, 8)) Then
-            p_vacacional = ConNom1.TextMatrix(li, 8)
+        If IsNumeric(ConNom1.TextMatrix(li, cPV)) Then
+            p_vacacional = ConNom1.TextMatrix(li, cPV)
         Else
             p_vacacional = 0
         End If
-        
+
         inte_grar
-        
+
         personal.integrado = integrado
         ' calcula el imss
         imss personal.integrado, seguro, diaseg
-        
-        ConNom1.TextMatrix(li, 14) = Format(seguro, z1$)
-        If seguro = 0 Then ConNom1.TextMatrix(li, 14) = ""
+
+        ConNom1.TextMatrix(li, C_IMSS) = Format(seguro, z1$)
+        If seguro = 0 Then ConNom1.TextMatrix(li, C_IMSS) = ""
     End If
-    
+
     ' CALCULO ESPECIAL ****************************************************
     ' *********************************************************************
-    If ConNom1.TextMatrix(li, 23) = "1" Then
+    If ConNom1.TextMatrix(li, C_FLAG_ESP) = "1" Then
         normal_1 = (sum(1) / 365 * 30.4)
-        If (normal_1 > 0) And (ConNom1.TextMatrix(li, 21) = "0") Then
-            rgtro = ConNom1.TextMatrix(li, 0)
+        If (normal_1 > 0) And (ConNom1.TextMatrix(li, C_FLAG_ISR) = "0") Then
+            rgtro = ConNom1.TextMatrix(li, C_NUM)
             Get #2, regtro, personal
             Normal = personal.ingr * 30
             DifImptos.CalcDoble = 0
-            
+
             ' Funcion calcula mensual
             calculo_compl2 Normal, impto, 1
-            
+
             DifImptos.ImpTIni = nom_com.ImpTot
             DifImptos.SubAIni = nom_com.subapl
             DifImptos.SubNIni = nom_com.subNap
@@ -3116,7 +3143,7 @@ saltaAnual:
             impto = 0
             calculo_compl2 normal_2, impto, 1
             impto_2 = impto
-            
+
             If (impto_1 = 0) And (impto_2 > 0) Then
                 DifImptos.CalcDoble = 1
                 ' Funcion que hace el calculo anual dos
@@ -3127,7 +3154,7 @@ saltaAnual:
                 DifImptos.SubAIni = nom_com.subapl
                 DifImptos.SubNIni = nom_com.subNap
             End If
-            
+
             DifImptos.ImpTFin = nom_com.ImpTot
             DifImptos.SubAFin = nom_com.subapl
             DifImptos.SubNFin = nom_com.subNap
@@ -3135,18 +3162,18 @@ saltaAnual:
             DifImptos.SubAIni = 0
             DifImptos.SubNIni = 0
             impto_3 = impto_2 - impto_1
-            
+
             porc_apli = CCur((impto_3 / normal_1))
             impto = sum(1) * porc_apli
-            
+
             If impto < 0 Then impto = 0
             nom_com.ImpTot = impto
             nom_com.subapl = 0
             nom_com.subNap = 0
             Put 14, regtro, nom_com
-            ConNom1.TextMatrix(li, 12) = Format(impto, z1$)
+            ConNom1.TextMatrix(li, C_ISPT) = Format(impto, z1$)
         Else
-            
+
             If impto < 0 Then impto = 0
             nom_com.ImpTot = impto
             nom_com.subapl = 0
@@ -3154,35 +3181,37 @@ saltaAnual:
             Put 14, regtro, nom_com
 
         End If
-        ConNom1.TextMatrix(li, 13) = ""
-        ConNom1.TextMatrix(li, 14) = ""
+        ConNom1.TextMatrix(li, C_SUBEMP) = ""
+        ConNom1.TextMatrix(li, C_IMSS) = ""
     End If
-    
-    ConNom1.Col = 10
-    If ConNom1.TextMatrix(li, 10) <> "" Then sum(1) = sum(1) + ConNom1.TextMatrix(li, 10)
+
+    ' La exenta se suma solo para el total de ingresos (no entra a la base de ISR)
+    ConNom1.Col = C_EXENTA
+    If ConNom1.TextMatrix(li, C_EXENTA) <> "" Then sum(1) = sum(1) + ConNom1.TextMatrix(li, C_EXENTA)
     If sum(1) Then
-        ConNom1.TextMatrix(li, 11) = Format(sum(1), z1$)
+        ConNom1.TextMatrix(li, C_TOTING) = Format(sum(1), z1$)
     Else
-        ConNom1.TextMatrix(li, 11) = ""
+        ConNom1.TextMatrix(li, C_TOTING) = ""
     End If
-    For late = 12 To 18
+    For late = C_DED_INI To C_DED_FIN
         If ConNom1.TextMatrix(li, late) <> "" Then
             sum(2) = sum(2) + ConNom1.TextMatrix(li, late)
         End If
     Next late
     If sum(2) <> 0 Then
-        ConNom1.TextMatrix(li, 19) = Format(sum(2), z1$)
+        ConNom1.TextMatrix(li, C_TOTDED) = Format(sum(2), z1$)
     Else
-        ConNom1.TextMatrix(li, 19) = ""
+        ConNom1.TextMatrix(li, C_TOTDED) = ""
     End If
     sum(3) = sum(1) - sum(2)
     If sum(3) <> 0 Then
-        ConNom1.TextMatrix(li, 20) = Format(sum(3), z1$)
+        ConNom1.TextMatrix(li, C_NETO) = Format(sum(3), z1$)
     Else
-        ConNom1.TextMatrix(li, 20) = ""
+        ConNom1.TextMatrix(li, C_NETO) = ""
     End If
     ConNom1.Col = colanti
 End Sub
+
 
 Sub inte_grar()
      aoingr = Val(Mid$(personal.fal, 7, 4))
@@ -3227,354 +3256,206 @@ Sub inte_grar()
      
 End Sub
 
+Private Sub PonCel(ByVal f As Long, ByVal c As Long, ByVal v As Currency, Optional ByVal fmt As String = "")
+    If fmt = "" Then fmt = z1$
+    If v <> 0 Then
+        ConNom1.TextMatrix(f, c) = Format(v, fmt)
+    Else
+        ConNom1.TextMatrix(f, c) = ""
+    End If
+End Sub
+
 Sub carganom()
+    li = ConNom1.Row
     ingresos = 0
     deducciones = 0
     neto = 0
 
     ' Nombre completo del empleado
-    ConNom1.TextMatrix(ConNom1.Row, 1) = RTrim$(personal.ape1) + " " + RTrim$(personal.ape2) + " " + RTrim$(personal.nom)
-    li = ConNom1.Row: ii = 2
-    If nomina.dias <> 0 Then ConNom1.TextMatrix(li, 2) = Format(nomina.dias, "##0.00") Else ConNom1.TextMatrix(li, ii) = ""
-    ii = ii + 1: Rem 2 Dias
-    If nomina.sueldo <> 0 Then ConNom1.TextMatrix(li, 3) = Format(nomina.sueldo, z1$) Else ConNom1.TextMatrix(li, ii) = ""
-    ii = ii + 1: Rem 3 Sueldo
-    If nomina.hs_nor <> 0 Then ConNom1.TextMatrix(li, 4) = Format(nomina.hs_nor, z1$) Else ConNom1.TextMatrix(li, ii) = ""
-    ii = ii + 1: Rem 4 Horas Normales
-    
-    If N_ormal = 1 Then
-        If nomina.aguin <> 0 Then ConNom1.TextMatrix(li, 5) = Format(nomina.aguin, z1$) Else ConNom1.TextMatrix(li, ii) = ""
-    Else
-        If nomina.hs_dbl <> 0 Then ConNom1.TextMatrix(li, 5) = Format(nomina.hs_dbl, z1$) Else ConNom1.TextMatrix(li, ii) = ""
-    End If
-    ii = ii + 1: Rem 5 Horas dobles
-   
-    If N_ormal = 1 Then ' **********************  AQUI VA EL PTU EN LUGAR DE HORAS EXTRAS TRIPLES  *****************
-       If nomina.ptu <> 0 Then ConNom1.TextMatrix(li, 6) = Format(nomina.ptu, z1$) Else ConNom1.TextMatrix(li, ii) = ""
-       Else
-       If nomina.hs_tri <> 0 Then ConNom1.TextMatrix(li, 6) = Format(nomina.hs_tri, z1$) Else ConNom1.TextMatrix(li, ii) = ""
-    End If
-    ii = ii + 1: Rem 6 Horas Triples / si es especial van las utilidades
-    
-    If nomina.viaticos <> 0 Then ConNom1.TextMatrix(li, 7) = Format(nomina.viaticos, z1$) Else ConNom1.TextMatrix(li, ii) = ""
-    ii = ii + 1: Rem 7 Viaticos
-     
-    If nomina.pvac <> 0 Then ConNom1.TextMatrix(li, 8) = Format(nomina.pvac, z1$) Else ConNom1.TextMatrix(li, ii) = ""
-    ii = ii + 1: Rem 8 prima vacacional
-    
-    If nomina.otras <> 0 Then ConNom1.TextMatrix(li, 9) = Format(nomina.otras, z1$) Else ConNom1.TextMatrix(li, ii) = ""
-    ii = ii + 1: Rem 9 Otras percepciones
-    
-    If nomina.exentos <> 0 Then ConNom1.TextMatrix(li, 10) = Format(nomina.exentos, z1$) Else ConNom1.TextMatrix(li, ii) = ""
-    ii = ii + 1: Rem 10 Percepción exenta
-    
-    ingresos = nomina.sueldo + nomina.hs_nor + nomina.hs_dbl + nomina.hs_tri + nomina.aguin + nomina.ptu + nomina.viaticos + nomina.pvac + nomina.otras + nomina.exentos
-    If ingresos <> 0 Then ConNom1.TextMatrix(li, 11) = Format(ingresos, z1$) Else ConNom1.TextMatrix(li, ii) = ""
-    ii = ii + 1: Rem 11 Suma de los ingresos
-    
-    If nomina.ispt <> 0 Then ConNom1.TextMatrix(li, 12) = Format(nomina.ispt, z1$) Else ConNom1.TextMatrix(li, ii) = ""
-    ii = ii + 1: Rem 12 Impuesto
-    
-    If nomina.crdsal <> 0 Then ConNom1.TextMatrix(li, 13) = Format(nomina.crdsal, z1$) Else ConNom1.TextMatrix(li, ii) = ""
-    ii = ii + 1: Rem 13 Subsidio para el empleo
-    
-    If nomina.imss <> 0 Then ConNom1.TextMatrix(li, 14) = Format(nomina.imss, z1$) Else ConNom1.TextMatrix(li, ii) = ""
-    ii = ii + 1: Rem 14 Seguro social
-    
-    If nomina.prestamos <> 0 Then ConNom1.TextMatrix(li, 15) = Format(nomina.prestamos, z1$) Else ConNom1.TextMatrix(li, ii) = ""
-    ii = ii + 1: Rem 15 Prestamos infonavit, etc
-    
-    If nomina.fonacot <> 0 Then ConNom1.TextMatrix(li, 16) = Format(nomina.fonacot, z1$) Else ConNom1.TextMatrix(li, ii) = ""
-    ii = ii + 1: Rem 16 Fonacot
-    
-    If nomina.telefono <> 0 Then ConNom1.TextMatrix(li, 17) = Format(nomina.telefono, z1$) Else ConNom1.TextMatrix(li, ii) = ""
-    ii = ii + 1: Rem 17 Pension alimenticia
-    
-    If nomina.otraded <> 0 Then ConNom1.TextMatrix(li, 18) = Format(nomina.otraded, z1$) Else ConNom1.TextMatrix(li, ii) = ""
-    ii = ii + 1: Rem 18 Infonavit
-    
-    deducciones = nomina.crdsal + nomina.ispt + nomina.imss + nomina.prestamos + nomina.fonacot + nomina.telefono + nomina.otraded
-    If deducciones <> 0 Then ConNom1.TextMatrix(li, 19) = Format(deducciones, z1$) Else ConNom1.TextMatrix(li, ii) = ""
-     ii = ii + 1: Rem 19 Total deducciones
-     
-    neto = ingresos - deducciones
-    If neto <> 0 Then ConNom1.TextMatrix(li, 20) = Format(neto, z1$) Else ConNom1.TextMatrix(li, ii) = ""
-    Rem 20 Neto
-    
-    ' _____________________________________ No visibles
-    ConNom1.TextMatrix(li, 21) = 0
-    ConNom1.TextMatrix(li, 22) = 0
-    ConNom1.TextMatrix(li, 23) = 0
-    
-    If N_ormal = 1 Then ConNom1.TextMatrix(ConNom1.Row, 23) = "1":
-    
-    ' _____________________________________ No visibles
-    
-    locobra
-    
-    Get 12, regtro, Clbnx
-    
-    ConNom1.TextMatrix(li, 24) = (" " + Clbnx.Q1)
-    Rem 24 Cuenta de banco
-    
-    ConNom1.TextMatrix(li, 24) = (" " + Clbnx.Q1)
-    Rem 24 Cuenta de banco
-    
+    ConNom1.TextMatrix(li, C_NOMBRE) = RTrim$(personal.ape1) + " " + RTrim$(personal.ape2) + " " + RTrim$(personal.nom)
+
+    PonCel li, C_DIAS, nomina.dias, "##0.00"
+    PonCel li, C_SUELDO, nomina.sueldo
+
     If g_TipoNominaActiva = tnLiquidacionFiniquito Then
-        If nomina.hsnor <> 0 Then ConNom1.TextMatrix(li, 25) = Format(nomina.hsnor, z1$) Else ConNom1.TextMatrix(li, 25) = ""
-        If nomina.hstri <> 0 Then ConNom1.TextMatrix(li, 26) = Format(nomina.hstri, z1$) Else ConNom1.TextMatrix(li, 26) = ""
+        ' ---- Liquidacion / Finiquito: un concepto por columna ----
+        PonCel li, C_LQ_SDOVAC, nomina.viaticos
+        PonCel li, C_LQ_PRIMAVAC, nomina.pvac
+        PonCel li, C_LQ_AGUI, nomina.aguin
+        PonCel li, C_LQ_ANTIG, nomina.hs_dbl
+        PonCel li, C_LQ_COMPENS, nomina.hs_nor
+        PonCel li, C_LQ_INDEMN, nomina.hs_tri
+        PonCel li, C_LQ_BONO, nomina.hsnor
+        ingresos = nomina.sueldo + nomina.viaticos + nomina.pvac + nomina.aguin + _
+                   nomina.hs_dbl + nomina.hs_nor + nomina.hs_tri + nomina.hsnor
+    Else
+        ' ---- Normal y especiales PTU / Aguinaldo / Bono: igual que siempre ----
+        PonCel li, C_CONC4, nomina.hs_nor
+        If N_ormal = 1 Then
+            PonCel li, C_CONC5, nomina.aguin
+        Else
+            PonCel li, C_CONC5, nomina.hs_dbl
         End If
+        If N_ormal = 1 Then
+            PonCel li, C_CONC6, nomina.ptu
+        Else
+            PonCel li, C_CONC6, nomina.hs_tri
+        End If
+        PonCel li, C_CONC7, nomina.viaticos
+        PonCel li, C_CONC8, nomina.pvac
+        ingresos = nomina.sueldo + nomina.hs_nor + nomina.hs_dbl + nomina.hs_tri + _
+                   nomina.aguin + nomina.ptu + nomina.viaticos + nomina.pvac
+    End If
+
+    PonCel li, C_OTRAS, nomina.otras
+    PonCel li, C_EXENTA, nomina.exentos
+    ingresos = ingresos + nomina.otras + nomina.exentos
+    PonCel li, C_TOTING, ingresos
+
+    PonCel li, C_ISPT, nomina.ispt
+    PonCel li, C_SUBEMP, nomina.crdsal
+    PonCel li, C_IMSS, nomina.imss
+    PonCel li, C_PRESTAMOS, nomina.prestamos
+    PonCel li, C_FONACOT, nomina.fonacot
+    PonCel li, C_PENSION, nomina.telefono
+    PonCel li, C_INFONAVIT, nomina.otraded
+
+    deducciones = nomina.crdsal + nomina.ispt + nomina.imss + nomina.prestamos + _
+                  nomina.fonacot + nomina.telefono + nomina.otraded
+    PonCel li, C_TOTDED, deducciones
+
+    neto = ingresos - deducciones
+    PonCel li, C_NETO, neto
+
+    ' ---- No visibles ----
+    ConNom1.TextMatrix(li, C_FLAG_ISR) = 0
+    ConNom1.TextMatrix(li, C_FLAG_IMSS) = 0
+    ConNom1.TextMatrix(li, C_FLAG_ESP) = 0
+    If N_ormal = 1 Then ConNom1.TextMatrix(li, C_FLAG_ESP) = "1"
+
+    locobra
+
+    Get 12, regtro, Clbnx
+
+    ConNom1.TextMatrix(li, C_BANAMEX) = (" " + Clbnx.Q1)
 End Sub
 
+
 Sub define()
-    ConNom1.Cols = 27
+    ConNom1.Cols = C_TOTCOLS
+
     ConNom1.Font = "Arial"
     ConNom1.Font.Size = 8
     ConNom1.Font.Bold = True
-    
+
     ConNom1.Row = 0
 
-   ConNom1.Col = 0
-   ConNom1.CellAlignment = 4
-   ConNom1.ColWidth(0) = 600
-   ConNom1.Text = "No."
+    Encab C_NUM, "No.", 600
+    Encab C_NOMBRE, "Nombre", 3500
+    Encab C_DIAS, "dias T.", 1200
+    Encab C_SUELDO, "Sueldo", 1200
 
-   ConNom1.Col = 1
-   ConNom1.CellAlignment = 4
-   ConNom1.ColWidth(1) = 3500
-   ConNom1.Text = "Nombre"
+    If g_TipoNominaActiva = tnLiquidacionFiniquito Then
+        Encab C_LQ_SDOVAC, "Sdo.Vac.", 1200
+        Encab C_LQ_PRIMAVAC, "P.Vacac.", 1200
+        Encab C_LQ_AGUI, "Aguinaldo", 1200
+        Encab C_LQ_ANTIG, "P.Antig.", 1200
+        Encab C_LQ_COMPENS, "Compens.", 1200
+        Encab C_LQ_INDEMN, "Indemn.", 1200
+        Encab C_LQ_BONO, "BONO", 1200
+    Else
+        Encab C_CONC4, "hs.Norm.", 1200
 
-   ConNom1.Col = 2
-   ConNom1.CellAlignment = 4
-   ConNom1.ColWidth(2) = 1200
-   ConNom1.Text = "dias T."
-
-   ConNom1.Col = 3
-   ConNom1.CellAlignment = 4
-   ConNom1.ColWidth(3) = 1200
-   ConNom1.Text = "Sueldo"
-
-   '==========================================================
-   ' COLUMNA 4
-   '==========================================================
-   ConNom1.Col = 4
-   ConNom1.CellAlignment = 4
-   ConNom1.ColWidth(4) = 1200
-
-   If g_TipoNominaActiva = tnLiquidacionFiniquito Then
-        ConNom1.Text = "Compens."
-   Else
-        ConNom1.Text = "hs.Norm."
-   End If
-
-   '==========================================================
-   ' COLUMNA 5
-   '==========================================================
-   ConNom1.Col = 5
-   ConNom1.CellAlignment = 4
-   ConNom1.ColWidth(5) = 1200
-
-   If g_TipoNominaActiva = tnLiquidacionFiniquito Then
-        ConNom1.Text = "P.Antig."
-   ElseIf g_TipoNominaActiva = tnAguinaldo Then
-        ConNom1.Text = "Aguinaldo"
-   Else
-
-        If N_ormal = 0 Then
-            ConNom1.Text = "hs.Dobles"
+        If g_TipoNominaActiva = tnAguinaldo Or N_ormal <> 0 Then
+            Encab C_CONC5, "Aguinaldo", 1200
         Else
-            ConNom1.Text = "Aguinaldo"
+            Encab C_CONC5, "hs.Dobles", 1200
         End If
 
-   End If
-
-   '==========================================================
-   ' COLUMNA 6
-   '==========================================================
-   ConNom1.Col = 6
-   ConNom1.CellAlignment = 4
-   ConNom1.ColWidth(6) = 1200
-
-   If g_TipoNominaActiva = tnLiquidacionFiniquito Then
-
-        ConNom1.Text = "Indemn."
-
-   ElseIf g_TipoNominaActiva = tnPTU Then
-
-        ConNom1.Text = "PTU"
-
-   Else
-
-        If N_ormal = 0 Then
-            ConNom1.Text = "hs.Triples"
+        If g_TipoNominaActiva = tnPTU Then
+            Encab C_CONC6, "PTU", 1200
+        ElseIf N_ormal = 0 Then
+            Encab C_CONC6, "hs.Triples", 1200
         Else
-            ConNom1.Text = "Ptu"
+            Encab C_CONC6, "Ptu", 1200
         End If
 
-   End If
+        If g_TipoNominaActiva = tnBonoPremio Or N_ormal <> 0 Then
+            Encab C_CONC7, "BONO", 1200
+        Else
+            Encab C_CONC7, "O.F.", 1200
+        End If
 
-   '==========================================================
-   ' COLUMNA 7
-   '==========================================================
-   ConNom1.Col = 7
-   ConNom1.CellAlignment = 4
-   ConNom1.ColWidth(7) = 1200
-
-   If g_TipoNominaActiva = tnBonoPremio Then
-
-        ConNom1.Text = "BONO"
-
-   ElseIf N_ormal = 0 Then
-
-        ConNom1.Text = "O.F."
-
-   Else
-
-        ConNom1.Text = "BONO"
-
-   End If
-
-   '==========================================================
-   ' COLUMNA 8
-   '==========================================================
-   ConNom1.Col = 8
-   ConNom1.CellAlignment = 4
-   ConNom1.ColWidth(8) = 1200
-
-   If g_TipoNominaActiva = tnLiquidacionFiniquito Then
-        ConNom1.Text = "Sdo.Vac."
-   Else
-        ConNom1.Text = "P.Vacac."
-   End If
-
-   '==========================================================
-   ' RESTO DE COLUMNAS
-   '==========================================================
-   ConNom1.Col = 9
-   ConNom1.CellAlignment = 4
-   ConNom1.ColWidth(9) = 1200
-   ConNom1.Text = "Otras"
-
-   ConNom1.Col = 10
-   ConNom1.CellAlignment = 4
-   ConNom1.ColWidth(10) = 1200
-   ConNom1.Text = "Perc.exenta."
-
-   ConNom1.Col = 11
-   ConNom1.CellAlignment = 4
-   ConNom1.ColWidth(11) = 1200
-   ConNom1.Text = "Tot.Ingr."
-
-   ConNom1.Col = 12
-   ConNom1.CellAlignment = 4
-   ConNom1.ColWidth(12) = 1200
-   ConNom1.Text = "Ispt"
-
-   ConNom1.Col = 13
-   ConNom1.CellAlignment = 4
-   ConNom1.ColWidth(13) = 1200
-   ConNom1.Text = "Sub.P/Empl."
-
-   ConNom1.Col = 14
-   ConNom1.CellAlignment = 4
-   ConNom1.ColWidth(14) = 1200
-   ConNom1.Text = "Imss"
-
-   ConNom1.Col = 15
-   ConNom1.CellAlignment = 4
-   ConNom1.ColWidth(15) = 1200
-   ConNom1.Text = "Prestamos"
-
-   ConNom1.Col = 16
-   ConNom1.CellAlignment = 4
-   ConNom1.ColWidth(16) = 1200
-   ConNom1.Text = "Fonacot"
-
-   ConNom1.Col = 17
-   ConNom1.CellAlignment = 4
-   ConNom1.ColWidth(17) = 1200
-   ConNom1.Text = "Pension Alimenticia"
-
-   ConNom1.Col = 18
-   ConNom1.CellAlignment = 4
-   ConNom1.ColWidth(18) = 1200
-   ConNom1.Text = "Infonavit"
-
-   ConNom1.Col = 19
-   ConNom1.CellAlignment = 4
-   ConNom1.ColWidth(19) = 1200
-   ConNom1.Text = "Tot.Deduc"
-
-   ConNom1.Col = 20
-   ConNom1.CellAlignment = 4
-   ConNom1.ColWidth(20) = 1200
-   ConNom1.Text = "Neto"
-
-   ConNom1.Col = 21
-   ConNom1.ColWidth(21) = 0
-
-   ConNom1.Col = 22
-   ConNom1.ColWidth(22) = 0
-
-   ConNom1.Col = 23
-   ConNom1.ColWidth(23) = 0
-
-   ConNom1.Col = 24: ConNom1.CellAlignment = 4: ConNom1.ColWidth(24) = 2400: ConNom1.Text = "Banamex"
-   ConNom1.Col = 25: ConNom1.CellAlignment = 4
-    If g_TipoNominaActiva = tnLiquidacionFiniquito Then
-        ConNom1.ColWidth(25) = 1200
-        ConNom1.Text = "Aguinaldo"
-    Else
-        ConNom1.ColWidth(25) = 0
+        Encab C_CONC8, "P.Vacac.", 1200
     End If
-    
-    ConNom1.Col = 26: ConNom1.CellAlignment = 4
-    If g_TipoNominaActiva = tnLiquidacionFiniquito Then
-        ConNom1.ColWidth(26) = 1200
-        ConNom1.Text = "P.Vac.Liq."
-    Else
-        ConNom1.ColWidth(26) = 0
-    End If
-    
-    ' ==== NUEVO: reacomodo visual para Liquidación/Finiquito ====
-   If g_TipoNominaActiva = tnLiquidacionFiniquito Then
-       ConNom1.ColPosition(25) = 9    ' Aguinaldo -> justo después de Sdo.Vac.
-       ConNom1.ColPosition(26) = 10   ' P.Vac.Liq. -> justo después de Aguinaldo
-   End If
+
+    Encab C_OTRAS, "Otras", 1200
+    Encab C_EXENTA, "Perc.exenta.", 1200
+    Encab C_TOTING, "Tot.Ingr.", 1200
+    Encab C_ISPT, "Ispt", 1200
+    Encab C_SUBEMP, "Sub.P/Empl.", 1200
+    Encab C_IMSS, "Imss", 1200
+    Encab C_PRESTAMOS, "Prestamos", 1200
+    Encab C_FONACOT, "Fonacot", 1200
+    Encab C_PENSION, "Pension Alimenticia", 1200
+    Encab C_INFONAVIT, "Infonavit", 1200
+    Encab C_TOTDED, "Tot.Deduc", 1200
+    Encab C_NETO, "Neto", 1200
+
+    ConNom1.Col = C_FLAG_ISR
+    ConNom1.ColWidth(C_FLAG_ISR) = 0
+    ConNom1.Col = C_FLAG_IMSS
+    ConNom1.ColWidth(C_FLAG_IMSS) = 0
+    ConNom1.Col = C_FLAG_ESP
+    ConNom1.ColWidth(C_FLAG_ESP) = 0
+
+    Encab C_BANAMEX, "Banamex", 2400
 End Sub
 
 Sub genenom(gg)
+    Dim cPV As Long
+    Dim esLiq As Boolean
+
+    esLiq = (g_TipoNominaActiva = tnLiquidacionFiniquito)
+    If esLiq Then
+        cPV = C_LQ_PRIMAVAC
+    Else
+        cPV = C_CONC8
+    End If
+
     sum(1) = 0
     sum(2) = 0
     ConNom1.Font.Size = 8
     ConNom1.Font.Bold = True
     li = ConNom1.Row
     ii = 0
-    
-    ConNom1.TextMatrix(li, 0) = Format(gg, "###0")
-    ConNom1.TextMatrix(li, 1) = RTrim$(personal.ape1) + " " + RTrim$(personal.ape2) + " " + RTrim$(personal.nom)
-    ConNom1.TextMatrix(li, 2) = Format(diat, "###0.00")
-    ConNom1.TextMatrix(li, 3) = Format((personal.ingr * diat), z1$): sum(1) = sum(1) + (personal.ingr * diat)
-       
-    If personal.viat > 0 Then
-        ConNom1.TextMatrix(li, 7) = Format((personal.viat * diat), z1$)
-        sum(1) = sum(1) + (personal.viat * diat)
+
+    ConNom1.TextMatrix(li, C_NUM) = Format(gg, "###0")
+    ConNom1.TextMatrix(li, C_NOMBRE) = RTrim$(personal.ape1) + " " + RTrim$(personal.ape2) + " " + RTrim$(personal.nom)
+    ConNom1.TextMatrix(li, C_DIAS) = Format(diat, "###0.00")
+    ConNom1.TextMatrix(li, C_SUELDO) = Format((personal.ingr * diat), z1$): sum(1) = sum(1) + (personal.ingr * diat)
+
+    If Not esLiq Then
+        If personal.viat > 0 Then
+            ConNom1.TextMatrix(li, C_CONC7) = Format((personal.viat * diat), z1$)
+            sum(1) = sum(1) + (personal.viat * diat)
+        End If
+
+        If personal.otras > 0 Then
+            ConNom1.TextMatrix(li, C_OTRAS) = Format((personal.otras * diat), z1$)
+            sum(1) = sum(1) + (personal.otras * diat)
+        End If
     End If
-    
-    If personal.otras > 0 Then
-        ConNom1.TextMatrix(li, 9) = Format((personal.otras * diat), z1$)
-        sum(1) = sum(1) + (personal.otras * diat)
-    End If
-    
-    ConNom1.TextMatrix(li, 11) = Format(sum(1), z1$)
-    
+
+    ConNom1.TextMatrix(li, C_TOTING) = Format(sum(1), z1$)
+
     Acum_Doble
-    
+
     If cal_anual = 0 Then
         impto = 0
         calculoRetencion sum(1), impto, 1, regtro
     Else
-        rgtro = ConNom1.TextMatrix(li, 0)
+        rgtro = ConNom1.TextMatrix(li, C_NUM)
         aoalta = Val(Mid(personal.fal, 7, 4))
         If (aoalta = empresa.ao) And (Tot_dias < 330) Then
             impto = 0
@@ -3583,7 +3464,7 @@ Sub genenom(gg)
             impto = 0: calc_anual sum(1), impto, 1
         End If
     End If
-        
+
     If ArAcum.DImpret > 0 And impto < 0 Then
         crd_sal = 0
     Else
@@ -3593,147 +3474,153 @@ Sub genenom(gg)
             crd_sal = 0
         End If
     End If
-       
+
     diaseg = diat: integrado = personal.integrado
     seguro = 0
-        
-    If ConNom1.TextMatrix(li, 8) > "" Then
-        p_vacacional = ConNom1.TextMatrix(li, 8)
+
+    If ConNom1.TextMatrix(li, cPV) > "" Then
+        p_vacacional = ConNom1.TextMatrix(li, cPV)
     Else
         p_vacacional = 0
     End If
-    
+
     imss integrado, seguro, diaseg
-       
+
     If impto <> 0 Then
-        ConNom1.TextMatrix(li, 12) = Format(impto, z1$)
+        ConNom1.TextMatrix(li, C_ISPT) = Format(impto, z1$)
         sum(2) = sum(2) + impto
     Else
-        ConNom1.TextMatrix(ConNom1.Row, 12) = ""
+        ConNom1.TextMatrix(li, C_ISPT) = ""
     End If
-    
+
     If crd_sal <> 0 Then
-        ConNom1.TextMatrix(li, 13) = Format(crd_sal, z1$)
+        ConNom1.TextMatrix(li, C_SUBEMP) = Format(crd_sal, z1$)
         sum(2) = sum(2) + crd_sal
     Else
-        ConNom1.TextMatrix(ConNom1.Row, 13) = ""
+        ConNom1.TextMatrix(li, C_SUBEMP) = ""
     End If
-    
+
     If seguro > 0 Then
-        ConNom1.TextMatrix(li, 14) = Format(seguro, z1$)
+        ConNom1.TextMatrix(li, C_IMSS) = Format(seguro, z1$)
         sum(2) = sum(2) + seguro
     Else
-        ConNom1.TextMatrix(ConNom1.Row, 14) = ""
+        ConNom1.TextMatrix(li, C_IMSS) = ""
     End If
-    
+
     sum(3) = sum(1) - sum(2)
-    ConNom1.TextMatrix(li, 19) = Format(sum(2), z1$)
-    ConNom1.TextMatrix(li, 20) = Format(sum(3), z1$)
-    ConNom1.TextMatrix(li, 21) = 0
-    ConNom1.TextMatrix(li, 22) = 0
-       
+    ConNom1.TextMatrix(li, C_TOTDED) = Format(sum(2), z1$)
+    ConNom1.TextMatrix(li, C_NETO) = Format(sum(3), z1$)
+    ConNom1.TextMatrix(li, C_FLAG_ISR) = 0
+    ConNom1.TextMatrix(li, C_FLAG_IMSS) = 0
+
     If diat = 0 Then
-        ConNom1.TextMatrix(li, 23) = 1
+        ConNom1.TextMatrix(li, C_FLAG_ESP) = 1
     Else
-        ConNom1.TextMatrix(li, 23) = 0
+        ConNom1.TextMatrix(li, C_FLAG_ESP) = 0
     End If
-       
+
     Get 12, regtro, Clbnx
-       
-    ConNom1.TextMatrix(li, 24) = (" " + Clbnx.Q1)
+
+    ConNom1.TextMatrix(li, C_BANAMEX) = (" " + Clbnx.Q1)
     locobra
-    
- End Sub
- 
+
+End Sub
+
+Private Sub LimpiaNomina()
+    With nomina
+        .dias = 0: .hsnor = 0: .hs_no = 0: .hsdbl = 0: .hs_db = 0: .hstri = 0
+        .hs_tr = 0: .ispt = 0: .crdsal = 0: .imss = 0: .sueldo = 0: .hs_nor = 0
+        .hs_dbl = 0: .hs_tri = 0: .viaticos = 0: .pvac = 0: .otras = 0: .aguin = 0
+        .ptu = 0: .exentos = 0: .prestamos = 0: .fonacot = 0: .telefono = 0
+        .otraded = 0
+    End With
+End Sub
+
+' Valor numerico de una celda (0 si esta vacia o no es numerica)
+Private Function CelCur(ByVal f As Long, ByVal c As Long) As Currency
+    Dim s As String
+    s = Trim$(ConNom1.TextMatrix(f, c))
+    If Len(s) > 0 Then
+        If IsNumeric(s) Then CelCur = CCur(s)
+    End If
+End Function
+
+' Pasa el renglon f de la grilla al registro global 'nomina'
+' (el Get del registro ya se hizo antes de llamar).
+Private Sub GridANomina(ByVal f As Long)
+    nomina.dias = CelCur(f, C_DIAS)
+    nomina.sueldo = CelCur(f, C_SUELDO)
+
+    If g_TipoNominaActiva = tnLiquidacionFiniquito Then
+        nomina.viaticos = CelCur(f, C_LQ_SDOVAC)
+        nomina.pvac = CelCur(f, C_LQ_PRIMAVAC)
+        nomina.aguin = CelCur(f, C_LQ_AGUI)
+        nomina.hs_dbl = CelCur(f, C_LQ_ANTIG)
+        nomina.hs_nor = CelCur(f, C_LQ_COMPENS)
+        nomina.hs_tri = CelCur(f, C_LQ_INDEMN)
+        nomina.hsnor = CelCur(f, C_LQ_BONO)
+    Else
+        nomina.hs_nor = CelCur(f, C_CONC4)
+        If N_ormal = 1 Then
+            nomina.aguin = CelCur(f, C_CONC5)
+        Else
+            nomina.hs_dbl = CelCur(f, C_CONC5)
+        End If
+        If N_ormal = 1 Then
+            nomina.ptu = CelCur(f, C_CONC6)
+        Else
+            nomina.hs_tri = CelCur(f, C_CONC6)
+        End If
+        nomina.viaticos = CelCur(f, C_CONC7)
+        nomina.pvac = CelCur(f, C_CONC8)
+    End If
+
+    nomina.otras = CelCur(f, C_OTRAS)
+    nomina.exentos = CelCur(f, C_EXENTA)
+
+    nomina.ispt = CelCur(f, C_ISPT)
+    nomina.crdsal = CelCur(f, C_SUBEMP)
+    nomina.imss = CelCur(f, C_IMSS)
+    nomina.prestamos = CelCur(f, C_PRESTAMOS)
+    nomina.fonacot = CelCur(f, C_FONACOT)
+    nomina.telefono = CelCur(f, C_PENSION)
+    nomina.otraded = CelCur(f, C_INFONAVIT)
+End Sub
+
 Private Sub archnom_Click(Index As Integer)
+    Dim f As Long
+    Dim colanti As Long, renati As Long
+
     Text4.Text = ""
     Close 6:: Dm = LOF(2) / Len(personal)
     Open Arch$ For Random As 6 Len = Len(nomina)
     nm = LOF(6) / Len(nomina)
-    
+
     colanti = ConNom1.Col
     renati = ConNom1.Row
-    ConNom1.Col = 0
-    ConNom1.Row = 1
-    
+
+    ' 1) Dejar en ceros todos los registros del archivo
+    LimpiaNomina
     For f = 1 To Dm
-     nomina.dias = 0: nomina.hsnor = 0: nomina.hs_no = 0
-     nomina.hs_nor = 0: nomina.hs_dbl = 0: nomina.hs_tri = 0
-     nomina.hsdbl = 0: nomina.hs_db = 0: nomina.hstri = 0
-     nomina.hs_tr = 0: nomina.ispt = 0: nomina.crdsal = 0
-     nomina.imss = 0: nomina.sueldo = 0: nomina.hs_nor = 0
-     nomina.hs_dbl = 0: nomina.hs_tri = 0: nomina.viaticos = 0
-     nomina.pvac = 0: nomina.otras = 0: nomina.aguin = 0
-     nomina.ptu = 0: nomina.exentos = 0
-     nomina.prestamos = 0: nomina.fonacot = 0: nomina.telefono = 0
-     nomina.otraded = 0
-
-     Put 6, f, nomina
+        Put 6, f, nomina
     Next f
-For f = 1 To limite
-   If ConNom1.TextMatrix(f, 0) <> "" Then regtro = ConNom1.TextMatrix(f, 0) Else regtro = 0
-   If regtro > 0 Then
-   Get #6, regtro, nomina
-   If ConNom1.TextMatrix(f, 2) <> "" Then nomina.dias = ConNom1.TextMatrix(f, 2) Else nomina.dias = 0
-   If ConNom1.TextMatrix(f, 3) <> "" Then nomina.sueldo = ConNom1.TextMatrix(f, 3) Else nomina.sueldo = 0
-   If ConNom1.TextMatrix(f, 4) <> "" Then nomina.hs_nor = ConNom1.TextMatrix(f, 4) Else nomina.hs_nor = 0
-   If N_ormal = 1 Then
-        If ConNom1.TextMatrix(f, 5) <> "" Then nomina.aguin = ConNom1.TextMatrix(f, 5) Else nomina.aguin = 0
-        Else
-        If ConNom1.TextMatrix(f, 5) <> "" Then nomina.hs_dbl = ConNom1.TextMatrix(f, 5) Else nomina.hs_dbl = 0
-   End If
-   If N_ormal = 1 Then
-        If ConNom1.TextMatrix(f, 6) <> "" Then nomina.ptu = ConNom1.TextMatrix(f, 6) Else nomina.ptu = 0
-        Else
-        If ConNom1.TextMatrix(f, 6) <> "" Then nomina.hs_tri = ConNom1.TextMatrix(f, 6) Else nomina.hs_tri = 0
-   End If
-   If ConNom1.TextMatrix(f, 7) <> "" Then nomina.viaticos = ConNom1.TextMatrix(f, 7) Else nomina.viaticos = 0
-   If ConNom1.TextMatrix(f, 8) <> "" Then nomina.pvac = ConNom1.TextMatrix(f, 8) Else nomina.pvac = 0
-   If ConNom1.TextMatrix(f, 9) <> "" Then nomina.otras = ConNom1.TextMatrix(f, 9) Else nomina.otras = 0
-   If ConNom1.TextMatrix(f, 10) <> "" Then nomina.exentos = ConNom1.TextMatrix(f, 10) Else nomina.exentos = 0
-   
-   ' NUEVO: Aguinaldo y Prima Vacacional de Liquidación/Finiquito
-   If g_TipoNominaActiva = tnLiquidacionFiniquito Then
-       If ConNom1.TextMatrix(f, 25) <> "" Then nomina.hsnor = ConNom1.TextMatrix(f, 25) Else nomina.hsnor = 0
-       If ConNom1.TextMatrix(f, 26) <> "" Then nomina.hstri = ConNom1.TextMatrix(f, 26) Else nomina.hstri = 0
-   End If
-   
-   If ConNom1.TextMatrix(f, 12) <> "" Then nomina.ispt = ConNom1.TextMatrix(f, 12) Else nomina.ispt = 0
-   '''''''Codigo de Modificacion''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-   
-   'If Option3 = True Then
-    'If ConNom1.TextMatrix(f, 12) <> "" Then nomina.ispt = ConNom1.TextMatrix(f, 12) Else nomina.ispt = 0
-   'End If
-   'If Option4 = True Then
-    
-    'mesNomina1 = Trim(Left(Combo1.Text, 3))
-    'AñoNomina1 = Right(Trim(Label7.Caption), 4)
-    'Close 39
-    'Open CStr(Trim(Form1.Dir1)) + "\" + mesNomina1 + "1" + AñoNomina1 + ".NOM" For Random As 39 Len = Len(nomina)
-    'Get 39, regtro, nomina
-    'ImpuestoAnteriorRetenido = nomina.ispt
-    'Close 39
-    
-    'If ConNom1.TextMatrix(f, 12) <> "" Then nomina.ispt = CCur(ConNom1.TextMatrix(f, 12)) - ImpuestoAnteriorRetenido Else nomina.ispt = 0
-   
-   'End If
-   '''''''''''''Codigo de Modificacion Termina'''''''''''''''''''''''''''''''''''
-   
-   If ConNom1.TextMatrix(f, 13) <> "" Then nomina.crdsal = ConNom1.TextMatrix(f, 13) Else nomina.crdsal = 0
-   If ConNom1.TextMatrix(f, 14) <> "" Then nomina.imss = ConNom1.TextMatrix(f, 14) Else nomina.imss = 0
-   If ConNom1.TextMatrix(f, 15) <> "" Then nomina.prestamos = ConNom1.TextMatrix(f, 15) Else nomina.prestamos = 0
-   If ConNom1.TextMatrix(f, 16) <> "" Then nomina.fonacot = ConNom1.TextMatrix(f, 16) Else nomina.fonacot = 0
-   If ConNom1.TextMatrix(f, 17) <> "" Then nomina.telefono = ConNom1.TextMatrix(f, 17) Else nomina.telefono = 0
-   If ConNom1.TextMatrix(f, 18) <> "" Then nomina.otraded = ConNom1.TextMatrix(f, 18) Else nomina.otraded = 0
-   Put 6, regtro, nomina
-  End If
- Next f
-  archiva_o = 0
-  ConNom1.Col = colanti
-  ConNom1.Row = renati
-  ConNom1.SetFocus
 
-MsgBox ("Archivada con éxito!")
+    ' 2) Guardar cada renglon de la grilla en su registro
+    For f = 1 To limite
+        regtro = Val(ConNom1.TextMatrix(f, C_NUM))
+        If regtro > 0 Then
+            Get #6, regtro, nomina
+            GridANomina f
+            Put 6, regtro, nomina
+        End If
+    Next f
+
+    archiva_o = 0
+    ConNom1.Col = colanti
+    ConNom1.Row = renati
+    ConNom1.SetFocus
+
+    MsgBox ("Archivada con exito!")
 End Sub
 
 Private Sub cap_act_Click(Index As Integer)
@@ -3997,6 +3884,7 @@ Public Sub main()
     ' Funcion que viene desde el form1
     generarNominas
 End Sub
+
 
 Private Sub generarNominas()
     ProgressBar1.Visible = True
@@ -4606,10 +4494,10 @@ Public Sub calculoRetencion(ingresoBruto, impuesto, porcentajeSubsidio, idEmplea
 ' Hace el calculo de la retencion mensual
     If Form8.Option4.Value = True Then
         mesNomina = Trim(Left(Combo1.Text, 3))
-        AñoNomina = Right(Trim(Label7.Caption), 4)
+        AnoNomina = Right(Trim(Label7.Caption), 4)
         
-        Close 35: Open CStr(Trim(Form1.Dir1)) + "\" + mesNomina + "1" + AñoNomina + ".NOM" For Random As 35 Len = Len(nomina)
-        Close 36: Open CStr(Trim(Form1.Dir1)) + "\" + mesNomina + "1" + AñoNomina + ".cmp" For Random As 36 Len = Len(nom_com)
+        Close 35: Open CStr(Trim(Form1.Dir1)) + "\" + mesNomina + "1" + AnoNomina + ".NOM" For Random As 35 Len = Len(nomina)
+        Close 36: Open CStr(Trim(Form1.Dir1)) + "\" + mesNomina + "1" + AnoNomina + ".cmp" For Random As 36 Len = Len(nom_com)
         
         Get 35, regtro, nomina: Get 36, regtro, nom_com
         
@@ -4706,4 +4594,15 @@ Private Sub Text4_KeyPress(KeyAscii As Integer)
     End If
 End Sub
 
+Private Sub Encab(ByVal c As Long, ByVal txt As String, ByVal ancho As Long)
+    ConNom1.Col = c
+    ConNom1.CellAlignment = 4
+    ConNom1.ColWidth(c) = ancho
+    ConNom1.Text = txt
+End Sub
+
+
+
 ' comentario
+
+

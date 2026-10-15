@@ -451,67 +451,149 @@ Dim algunCampoVacioGlobal As Boolean
 Dim ModoEdicion As Boolean
 Private EsNuevo As Boolean
 
+' ============================================================
+' CARGA / MODOS DE TRABAJO
+' ============================================================
+
+Public Sub Form_Load()
+
+End Sub
+
+Public Sub IniciarNuevo()
+    EsNuevo = True
+    ModoEdicion = True          'En captura nueva no hay que habilitar edición.
+
+    AbrirArchivosPersistentes
+    limpiarCampos
+
+    Text16.Text = (largoPersonal + 1)
+
+    If largoPersonal <= 0 Then
+        MsgBox ("Achis, no hay personal. Intenta con otra carpeta!")
+        Get 2, 1, personal
+    Else
+        Get 2, largoPersonal, personal
+        LabelAnterior.Caption = ("ID anterior:  " & largoPersonal)
+    End If
+
+    LabelAnterior.Visible = True
+    ActualizarBotones
+End Sub
+
+Public Sub IniciarConsulta(ByVal id As Integer)
+    EsNuevo = False
+    ModoEdicion = False
+
+    AbrirArchivosPersistentes
+    cargarEmpleado id
+
+    LabelAnterior.Visible = False
+    ActualizarBotones
+End Sub
+
+' ============================================================
+' ARCHIVOS / RESPALDOS
+' ============================================================
+
+Private Sub AbrirArchivosPersistentes()
+    Close 2, 3, 8
+
+    Open "personal.dno" For Random As 2 Len = Len(personal)
+    largoPersonal = LOF(2) / Len(personal)
+
+    Open "PerOtre.dno" For Random As 3 Len = Len(Otros_Rgtros)
+    largoOtros = LOF(3) / Len(personal)
+
+    Open "maestro.dno" For Random As 8 Len = Len(maestro)
+    largoMaestro = LOF(8) / Len(maestro)
+End Sub
+
 Private Sub RespaldarArchivos()
     Close 2, 3, 4, 8
+
     FileCopy "personal.dno", "personal.bak"
     FileCopy "PerOtre.dno", "PerOtre.bak"
+
     If Dir("maestro.dno") <> "" Then FileCopy "maestro.dno", "maestro.bak"
     If Dir("Bnxcla.dno") <> "" Then FileCopy "Bnxcla.dno", "Bnxcla.bak"
 End Sub
 
 Private Sub RestaurarArchivos()
     Close 2, 3, 4, 8
+
     FileCopy "personal.bak", "personal.dno"
     FileCopy "PerOtre.bak", "PerOtre.dno"
+
     If Dir("maestro.bak") <> "" Then FileCopy "maestro.bak", "maestro.dno"
     If Dir("Bnxcla.bak") <> "" Then FileCopy "Bnxcla.bak", "Bnxcla.dno"
 End Sub
 
+' ============================================================
+' ESTADO DE BOTONES / CAMPOS
+' ============================================================
+
 Private Sub ActualizarBotones()
     If EsNuevo Then
-        ' Captura nueva: solo Archivar (Command1) y Actualizar (Command3)
-        BtnHabilitarEdicion.Visible = False
-        BtnCancelarCambios.Visible = False
-        Command2.Visible = False
         Command1.Visible = True
         Command3.Visible = True
+        Command2.Visible = False
+
+        BtnHabilitarEdicion.Visible = False
+        BtnCancelarCambios.Visible = False
+
         Command1.Enabled = True
         Command3.Enabled = True
     Else
-        ' Empleado existente: solo botones de edición
         Command1.Visible = False
-        BtnHabilitarEdicion.Visible = True
-        BtnCancelarCambios.Visible = True
         Command2.Visible = True
         Command3.Visible = True
+
+        BtnHabilitarEdicion.Visible = True
+        BtnCancelarCambios.Visible = True
+
         BtnHabilitarEdicion.Enabled = Not ModoEdicion
         BtnCancelarCambios.Enabled = ModoEdicion
-        Command3.Enabled = ModoEdicion
         Command2.Enabled = ModoEdicion
+        Command3.Enabled = ModoEdicion
     End If
+
     BloquearCampos Not ModoEdicion
 End Sub
 
+Private Sub BloquearCampos(ByVal bloquear As Boolean)
+    Dim i As Integer
+
+    For i = 1 To 15
+        Me.Controls("Text" & i).locked = bloquear
+    Next i
+
+    'Text16 (ID) se deja libre: con Enter sirve para navegar a otro empleado.
+End Sub
+
+Private Sub BtnHabilitarEdicion_Click()
+    RespaldarArchivos
+    AbrirArchivosPersistentes
+
+    ModoEdicion = True
+    ActualizarBotones
+End Sub
+
 Private Sub BtnCancelarCambios_Click()
-    If MsgBox("Se descartarán los cambios hechos desde que habilitaste edición. ¿Continuar?", vbYesNo + vbExclamation) = vbYes Then
+    If MsgBox("Se descartarán los cambios hechos desde que habilitaste edición. ¿Continuar?", _
+              vbYesNo + vbExclamation) = vbYes Then
+
         RestaurarArchivos
-        AbrirArchivosPersistentes   ' <- nueva línea
+        AbrirArchivosPersistentes
+
         ModoEdicion = False
         ActualizarBotones
         cargarEmpleado Val(Text16.Text)
     End If
 End Sub
 
-Private Sub BtnHabilitarEdicion_Click()
-    RespaldarArchivos
-    AbrirArchivosPersistentes   ' <- nueva línea
-    ModoEdicion = True
-    ActualizarBotones
-End Sub
-
-Public Sub Form_Load()
-    
-End Sub
+' ============================================================
+' EVENTOS DE TEXTBOX
+' ============================================================
 
 Private Sub Text1_Change()
     calcularSalarioDiario
@@ -523,232 +605,120 @@ Private Sub Text1_KeyPress(KeyAscii As Integer)
     End If
 End Sub
 
+Private Sub Text2_KeyPress(KeyAscii As Integer)
+    If EsNuevo Then Exit Sub
+
+    If KeyAscii = 13 And Text2.Text <> "" Then
+        EliminarNumeroTarjeta
+    End If
+End Sub
+
+Private Sub Text3_Change()
+    Dim texto As String
+
+    texto = Text3.Text
+
+    If Len(texto) > 3 Then
+        Text4.Text = Left(texto, Len(texto) - 3)
+    Else
+        Text4.Text = ""
+    End If
+End Sub
+
+Private Sub Text9_Change()
+    calcularSalarioDiario
+    calcularImpuestoMensual
+End Sub
+
+Private Sub Text10_Change()
+    calcularSalarioDiario
+    calcularImpuestoMensual
+End Sub
+
+Private Sub Text11_Change()
+    calcularSalarioDiario
+    calcularImpuestoMensual
+End Sub
+
 Private Sub Text16_KeyPress(KeyAscii As Integer)
     If KeyAscii = 13 And Text16.Text <> "" Then
         cargarEmpleado Val(Text16.Text)
     End If
 End Sub
 
-Private Sub Text2_KeyPress(KeyAscii As Integer)
-
-    If EsNuevo Then Exit Sub
-
-    If KeyAscii = 13 And Text2.Text <> "" Then
-
-        Dim respuesta As Integer
-        Dim respuestaDos As Integer
-        Dim idNomina As String
-
-        If Not ModoEdicion Then
-            MsgBox "Debes habilitar edición primero.", vbExclamation
-            Exit Sub
-        End If
-
-        Close 4
-        Open "Bnxcla.dno" For Random As #4 Len = Len(Clbnx)
-
-        idNomina = Text16.Text
-
-        Get #4, idNomina, Clbnx
-
-        respuesta = MsgBox( _
-            "¿Se eliminará el número de tarjeta: " & Clbnx.Q1 & _
-            "?" & vbCrLf & vbCrLf & _
-            "¿Deseas continuar?", _
-            vbOKCancel + vbQuestion)
-
-        If respuesta = vbOK Then
-
-            respuestaDos = MsgBox( _
-                "Esta acción es irreversible. " & _
-                "Asegúrate de tener una copia del número de tarjeta.", _
-                vbOKCancel + vbExclamation)
-
-            If respuestaDos = vbOK Then
-
-                Clbnx.Q1 = "0"
-
-                Put #4, idNomina, Clbnx
-
-                MsgBox "Se eliminó el número de tarjeta.", vbInformation
-
-            Else
-                MsgBox "Operación cancelada.", vbInformation
-            End If
-
-        Else
-            MsgBox "Operación cancelada.", vbInformation
-        End If
-
-        Close #4
-
-    End If
-
-End Sub
-
-Private Sub Text3_Change()
-    ' Obtener el texto de Text1
-    Dim texto As String
-    texto = Text3.Text
-    
-    ' Verificar que el texto tiene m?s de 3 caracteres
-    If Len(texto) > 3 Then
-        ' Copiar el texto en Text2 menos los ?ltimos 3 caracteres
-        Text4.Text = Left(texto, Len(texto) - 3)
-    Else
-        ' Si el texto tiene 3 o menos caracteres, Text2 ser? vac?o
-        Text4.Text = ""
-    End If
-    
-End Sub
-
-Private Sub Text9_Change()
-        calcularSalarioDiario
-        calcularImpuestoMensual
-End Sub
-
-Private Sub Text10_Change()
-        calcularSalarioDiario
-        calcularImpuestoMensual
-End Sub
-
-Private Sub Text11_Change()
-        calcularSalarioDiario
-        calcularImpuestoMensual
-End Sub
-
-
-Sub calcularSalarioDiario()
-Dim antiguedad As Integer
-Dim facto As Double
-Dim totalIngr As Currency
-
-    antiguedad = CalcularAntiguedad(Text1.Text)
-    facto = 0
-    totalIngr = 0
-     
-    If IsNumeric(Text9.Text) Then totalIngr = totalIngr + Text9.Text
-    If IsNumeric(Text10.Text) Then totalIngr = totalIngr + Text10.Text
-    If IsNumeric(Text11.Text) Then totalIngr = totalIngr + Text11.Text
-     
-    factor antiguedad, facto
-     
-    Text12.Text = Format((totalIngr * facto), z1$)
-     
-    If IsNumeric(Text12.Text) Then
-        If Text12.Text > (25 * empresa.sm) Then
-            Text12.Text = Format((25 * empresa.sm), z1$)
-        End If
-    End If
-    
-End Sub
+' ============================================================
+' EVENTOS DE BOTONES
+' ============================================================
 
 Private Sub cedulaFiscal_Click()
     FormCedulaFiscal.Show 1
+End Sub
+
+Private Sub Command1_Click()
+    Dim sinCamposVacios As Boolean
+    Dim camposValidos As Boolean
+    Dim noDuplicado As Boolean
+
+    If Not ModoEdicion Then
+        MsgBox "Debes habilitar edición primero.", vbExclamation
+        Exit Sub
+    End If
+
+    verificarCamposVacios
+    sinCamposVacios = Not algunCampoVacioGlobal
+
+    ValidarCampos
+    camposValidos = camposValidosGlobal
+
+    verificarEmpleadoDuplicado
+    noDuplicado = Not empleadoDuplicado
+
+    If camposValidos And noDuplicado And sinCamposVacios Then
+        guardarRegistro
+    Else
+        MsgBox "Hay errores en los campos o el empleado ya existe. No se puede guardar."
+    End If
 End Sub
 
 Private Sub Command2_Click()
     eliminarRegistro
 End Sub
 
-
-Private Sub eliminarRegistro()
-    Dim respuesta As VbMsgBoxResult
-    Dim registro As Integer
-    Dim i As Integer
-    Dim personalList() As per
-    Dim otrosList() As OtrasCh
-    Dim maestroList() As ob
-    Dim countPersonal As Integer
-    Dim countOtros As Integer
-    Dim countMaestro As Integer
-    
-    ' Pregunta al usuario si desea eliminar el registro
-    respuesta = MsgBox("?Desea eliminar el registro?", vbYesNo + vbQuestion, "Confirmar eliminaci?n")
-
-    If respuesta = vbNo Then
-        MsgBox "Operaci?n cancelada.", vbInformation
-        Exit Sub
+Private Sub Command3_Click()
+    If EsNuevo Then
+        Command1_Click          'Mismas validaciones: vacíos, RFC/CURP y duplicado.
+    Else
+        actualizarRegistro
     End If
-
-    registro = Val(Text16.Text)
-    
-    countPersonal = LOF(2) / Len(personal)
-    countOtros = LOF(3) / Len(Otros_Rgtros)
-    countMaestro = LOF(8) / Len(maestro)
-    
-    ReDim personalList(1 To countPersonal)
-    ReDim otrosList(1 To countOtros)
-    ReDim maestroList(1 To countMaestro)
-    
-    For i = 1 To countPersonal
-        Get 2, i, personalList(i)
-    Next i
-    For i = 1 To countOtros
-        Get 3, i, otrosList(i)
-    Next i
-    For i = 1 To countMaestro
-        Get 8, i, maestroList(i)
-    Next i
-    
-    ' Cerrar archivos
-    Close 2
-    Close 3
-    Close 8
-    
-    ' Eliminar el registro de las listas
-    If registro > 0 And registro <= countPersonal Then
-        For i = registro To countPersonal - 1
-            personalList(i) = personalList(i + 1)
-        Next i
-        ReDim Preserve personalList(1 To countPersonal - 1)
-    End If
-    
-    If registro > 0 And registro <= countOtros Then
-        For i = registro To countOtros - 1
-            otrosList(i) = otrosList(i + 1)
-        Next i
-        ReDim Preserve otrosList(1 To countOtros - 1)
-    End If
-    
-    If registro > 0 And registro <= countMaestro Then
-        For i = registro To countMaestro - 1
-            maestroList(i) = maestroList(i + 1)
-        Next i
-        ReDim Preserve maestroList(1 To countMaestro - 1)
-    End If
-    
-    ' Reescribir los registros en los archivos
-    Open "personal.dno" For Output As #2
-    Open "PerOtre.dno" For Output As #3
-    Open "maestro.dno" For Output As #8
-    
-    Close #2
-    Close #3
-    Close #8
-    
-    Open "personal.dno" For Random As 2 Len = Len(personal)
-    Open "PerOtre.dno" For Random As 3 Len = Len(Otros_Rgtros)
-    Open "maestro.dno" For Random As 8 Len = Len(maestro)
-    
-    For i = 1 To UBound(personalList)
-        Put 2, i, personalList(i)
-    Next i
-    For i = 1 To UBound(otrosList)
-        Put 3, i, otrosList(i)
-    Next i
-    For i = 1 To UBound(maestroList)
-        Put 8, i, maestroList(i)
-    Next i
-    
-    ' Cerrar archivos
-    Close 2
-    Close 3
-    Close 8
-    
-    MsgBox "Registro eliminado con ?xito.", vbInformation
-    Unload Me
 End Sub
+
+' ============================================================
+' CARGA / LIMPIEZA DE DATOS EN PANTALLA
+' ============================================================
+
+Public Sub cargarEmpleado(id As Integer)
+    Get 2, id, personal
+    Get 3, id, Otros_Rgtros
+    Get 8, id, maestro
+
+    Text16.Text = id
+
+    Text1.Text = Trim(personal.fal)                    'Fecha alta.
+    Text2.Text = Trim(personal.fab)                    'Fecha baja.
+    Text3.Text = Trim(personal.RFC)                    'RFC.
+    Text4.Text = Trim(Otros_Rgtros.curp)               'CURP.
+    Text5.Text = Trim(personal.nom)                    'Nombre.
+    Text6.Text = Trim(personal.ape1)                   'Apellido paterno.
+    Text7.Text = Trim(personal.ape2)                   'Apellido materno.
+    Text8.Text = Replace(Trim(personal.imss), "-", "") 'Número SS.
+    Text9.Text = personal.ingr                         'Ingreso diario normal.
+    Text10.Text = personal.viat                        'O.F. diarios.
+    Text11.Text = personal.otras                       'Otros ingresos.
+    Text12.Text = personal.integrado                   'Salario diario integrado.
+    Text13.Text = maestro.O_1                          'Número obra.
+    Text14.Text = maestro.por_1                        'Porcentaje.
+End Sub
+
 Private Sub limpiarCampos()
     Text1.Text = Empty
     Text2.Text = Empty
@@ -767,16 +737,49 @@ Private Sub limpiarCampos()
     Text15.Text = Empty
 End Sub
 
+' ============================================================
+' CALCULOS
+' ============================================================
+
+Sub calcularSalarioDiario()
+    Dim antiguedad As Integer
+    Dim facto As Double
+    Dim totalIngr As Currency
+
+    antiguedad = CalcularAntiguedad(Text1.Text)
+    facto = 0
+    totalIngr = 0
+
+    If IsNumeric(Text9.Text) Then totalIngr = totalIngr + Text9.Text
+    If IsNumeric(Text10.Text) Then totalIngr = totalIngr + Text10.Text
+    If IsNumeric(Text11.Text) Then totalIngr = totalIngr + Text11.Text
+
+    factor antiguedad, facto
+
+    Text12.Text = Format((totalIngr * facto), z1$)
+
+    If IsNumeric(Text12.Text) Then
+        If Text12.Text > (25 * empresa.sm) Then
+            Text12.Text = Format((25 * empresa.sm), z1$)
+        End If
+    End If
+End Sub
+
 Private Sub calcularImpuestoMensual()
-Dim ingresoTotal As Currency
-Dim largoArticulo As Double
+    Dim ingresoTotal As Currency
+    Dim largoArticulo As Double
+    Dim salarioDiario As Currency
+    Dim viaticosDiarios As Currency
+    Dim otrosDiarios As Currency
+    Dim impuesto As Currency
+    Dim i As Integer
 
-On Error GoTo Error:
+    On Error GoTo ErrorCalculo
 
-    Dim salarioDiario As Currency: salarioDiario = 0
-    Dim viaticosDiarios As Currency: viaticosDiarios = 0
-    Dim otrosDiarios As Currency: otrosDiarios = 0
-    
+    salarioDiario = 0
+    viaticosDiarios = 0
+    otrosDiarios = 0
+
     If IsNumeric(Text9.Text) Then salarioDiario = CCur(Text9.Text)
     If IsNumeric(Text10.Text) Then viaticosDiarios = CCur(Text10.Text)
     If IsNumeric(Text11.Text) Then otrosDiarios = CCur(Text11.Text)
@@ -784,114 +787,45 @@ On Error GoTo Error:
     ingresoTotal = salarioDiario + viaticosDiarios + otrosDiarios
     ingresoTotal = ingresoTotal * 30
 
-    Close 99: Open (Trim(Dir_imptos) + "Tab08Mes.ISR") For Random As 99 Len = Len(articulo): largoArticulo = LOF(99) / Len(articulo)
-    
-    Dim i As Integer
-    
+    Close 99
+    Open (Trim(Dir_imptos) + "Tab08Mes.ISR") For Random As 99 Len = Len(articulo)
+
+    largoArticulo = LOF(99) / Len(articulo)
+
     For i = 1 To largoArticulo
         Get 99, i, articulo
-        Dim impuesto As Currency
-            
-            impuesto = ingresoTotal
+
+        impuesto = ingresoTotal
+
         If ingresoTotal >= articulo.liminf And ingresoTotal <= articulo.limsup Then
-                
             impuesto = (((impuesto - articulo.liminf) * articulo.porcsl / 100) + articulo.cuotaf)
             Text15.Text = Format(impuesto, z1$)
-            
         End If
     Next i
-Error:
 
+ErrorCalculo:
 End Sub
 
-Public Sub cargarEmpleado(id As Integer)
-    Get 2, id, personal
-    Get 3, id, Otros_Rgtros
-    Get 8, id, maestro
-    
-    Text16.Text = id
-    
-    ' FECHA ALTA
-    Text1.Text = Trim(personal.fal)
-    ' FECHA BAJA
-    Text2.Text = Trim(personal.fab)
-    ' RFC
-    Text3.Text = Trim(personal.RFC)
-    ' CURP
-    Text4.Text = Trim(Otros_Rgtros.curp)
-    ' NOMBRE
-    Text5.Text = Trim(personal.nom)
-    ' APELLIDO P
-    Text6.Text = Trim(personal.ape1)
-    ' APELLIDO M
-    Text7.Text = Trim(personal.ape2)
-    ' NUMERO SS
-    Text8.Text = Replace(Trim(personal.imss), "-", "")
-    ' INGRESO DIARIO NORMAL
-    Text9.Text = personal.ingr
-    ' O.F DIARIOS
-    Text10.Text = personal.viat
-    ' OTROS INGRESOS
-    Text11.Text = personal.otras
-    ' SALARIO DIARIO INTEGRADO
-    Text12.Text = personal.integrado
-    ' NUMERO OBRA
-    Text13.Text = maestro.O_1
-    ' PORCENTAJE
-    Text14.Text = maestro.por_1
-    
-End Sub
-
-Private Sub Command1_Click()
-
-    If Not ModoEdicion Then
-        MsgBox "Debes habilitar edición primero.", vbExclamation
-        Exit Sub
-    End If
-    
-    Dim sinCamposVacios As Boolean
-    Dim camposValidos As Boolean
-    Dim noDuplicado As Boolean
-    
-    ' Verificar campos vac?os y establecer la bandera correspondiente
-    verificarCamposVacios
-    sinCamposVacios = Not algunCampoVacioGlobal
-    
-    ' Validar campos y establecer la bandera correspondiente
-    ValidarCampos
-    camposValidos = camposValidosGlobal
-    
-    ' Verificar empleado duplicado y establecer la bandera correspondiente
-    verificarEmpleadoDuplicado
-    noDuplicado = Not empleadoDuplicado
-    
-    ' Comprobar todas las banderas antes de guardar
-    If camposValidos And noDuplicado And sinCamposVacios Then
-        guardarRegistro
-    Else
-        MsgBox "Hay errores en los campos o el empleado ya existe. No se puede guardar."
-    End If
-End Sub
-
+' ============================================================
+' VALIDACIONES
+' ============================================================
 
 Private Sub verificarCamposVacios()
     Dim i As Integer
     Dim txt As TextBox
     Dim lbl As Label
     Dim algunCampoVacio As Boolean
-    
+
     algunCampoVacio = False
-    
+
     For i = 1 To 14
-        If i = 2 Then
-            GoTo SiguienteIteracion
-        End If
-        
+        If i = 2 Then GoTo SiguienteIteracion
+
         On Error Resume Next
         Set txt = Me.Controls("Text" & i)
         Set lbl = Me.Controls("Label" & i)
         On Error GoTo 0
-        
+
         If Not txt Is Nothing And Not lbl Is Nothing Then
             If txt.Text = "" Then
                 lbl.ForeColor = vbRed
@@ -902,14 +836,13 @@ Private Sub verificarCamposVacios()
         Else
             MsgBox "Control " & "Text" & i & " o " & "Label" & i & " no existe."
         End If
-        
+
         Set txt = Nothing
         Set lbl = Nothing
-    
+
 SiguienteIteracion:
     Next i
-    
-    ' Asignar valor a la variable global
+
     algunCampoVacioGlobal = algunCampoVacio
 End Sub
 
@@ -918,79 +851,90 @@ Private Sub ValidarCampos()
     Dim fechaOpcionalValida As Boolean
     Dim rfcValido As Boolean
     Dim curpValido As Boolean
-    
+
     fechaValida = IsValidDate(Text1.Text)
-    
+
     If Trim(Text2.Text) = "" Then
         fechaOpcionalValida = True
     Else
         fechaOpcionalValida = IsValidDate(Text2.Text)
     End If
-    
+
     rfcValido = (Len(Text3.Text) = 13)
     curpValido = IsValidCURP(Text4.Text)
-    
-    ' Asignar valor a la variable global
+
     camposValidosGlobal = fechaValida And fechaOpcionalValida And rfcValido And curpValido
 End Sub
 
 Private Sub verificarEmpleadoDuplicado()
     Dim i As Integer
     Dim empleadoExistente As Boolean
-    
+
     empleadoExistente = False
-    
+
     For i = 1 To largoPersonal
         Get 2, i, personal
+
         If Text3.Text = Trim(personal.RFC) Then
             empleadoExistente = True
             MsgBox "Este empleado ya existe."
             Exit For
         End If
     Next i
-    
-    ' Asignar valor a la variable global
+
     empleadoDuplicado = empleadoExistente
 End Sub
 
+Private Function IsValidDate(ByVal fecha As String) As Boolean
+    Dim testDate As Date
 
-Private Sub Command3_Click()
-    If EsNuevo Then
-        Command1_Click          ' mismas validaciones (vacíos, RFC/CURP, duplicado)
-    Else
-        actualizarRegistro
+    IsValidDate = False
+
+    On Error Resume Next
+    testDate = DateValue(fecha)
+    On Error GoTo 0
+
+    If Err.Number = 0 Then
+        IsValidDate = True
     End If
-End Sub
+End Function
+
+Private Function IsValidCURP(ByVal curp As String) As Boolean
+    Dim regex As Object
+
+    Set regex = CreateObject("VBScript.RegExp")
+
+    regex.Pattern = "^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[0-9]{2}$"
+
+    IsValidCURP = regex.Test(curp)
+End Function
+
+' ============================================================
+' GUARDAR / ACTUALIZAR / ELIMINAR
+' ============================================================
 
 Private Sub actualizarRegistro()
     Dim respuesta As VbMsgBoxResult
-    respuesta = MsgBox("?Desea actualizar los registros?", vbYesNo + vbQuestion, "Confirmar actualizaci?n")
+
+    respuesta = MsgBox("¿Desea actualizar los registros?", vbYesNo + vbQuestion, "Confirmar actualización")
 
     If respuesta = vbNo Then
-        MsgBox "Operaci?n cancelada.", vbInformation
+        MsgBox "Operación cancelada.", vbInformation
         Exit Sub
     End If
 
     guardarRegistro
-
 End Sub
 
 Private Sub guardarRegistro()
-
     Dim id As Long
 
     id = Val(Text16.Text)
 
-    ' ==========================================
-    ' LEER LOS REGISTROS ACTUALES
-    ' ==========================================
     Get 2, id, personal
     Get 3, id, Otros_Rgtros
     Get 8, id, maestro
 
-    ' ==========================================
-    ' ACTUALIZAR DATOS DE PERSONAL
-    ' ==========================================
     personal.fal = Text1.Text
     personal.fab = Text2.Text
     personal.RFC = Text3.Text
@@ -999,39 +943,17 @@ Private Sub guardarRegistro()
     personal.ape2 = Text7.Text
     personal.imss = Text8.Text
 
-    If IsNumeric(Text9.Text) Then
-        personal.ingr = CCur(Text9.Text)
-    End If
+    If IsNumeric(Text9.Text) Then personal.ingr = CCur(Text9.Text)
+    If IsNumeric(Text10.Text) Then personal.viat = CCur(Text10.Text)
+    If IsNumeric(Text11.Text) Then personal.otras = CCur(Text11.Text)
+    If IsNumeric(Text12.Text) Then personal.integrado = CCur(Text12.Text)
 
-    If IsNumeric(Text10.Text) Then
-        personal.viat = CCur(Text10.Text)
-    End If
-
-    If IsNumeric(Text11.Text) Then
-        personal.otras = CCur(Text11.Text)
-    End If
-
-    If IsNumeric(Text12.Text) Then
-        personal.integrado = CCur(Text12.Text)
-    End If
-
-    ' ==========================================
-    ' ACTUALIZAR CURP
-    ' ==========================================
     Otros_Rgtros.curp = Text4.Text
 
-    ' ==========================================
-    ' ACTUALIZAR DATOS DE MAESTRO
-    ' ==========================================
     maestro.O_1 = Text13.Text
 
-    If IsNumeric(Text14.Text) Then
-        maestro.por_1 = CCur(Text14.Text)
-    End If
+    If IsNumeric(Text14.Text) Then maestro.por_1 = CCur(Text14.Text)
 
-    ' ==========================================
-    ' ESCRIBIR LOS REGISTROS
-    ' ==========================================
     Put 2, id, personal
     Put 3, id, Otros_Rgtros
     Put 8, id, maestro
@@ -1039,70 +961,150 @@ Private Sub guardarRegistro()
     MsgBox "Se guardó con éxito.", vbInformation
 
     Unload Me
-
 End Sub
 
-Private Function IsValidDate(ByVal fecha As String) As Boolean
-    Dim testDate As Date
-    IsValidDate = False
-    On Error Resume Next
-    testDate = DateValue(fecha)
-    On Error GoTo 0
-    If Err.Number = 0 Then
-        IsValidDate = True
-    End If
-End Function
-
-Private Function IsValidCURP(ByVal curp As String) As Boolean
-    Dim regex As Object
-    Set regex = CreateObject("VBScript.RegExp")
-    
-    ' Patr?n de expresi?n regular para validar CURP
-    regex.Pattern = "^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[0-9]{2}$"
-    
-    ' Aplicar la expresi?n regular a la cadena CURP
-    IsValidCURP = regex.Test(curp)
-End Function
-
-Private Sub AbrirArchivosPersistentes()
-    Close 2, 3, 8
-    Open "personal.dno" For Random As 2 Len = Len(personal): largoPersonal = LOF(2) / Len(personal)
-    Open "PerOtre.dno" For Random As 3 Len = Len(Otros_Rgtros): largoOtros = LOF(3) / Len(personal)
-    Open "maestro.dno" For Random As 8 Len = Len(maestro): largoMaestro = LOF(8) / Len(maestro)
-End Sub
-
-Public Sub IniciarNuevo()
-    EsNuevo = True
-    ModoEdicion = True          ' en captura nueva no hay que "habilitar edición"
-    AbrirArchivosPersistentes
-    limpiarCampos
-
-    Text16.Text = (largoPersonal + 1)
-    If largoPersonal <= 0 Then
-        MsgBox ("Achis, no hay personal. Intenta con otra carpeta!")
-        Get 2, 1, personal
-    Else
-        Get 2, largoPersonal, personal
-        LabelAnterior.Caption = ("ID anterior:  " & largoPersonal)
-    End If
-    LabelAnterior.Visible = True
-    ActualizarBotones
-End Sub
-
-Public Sub IniciarConsulta(ByVal id As Integer)
-    EsNuevo = False
-    ModoEdicion = False
-    AbrirArchivosPersistentes
-    cargarEmpleado id
-    LabelAnterior.Visible = False
-    ActualizarBotones
-End Sub
-
-Private Sub BloquearCampos(ByVal bloquear As Boolean)
+Private Sub eliminarRegistro()
+    Dim respuesta As VbMsgBoxResult
+    Dim registro As Integer
     Dim i As Integer
-    For i = 1 To 15
-        Me.Controls("Text" & i).locked = bloquear
+    Dim personalList() As per
+    Dim otrosList() As OtrasCh
+    Dim maestroList() As ob
+    Dim countPersonal As Integer
+    Dim countOtros As Integer
+    Dim countMaestro As Integer
+
+    respuesta = MsgBox("¿Desea eliminar el registro?", vbYesNo + vbQuestion, "Confirmar eliminación")
+
+    If respuesta = vbNo Then
+        MsgBox "Operación cancelada.", vbInformation
+        Exit Sub
+    End If
+
+    registro = Val(Text16.Text)
+
+    countPersonal = LOF(2) / Len(personal)
+    countOtros = LOF(3) / Len(Otros_Rgtros)
+    countMaestro = LOF(8) / Len(maestro)
+
+    ReDim personalList(1 To countPersonal)
+    ReDim otrosList(1 To countOtros)
+    ReDim maestroList(1 To countMaestro)
+
+    For i = 1 To countPersonal
+        Get 2, i, personalList(i)
     Next i
-    ' Text16 (ID) se deja libre: con Enter sirve para navegar a otro empleado
+
+    For i = 1 To countOtros
+        Get 3, i, otrosList(i)
+    Next i
+
+    For i = 1 To countMaestro
+        Get 8, i, maestroList(i)
+    Next i
+
+    Close 2
+    Close 3
+    Close 8
+
+    If registro > 0 And registro <= countPersonal Then
+        For i = registro To countPersonal - 1
+            personalList(i) = personalList(i + 1)
+        Next i
+
+        ReDim Preserve personalList(1 To countPersonal - 1)
+    End If
+
+    If registro > 0 And registro <= countOtros Then
+        For i = registro To countOtros - 1
+            otrosList(i) = otrosList(i + 1)
+        Next i
+
+        ReDim Preserve otrosList(1 To countOtros - 1)
+    End If
+
+    If registro > 0 And registro <= countMaestro Then
+        For i = registro To countMaestro - 1
+            maestroList(i) = maestroList(i + 1)
+        Next i
+
+        ReDim Preserve maestroList(1 To countMaestro - 1)
+    End If
+
+    Open "personal.dno" For Output As #2
+    Open "PerOtre.dno" For Output As #3
+    Open "maestro.dno" For Output As #8
+
+    Close #2
+    Close #3
+    Close #8
+
+    Open "personal.dno" For Random As 2 Len = Len(personal)
+    Open "PerOtre.dno" For Random As 3 Len = Len(Otros_Rgtros)
+    Open "maestro.dno" For Random As 8 Len = Len(maestro)
+
+    For i = 1 To UBound(personalList)
+        Put 2, i, personalList(i)
+    Next i
+
+    For i = 1 To UBound(otrosList)
+        Put 3, i, otrosList(i)
+    Next i
+
+    For i = 1 To UBound(maestroList)
+        Put 8, i, maestroList(i)
+    Next i
+
+    Close 2
+    Close 3
+    Close 8
+
+    MsgBox "Registro eliminado con éxito.", vbInformation
+
+    Unload Me
 End Sub
-' comentario
+
+Private Sub EliminarNumeroTarjeta()
+    Dim respuesta As Integer
+    Dim respuestaDos As Integer
+    Dim idNomina As String
+
+    If Not ModoEdicion Then
+        MsgBox "Debes habilitar edición primero.", vbExclamation
+        Exit Sub
+    End If
+
+    Close 4
+    Open "Bnxcla.dno" For Random As #4 Len = Len(Clbnx)
+
+    idNomina = Text16.Text
+
+    Get #4, idNomina, Clbnx
+
+    respuesta = MsgBox( _
+        "¿Se eliminará el número de tarjeta: " & Clbnx.Q1 & _
+        "?" & vbCrLf & vbCrLf & _
+        "¿Deseas continuar?", _
+        vbOKCancel + vbQuestion)
+
+    If respuesta = vbOK Then
+        respuestaDos = MsgBox( _
+            "Esta acción es irreversible. " & _
+            "Asegúrate de tener una copia del número de tarjeta.", _
+            vbOKCancel + vbExclamation)
+
+        If respuestaDos = vbOK Then
+            Clbnx.Q1 = "0"
+            Put #4, idNomina, Clbnx
+            MsgBox "Se eliminó el número de tarjeta.", vbInformation
+        Else
+            MsgBox "Operación cancelada.", vbInformation
+        End If
+    Else
+        MsgBox "Operación cancelada.", vbInformation
+    End If
+
+    Close #4
+End Sub
+
+

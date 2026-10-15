@@ -339,22 +339,26 @@ Dim GridOrigen As Object
 End Sub
 Public Function ClasificarTipoNomina(ByVal NombreArch As String) As TipoNominaCFDI
     Dim n As String
-    n = UCase(Trim(NombreArch))
+    n = NombreBaseNomina(NombreArch)
 
-    ' Orden importa: revisa los más específicos primero
-    If InStr(n, "LIQUID") > 0 Or InStr(n, "LIQUI") > 0 Or InStr(n, "LIQ") > 0 _
-       Or InStr(n, "FINIQUITO") > 0 Or InStr(n, "FINIQ") > 0 Or InStr(n, "FINI") > 0 Then
+    ' Orden importa: primero la normal, luego los mas especificos
+    If EsNominaNormal(n) Then
+        ClasificarTipoNomina = tnOrdinaria
+    ElseIf InStr(n, "LIQ") > 0 Or InStr(n, "FINI") > 0 Then
         ClasificarTipoNomina = tnLiquidacionFiniquito
-    ElseIf InStr(n, "AGUINALDO") > 0 Or InStr(n, "AGUI") > 0 Then
+    ElseIf InStr(n, "AGUI") > 0 Then
         ClasificarTipoNomina = tnAguinaldo
     ElseIf InStr(n, "PTU") > 0 Then
         ClasificarTipoNomina = tnPTU
     ElseIf InStr(n, "BONO") > 0 Then
         ClasificarTipoNomina = tnBonoPremio
     Else
+        ' Especial sin palabra clave: se trata como "ordinaria" en cuanto a tipo,
+        ' pero N_ormal debe decidirse con EsNominaNormal (ver LoadPayroll).
         ClasificarTipoNomina = tnOrdinaria
     End If
 End Function
+
 
 Public Function AniosServicioRedondeado(ByVal fechaAlta As Date, ByVal fechaCorte As Date) As Integer
     Dim aniosCompletos As Integer
@@ -387,4 +391,23 @@ Public Function TipoNominaATexto(ByVal t As TipoNominaCFDI) As String
     End Select
 End Function
 
-' comentario
+' Nombre sin ruta, en mayusculas y sin espacios sobrantes
+Public Function NombreBaseNomina(ByVal nombre As String) As String
+    Dim b As String
+    Dim p As Long
+    b = UCase$(Trim$(nombre))
+    p = InStrRev(b, "\")
+    If p > 0 Then b = Mid$(b, p + 1)
+    NombreBaseNomina = b
+End Function
+
+' Nomina normal = MES(3 letras) + quincena (1 o 2) + ano (4 digitos), p.ej.
+' OCT12026 o DIC22026 (con o sin .NOM)
+Public Function EsNominaNormal(ByVal nombre As String) As Boolean
+    Dim b As String
+    b = NombreBaseNomina(nombre)
+    If Right$(b, 4) = ".NOM" Then b = Left$(b, Len(b) - 4)
+    If Not (b Like "???[12]####") Then Exit Function
+    EsNominaNormal = (InStr("|ENE|FEB|MAR|ABR|MAY|JUN|JUL|AGO|SEP|OCT|NOV|DIC|", "|" & Left$(b, 3) & "|") > 0)
+End Function
+

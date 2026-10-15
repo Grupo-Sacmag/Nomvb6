@@ -129,6 +129,48 @@ Begin VB.Form FormViewer
    Begin VB.Menu mnuCFDI 
       Caption         =   "CFDI"
    End
+   Begin VB.Menu mnuImpresion 
+      Caption         =   "Impresión"
+      Begin VB.Menu mnuNomina 
+         Caption         =   "Nomina"
+         Begin VB.Menu mnuNominaNominaTotal 
+            Caption         =   "Nomina Total"
+         End
+         Begin VB.Menu mnuNominaTodasLasObras 
+            Caption         =   "Todas las Obras"
+         End
+         Begin VB.Menu mnuNominaNominaOficina 
+            Caption         =   "Nomina Oficina"
+         End
+      End
+      Begin VB.Menu mnuRecibos 
+         Caption         =   "Recibos"
+         Begin VB.Menu mnuReciboTodos 
+            Caption         =   "Todos"
+         End
+         Begin VB.Menu mnuReciboIndividuales 
+            Caption         =   "Individuales"
+         End
+      End
+      Begin VB.Menu mnuCheques 
+         Caption         =   "Cheques"
+         Begin VB.Menu mnuChequesAjustarImpresion 
+            Caption         =   "Ajustar Impresion"
+         End
+         Begin VB.Menu mnuChequesIndividuales 
+            Caption         =   "Individuales"
+         End
+         Begin VB.Menu mnuChequesTotales 
+            Caption         =   "Totales"
+         End
+         Begin VB.Menu mnuChequesDirectorioDeObra 
+            Caption         =   "Directorio de Obra"
+         End
+      End
+      Begin VB.Menu mnuDetalleCalculoImpuestos 
+         Caption         =   "Detalle Calculo Imptos."
+      End
+   End
    Begin VB.Menu mnuPortapapeles 
       Caption         =   "Portapapeles"
       Begin VB.Menu mnuCopiarTodo 
@@ -216,7 +258,8 @@ Private Sub CmdLimpiarFiltro_Click()
 End Sub
 
 Private Sub Form_Load()
-
+    
+    InicializarColumnas tnOrdinaria
     cargandoNomina = True
     CargaCorrecta = False
 
@@ -320,17 +363,16 @@ Public Sub LoadPayroll(ByVal fName As String)
     ' DETERMINAR TIPO DE NOMINA (unificado con Form8 ya no depende de un global externo ni de IsNormalPayrollName)
     '========================================================
 
-    G_NombreArchivoNomina = UCase$(Trim$(nameOnly))
-    g_TipoNominaActiva = ClasificarTipoNomina(G_NombreArchivoNomina)
-    G_TipoNominaProcess = TipoNominaATexto(g_TipoNominaActiva)
+    AplicarTipoNomina nameOnly
 
-    If g_TipoNominaActiva = tnOrdinaria Then
+    If EsNominaNormal(nameOnly) Then
         N_ormal = 0
         diat = 15
     Else
         N_ormal = 1
         diat = 0
     End If
+
 
     '========================================================
     ' ARCHIVOS
@@ -393,7 +435,7 @@ Public Sub LoadPayroll(ByVal fName As String)
     ConNom1.Clear
 
     'Primero las columnas
-    ConNom1.Cols = 27
+    ConNom1.Cols = C_TOTCOLS
 
     'Después las filas
     ConNom1.Rows = fi_nm + 2
@@ -472,7 +514,7 @@ Public Sub LoadPayroll(ByVal fName As String)
             End If
 
             ConNom1.Row = renglon
-            ConNom1.Col = 0
+            ConNom1.Col = C_NUM
             ConNom1.Text = Format$(r, "#####")
             limite = limite + 1
             regtro = r
@@ -587,270 +629,162 @@ Private Function IsNormalPayrollName(ByVal fName As String) As Boolean
     End If
     IsNormalPayrollName = False
 End Function
+Private Sub PonCel(ByVal f As Long, ByVal c As Long, ByVal v As Currency, Optional ByVal fmt As String = "")
+    If fmt = "" Then fmt = z1$
+    If v <> 0 Then
+        ConNom1.TextMatrix(f, c) = Format(v, fmt)
+    Else
+        ConNom1.TextMatrix(f, c) = ""
+    End If
+End Sub
 
 Sub carganom()
-
-    Dim ingresos As Currency
-    Dim deducciones As Currency
-    Dim neto As Currency
-    Dim ii As Integer
-    Dim li As Long
-
-    ConNom1.TextMatrix(ConNom1.Row, 1) = RTrim$(personal.ape1) & " " & RTrim$(personal.ape2) & " " & RTrim$(personal.nom)
-
     li = ConNom1.Row
-    ii = 2
+    ingresos = 0
+    deducciones = 0
+    neto = 0
 
-    If nomina.dias <> 0 Then
-        ConNom1.TextMatrix(li, 2) = Format$(nomina.dias, "##0.00")
+    ' Nombre completo del empleado
+    ConNom1.TextMatrix(li, C_NOMBRE) = RTrim$(personal.ape1) + " " + RTrim$(personal.ape2) + " " + RTrim$(personal.nom)
+
+    PonCel li, C_DIAS, nomina.dias, "##0.00"
+    PonCel li, C_SUELDO, nomina.sueldo
+
+    If g_TipoNominaActiva = tnLiquidacionFiniquito Then
+        ' ---- Liquidacion / Finiquito: un concepto por columna ----
+        PonCel li, C_LQ_SDOVAC, nomina.viaticos
+        PonCel li, C_LQ_PRIMAVAC, nomina.pvac
+        PonCel li, C_LQ_AGUI, nomina.aguin
+        PonCel li, C_LQ_ANTIG, nomina.hs_dbl
+        PonCel li, C_LQ_COMPENS, nomina.hs_nor
+        PonCel li, C_LQ_INDEMN, nomina.hs_tri
+        PonCel li, C_LQ_BONO, nomina.hsnor
+        ingresos = nomina.sueldo + nomina.viaticos + nomina.pvac + nomina.aguin + _
+                   nomina.hs_dbl + nomina.hs_nor + nomina.hs_tri + nomina.hsnor
     Else
-        ConNom1.TextMatrix(li, ii) = ""
-    End If
-
-    ii = ii + 1
-
-    If nomina.sueldo <> 0 Then
-        ConNom1.TextMatrix(li, 3) = Format$(nomina.sueldo, z1$)
-    Else
-        ConNom1.TextMatrix(li, ii) = ""
-    End If
-
-    ii = ii + 1
-
-    If nomina.hs_nor <> 0 Then
-        ConNom1.TextMatrix(li, 4) = Format$(nomina.hs_nor, z1$)
-    Else
-        ConNom1.TextMatrix(li, ii) = ""
-    End If
-
-    ii = ii + 1
-
-    If N_ormal = 1 Then
-        If nomina.aguin <> 0 Then
-            ConNom1.TextMatrix(li, 5) = Format$(nomina.aguin, z1$)
+        ' ---- Normal y especiales PTU / Aguinaldo / Bono: igual que siempre ----
+        PonCel li, C_CONC4, nomina.hs_nor
+        If N_ormal = 1 Then
+            PonCel li, C_CONC5, nomina.aguin
         Else
-            ConNom1.TextMatrix(li, ii) = ""
+            PonCel li, C_CONC5, nomina.hs_dbl
         End If
-    Else
-        If nomina.hs_dbl <> 0 Then
-            ConNom1.TextMatrix(li, 5) = Format$(nomina.hs_dbl, z1$)
+        If N_ormal = 1 Then
+            PonCel li, C_CONC6, nomina.ptu
         Else
-            ConNom1.TextMatrix(li, ii) = ""
+            PonCel li, C_CONC6, nomina.hs_tri
         End If
-    End If
-    
-    ii = ii + 1
-
-    If N_ormal = 1 Then
-        If nomina.ptu <> 0 Then
-            ConNom1.TextMatrix(li, 6) = Format$(nomina.ptu, z1$)
-        Else
-            ConNom1.TextMatrix(li, ii) = ""
-        End If
-    Else
-        If nomina.hs_tri <> 0 Then
-            ConNom1.TextMatrix(li, 6) = Format$(nomina.hs_tri, z1$)
-        Else
-            ConNom1.TextMatrix(li, ii) = ""
-        End If
+        PonCel li, C_CONC7, nomina.viaticos
+        PonCel li, C_CONC8, nomina.pvac
+        ingresos = nomina.sueldo + nomina.hs_nor + nomina.hs_dbl + nomina.hs_tri + _
+                   nomina.aguin + nomina.ptu + nomina.viaticos + nomina.pvac
     End If
 
-    ii = ii + 1
+    PonCel li, C_OTRAS, nomina.otras
+    PonCel li, C_EXENTA, nomina.exentos
+    ingresos = ingresos + nomina.otras + nomina.exentos
+    PonCel li, C_TOTING, ingresos
 
-    If nomina.viaticos <> 0 Then
-        ConNom1.TextMatrix(li, 7) = Format$(nomina.viaticos, z1$)
-    Else
-        ConNom1.TextMatrix(li, ii) = ""
-    End If
+    PonCel li, C_ISPT, nomina.ispt
+    PonCel li, C_SUBEMP, nomina.crdsal
+    PonCel li, C_IMSS, nomina.imss
+    PonCel li, C_PRESTAMOS, nomina.prestamos
+    PonCel li, C_FONACOT, nomina.fonacot
+    PonCel li, C_PENSION, nomina.telefono
+    PonCel li, C_INFONAVIT, nomina.otraded
 
-    ii = ii + 1
-
-    If nomina.pvac <> 0 Then
-        ConNom1.TextMatrix(li, 8) = Format$(nomina.pvac, z1$)
-    Else
-        ConNom1.TextMatrix(li, ii) = ""
-    End If
-
-    ii = ii + 1
-
-    If nomina.otras <> 0 Then
-        ConNom1.TextMatrix(li, 9) = Format$(nomina.otras, z1$)
-    Else
-        ConNom1.TextMatrix(li, ii) = ""
-    End If
-
-    ii = ii + 1
-
-    If nomina.exentos <> 0 Then
-        ConNom1.TextMatrix(li, 10) = Format$(nomina.exentos, z1$)
-    Else
-        ConNom1.TextMatrix(li, ii) = ""
-    End If
-
-    ii = ii + 1
-
-    ingresos = nomina.sueldo + nomina.hs_nor + nomina.hs_dbl + nomina.hs_tri + nomina.aguin + nomina.ptu + nomina.viaticos + nomina.pvac + nomina.otras + nomina.exentos
-
-    If ingresos <> 0 Then
-        ConNom1.TextMatrix(li, 11) = Format$(ingresos, z1$)
-    Else
-        ConNom1.TextMatrix(li, ii) = ""
-    End If
-
-    ii = ii + 1
-
-    If nomina.ispt <> 0 Then
-        ConNom1.TextMatrix(li, 12) = Format$(nomina.ispt, z1$)
-    Else
-        ConNom1.TextMatrix(li, ii) = ""
-    End If
-
-    ii = ii + 1
-
-    If nomina.crdsal <> 0 Then
-        ConNom1.TextMatrix(li, 13) = Format$(nomina.crdsal, z1$)
-    Else
-        ConNom1.TextMatrix(li, ii) = ""
-    End If
-
-    ii = ii + 1
-
-    If nomina.imss <> 0 Then
-        ConNom1.TextMatrix(li, 14) = Format$(nomina.imss, z1$)
-    Else
-        ConNom1.TextMatrix(li, ii) = ""
-    End If
-
-    ii = ii + 1
-
-    If nomina.prestamos <> 0 Then
-        ConNom1.TextMatrix(li, 15) = Format$(nomina.prestamos, z1$)
-    Else
-        ConNom1.TextMatrix(li, ii) = ""
-    End If
-
-    ii = ii + 1
-
-    If nomina.fonacot <> 0 Then
-        ConNom1.TextMatrix(li, 16) = Format$(nomina.fonacot, z1$)
-    Else
-        ConNom1.TextMatrix(li, ii) = ""
-    End If
-
-    ii = ii + 1
-
-    If nomina.telefono <> 0 Then
-        ConNom1.TextMatrix(li, 17) = Format$(nomina.telefono, z1$)
-    Else
-        ConNom1.TextMatrix(li, ii) = ""
-    End If
-
-    ii = ii + 1
-
-    If nomina.otraded <> 0 Then
-        ConNom1.TextMatrix(li, 18) = Format$(nomina.otraded, z1$)
-    Else
-        ConNom1.TextMatrix(li, ii) = ""
-    End If
-
-    ii = ii + 1
-
-    deducciones = nomina.crdsal + nomina.ispt + nomina.imss + nomina.prestamos + nomina.fonacot + nomina.telefono + nomina.otraded
-
-    If deducciones <> 0 Then
-        ConNom1.TextMatrix(li, 19) = Format$(deducciones, z1$)
-    Else
-        ConNom1.TextMatrix(li, ii) = ""
-    End If
-
-    ii = ii + 1
+    deducciones = nomina.crdsal + nomina.ispt + nomina.imss + nomina.prestamos + _
+                  nomina.fonacot + nomina.telefono + nomina.otraded
+    PonCel li, C_TOTDED, deducciones
 
     neto = ingresos - deducciones
+    PonCel li, C_NETO, neto
 
-    If neto <> 0 Then
-        ConNom1.TextMatrix(li, 20) = Format$(neto, z1$)
-    Else
-        ConNom1.TextMatrix(li, ii) = ""
-    End If
+    ' ---- No visibles ----
+    ConNom1.TextMatrix(li, C_FLAG_ISR) = 0
+    ConNom1.TextMatrix(li, C_FLAG_IMSS) = 0
+    ConNom1.TextMatrix(li, C_FLAG_ESP) = 0
+    If N_ormal = 1 Then ConNom1.TextMatrix(li, C_FLAG_ESP) = "1"
 
-    ConNom1.TextMatrix(li, 21) = "0"
-    ConNom1.TextMatrix(li, 22) = "0"
-    ConNom1.TextMatrix(li, 23) = "0"
+    locobra
 
-    If N_ormal = 1 Then
-        ConNom1.TextMatrix(li, 23) = "1"
-    End If
+    Get 12, regtro, Clbnx
 
-    '========================================================
-    ' BANAMEX
-    '========================================================
-    If regtro > 0 Then
-        If regtro <= LOF(12) / Len(Clbnx) Then
-            Get #12, regtro, Clbnx
-            ConNom1.TextMatrix(li, 24) = " " & Clbnx.Q1
-        Else
-            ConNom1.TextMatrix(li, 24) = ""
-        End If
-    Else
-        ConNom1.TextMatrix(li, 24) = ""
-    End If
-    
-    If g_TipoNominaActiva = tnLiquidacionFiniquito Then
-        If nomina.hsnor <> 0 Then ConNom1.TextMatrix(li, 25) = Format(nomina.hsnor, z1$) Else ConNom1.TextMatrix(li, 25) = ""
-        If nomina.hstri <> 0 Then ConNom1.TextMatrix(li, 26) = Format(nomina.hstri, z1$) Else ConNom1.TextMatrix(li, 26) = ""
-    End If
+    ConNom1.TextMatrix(li, C_BANAMEX) = (" " + Clbnx.Q1)
 End Sub
+
 
 Sub define()
-     ConNom1.Cols = 27
-     ConNom1.Font = "Arial": ConNom1.Font.Size = 8: ConNom1.Font.Bold = True
-     
-     ConNom1.Row = 0
-     ConNom1.Col = 0: ConNom1.CellAlignment = 4: ConNom1.ColWidth(0) = 600: ConNom1.Text = "No."
-     ConNom1.Col = 1: ConNom1.CellAlignment = 4: ConNom1.ColWidth(1) = 3500: ConNom1.Text = "Nombre"
-     ConNom1.Col = 2: ConNom1.CellAlignment = 4: ConNom1.ColWidth(2) = 1200: ConNom1.Text = "dias T."
-     ConNom1.Col = 3: ConNom1.CellAlignment = 4: ConNom1.ColWidth(3) = 1200: ConNom1.Text = "Sueldo"
-     ConNom1.Col = 4: ConNom1.CellAlignment = 4: ConNom1.ColWidth(4) = 1200: ConNom1.Text = "hs.Norm."
-     ConNom1.Col = 5: ConNom1.CellAlignment = 4: ConNom1.ColWidth(5) = 1200
-      
-      If N_ormal = 0 Then
-          ConNom1.Text = "hs.Dobles"
-      Else
-          ConNom1.Text = "Aguinaldo"
-      End If
-      
-      ConNom1.Col = 6: ConNom1.CellAlignment = 4: ConNom1.ColWidth(6) = 1200
-      
-      If N_ormal = 0 Then
-          ConNom1.Text = "hs.Triples"
-      Else
-          ConNom1.Text = "Ptu"
-      End If
-      
-      If N_ormal = 0 Then
-          ConNom1.Col = 7: ConNom1.CellAlignment = 4: ConNom1.ColWidth(7) = 1200: ConNom1.Text = "O.F."
-      Else
-          ConNom1.Col = 7: ConNom1.CellAlignment = 4: ConNom1.ColWidth(7) = 1200: ConNom1.Text = "Premio punt."
-      End If
-     
-      ConNom1.Col = 8: ConNom1.CellAlignment = 4: ConNom1.ColWidth(8) = 1200: ConNom1.Text = "P.Vacac."
-      ConNom1.Col = 9: ConNom1.CellAlignment = 4: ConNom1.ColWidth(9) = 1200: ConNom1.Text = "Otras"
-      ConNom1.Col = 10: ConNom1.CellAlignment = 4: ConNom1.ColWidth(10) = 1200: ConNom1.Text = "Perc.exenta."
-      ConNom1.Col = 11: ConNom1.CellAlignment = 4: ConNom1.ColWidth(11) = 1200: ConNom1.Text = "Tot.Ingr."
-      ConNom1.Col = 12: ConNom1.CellAlignment = 4: ConNom1.ColWidth(12) = 1200: ConNom1.Text = "Ispt"
-      ConNom1.Col = 13: ConNom1.CellAlignment = 4: ConNom1.ColWidth(13) = 1200: ConNom1.Text = "Sub.P/Empl."
-      ConNom1.Col = 14: ConNom1.CellAlignment = 4: ConNom1.ColWidth(14) = 1200: ConNom1.Text = "Imss"
-      ConNom1.Col = 15: ConNom1.CellAlignment = 4: ConNom1.ColWidth(15) = 1200: ConNom1.Text = "Prestamos"
-      ConNom1.Col = 16: ConNom1.CellAlignment = 4: ConNom1.ColWidth(16) = 1200: ConNom1.Text = "Fonacot"
-      ConNom1.Col = 17: ConNom1.CellAlignment = 4: ConNom1.ColWidth(17) = 1200: ConNom1.Text = "Pension Alimenticia"
-      ConNom1.Col = 18: ConNom1.CellAlignment = 4: ConNom1.ColWidth(18) = 1200: ConNom1.Text = "Infonavit"
-      ConNom1.Col = 19: ConNom1.CellAlignment = 4: ConNom1.ColWidth(19) = 1200: ConNom1.Text = "Tot.Deduc"
-      ConNom1.Col = 20: ConNom1.CellAlignment = 4: ConNom1.ColWidth(20) = 1200: ConNom1.Text = "Neto"
-      ConNom1.Col = 21: ConNom1.ColWidth(21) = 0
-      ConNom1.Col = 22: ConNom1.ColWidth(22) = 0
-      ConNom1.Col = 23: ConNom1.ColWidth(23) = 0
-      ConNom1.Col = 24: ConNom1.CellAlignment = 4: ConNom1.ColWidth(24) = 2400: ConNom1.Text = "Banamex"
+    ConNom1.Cols = C_TOTCOLS
+
+    ConNom1.Font = "Arial"
+    ConNom1.Font.Size = 8
+    ConNom1.Font.Bold = True
+
+    ConNom1.Row = 0
+
+    Encab C_NUM, "No.", 600
+    Encab C_NOMBRE, "Nombre", 3500
+    Encab C_DIAS, "dias T.", 1200
+    Encab C_SUELDO, "Sueldo", 1200
+
+    If g_TipoNominaActiva = tnLiquidacionFiniquito Then
+        Encab C_LQ_SDOVAC, "Sdo.Vac.", 1200
+        Encab C_LQ_PRIMAVAC, "P.Vacac.", 1200
+        Encab C_LQ_AGUI, "Aguinaldo", 1200
+        Encab C_LQ_ANTIG, "P.Antig.", 1200
+        Encab C_LQ_COMPENS, "Compens.", 1200
+        Encab C_LQ_INDEMN, "Indemn.", 1200
+        Encab C_LQ_BONO, "BONO", 1200
+    Else
+        Encab C_CONC4, "hs.Norm.", 1200
+
+        If g_TipoNominaActiva = tnAguinaldo Or N_ormal <> 0 Then
+            Encab C_CONC5, "Aguinaldo", 1200
+        Else
+            Encab C_CONC5, "hs.Dobles", 1200
+        End If
+
+        If g_TipoNominaActiva = tnPTU Then
+            Encab C_CONC6, "PTU", 1200
+        ElseIf N_ormal = 0 Then
+            Encab C_CONC6, "hs.Triples", 1200
+        Else
+            Encab C_CONC6, "Ptu", 1200
+        End If
+
+        If g_TipoNominaActiva = tnBonoPremio Or N_ormal <> 0 Then
+            Encab C_CONC7, "BONO", 1200
+        Else
+            Encab C_CONC7, "O.F.", 1200
+        End If
+
+        Encab C_CONC8, "P.Vacac.", 1200
+    End If
+
+    Encab C_OTRAS, "Otras", 1200
+    Encab C_EXENTA, "Perc.exenta.", 1200
+    Encab C_TOTING, "Tot.Ingr.", 1200
+    Encab C_ISPT, "Ispt", 1200
+    Encab C_SUBEMP, "Sub.P/Empl.", 1200
+    Encab C_IMSS, "Imss", 1200
+    Encab C_PRESTAMOS, "Prestamos", 1200
+    Encab C_FONACOT, "Fonacot", 1200
+    Encab C_PENSION, "Pension Alimenticia", 1200
+    Encab C_INFONAVIT, "Infonavit", 1200
+    Encab C_TOTDED, "Tot.Deduc", 1200
+    Encab C_NETO, "Neto", 1200
+
+    ConNom1.Col = C_FLAG_ISR
+    ConNom1.ColWidth(C_FLAG_ISR) = 0
+    ConNom1.Col = C_FLAG_IMSS
+    ConNom1.ColWidth(C_FLAG_IMSS) = 0
+    ConNom1.Col = C_FLAG_ESP
+    ConNom1.ColWidth(C_FLAG_ESP) = 0
+
+    Encab C_BANAMEX, "Banamex", 2400
 End Sub
+
 
 Sub verifica(yavas)
     If nomina.dias <> 0 Then yavas = 1
@@ -906,7 +840,7 @@ Sub sumavert()
     Dim late As Integer
     Dim li As Long
     Dim ii As Integer
-    Dim sumv(20) As Currency
+    Dim sumv(0 To 26) As Currency
 
     ProgressBar1.Min = 0
     ProgressBar1.Max = limite
@@ -1556,3 +1490,9 @@ ErrorOrden:
 
 End Sub
 
+Private Sub Encab(ByVal c As Long, ByVal txt As String, ByVal ancho As Long)
+    ConNom1.Col = c
+    ConNom1.CellAlignment = 4
+    ConNom1.ColWidth(c) = ancho
+    ConNom1.Text = txt
+End Sub

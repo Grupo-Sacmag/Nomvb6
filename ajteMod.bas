@@ -1,58 +1,75 @@
 Attribute VB_Name = "Module4"
+' ============================================================
+' TIPOS DE AJUSTE / NOMINA CONTABLE
+' ============================================================
+
 Type ajform
-     totr As Integer
-     fechar As Integer
-     fechac As Integer
-     benefr As Integer
-     benefc As Integer
-     impnumr As Integer
-     impnumc As Integer
-     impletr As Integer
-     impletc As Integer
-     concepr As Integer
-     concepc As Integer
-     inicopr As Integer
-     cta As Integer
-     scta As Integer
-     name As Integer
-     aplicr As Integer
-     parcialc As Integer
-     debec As Integer
-     haberc As Integer
-     sumasr As Integer
+    totr As Integer
+    fechar As Integer
+    fechac As Integer
+    benefr As Integer
+    benefc As Integer
+    impnumr As Integer
+    impnumc As Integer
+    impletr As Integer
+    impletc As Integer
+    concepr As Integer
+    concepc As Integer
+    inicopr As Integer
+    cta As Integer
+    scta As Integer
+    name As Integer
+    aplicr As Integer
+    parcialc As Integer
+    debec As Integer
+    haberc As Integer
+    sumasr As Integer
 End Type
+
 Type nomco
-     ArchImp As String * 50
-     PSubDi As Currency
-     subdio As Currency
-     subapl As Currency
-     subNap As Currency
-     CreTot As Currency
-     CredNe As Currency
-     ImpTot As Currency
+    ArchImp As String * 50
+    PSubDi As Currency
+    subdio As Currency
+    subapl As Currency
+    subNap As Currency
+    CreTot As Currency
+    CredNe As Currency
+    ImpTot As Currency
 End Type
+
 Type antnom
-   inggrav As Currency
-   imptoret As Currency
-   credcalc As Currency
-   credpag As Currency
-   subapl As Currency
-   subtotal As Currency
-   subnoapl As Currency
+    inggrav As Currency
+    imptoret As Currency
+    credcalc As Currency
+    credpag As Currency
+    subapl As Currency
+    subtotal As Currency
+    subnoapl As Currency
 End Type
+
+' ============================================================
+' VARIABLES GLOBALES
+' ============================================================
 
 Public NomAnterior As antnom
 Public nom_com As nomco, Arch1 As String * 20, ArchAnterior, Arch1Anterior
 Public formajte As ajform, cmaj, QUIN As Integer, Arch$
+
+' ============================================================
+' ARCHIVO DE AJUSTE DE CHEQUE
+' ============================================================
 
 Sub apeajte()
     Close 8
     Open "cheque.ajt" For Random As 8 Len = Len(formajte)
     cmaj = LOF(8) / Len(formajte)
 End Sub
+
 Sub cargaaj()
     If cmaj < 1 Then Exit Sub
+
     Get 8, 1, formajte
+
     AJTECH.AJTE.TextMatrix(1, 1) = formajte.totr
     AJTECH.AJTE.TextMatrix(2, 1) = formajte.fechar
     AJTECH.AJTE.TextMatrix(2, 2) = formajte.fechac
@@ -73,6 +90,7 @@ Sub cargaaj()
     AJTECH.AJTE.TextMatrix(13, 2) = formajte.debec
     AJTECH.AJTE.TextMatrix(14, 2) = formajte.haberc
 End Sub
+
 Sub archaj()
     formajte.totr = AJTECH.AJTE.TextMatrix(1, 1)
     formajte.fechar = AJTECH.AJTE.TextMatrix(2, 1)
@@ -93,7 +111,7 @@ Sub archaj()
     formajte.parcialc = AJTECH.AJTE.TextMatrix(12, 2)
     formajte.debec = AJTECH.AJTE.TextMatrix(13, 2)
     formajte.haberc = AJTECH.AJTE.TextMatrix(14, 2)
+
     Put 8, 1, formajte
 End Sub
 
-' comentario

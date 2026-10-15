@@ -91,239 +91,81 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Dim temporal, Temporal1
+
+' ============================================================
+' CONFIGURACION DEL GRID
+' ============================================================
+
 Sub Col_Def()
-PCpCfdi.Clear: PCpCfdi.Rows = 200: PCpCfdi.Cols = 9: PCpCfdi.FixedCols = 0
-   PCpCfdi.FixedRows = 1
-   PCpCfdi.Row = 0
-   PCpCfdi.Col = 0: PCpCfdi.CellAlignment = 4: PCpCfdi.ColWidth(0) = 800: PCpCfdi.Text = "Num"
-   PCpCfdi.Col = 1: PCpCfdi.CellAlignment = 4: PCpCfdi.ColWidth(1) = 3600: PCpCfdi.Text = "Nombre"
-   PCpCfdi.Col = 2: PCpCfdi.CellAlignment = 4: PCpCfdi.ColWidth(2) = 2400: PCpCfdi.Text = "Direccion"
-   PCpCfdi.Col = 3: PCpCfdi.CellAlignment = 4: PCpCfdi.ColWidth(3) = 2400: PCpCfdi.Text = "Colonia"
-   PCpCfdi.Col = 4: PCpCfdi.CellAlignment = 4: PCpCfdi.ColWidth(4) = 2400: PCpCfdi.Text = "Ciudad"
-   PCpCfdi.Col = 5: PCpCfdi.CellAlignment = 4: PCpCfdi.ColWidth(5) = 2400: PCpCfdi.Text = "Estado"
-   PCpCfdi.Col = 6: PCpCfdi.CellAlignment = 4: PCpCfdi.ColWidth(6) = 2400: PCpCfdi.Text = "Delegacion"
-   PCpCfdi.Col = 7: PCpCfdi.CellAlignment = 4: PCpCfdi.ColWidth(7) = 800: PCpCfdi.Text = "Codigo"
-   PCpCfdi.Col = 8: PCpCfdi.CellAlignment = 4: PCpCfdi.ColWidth(8) = 2400: PCpCfdi.Text = "Correo "
-   'pcpcfdi.Col = 9: pcpcfdi.CellAlignment = 4: pcpcfdi.ColWidth(9) = 600: pcpcfdi.Text = "Cons."
-   
+    PCpCfdi.Clear
+    PCpCfdi.Rows = 200
+    PCpCfdi.Cols = 9
+    PCpCfdi.FixedCols = 0
+    PCpCfdi.FixedRows = 1
+    PCpCfdi.Row = 0
+
+    PCpCfdi.col = 0
+    PCpCfdi.CellAlignment = 4
+    PCpCfdi.ColWidth(0) = 800
+    PCpCfdi.Text = "Num"
+
+    PCpCfdi.col = 1
+    PCpCfdi.CellAlignment = 4
+    PCpCfdi.ColWidth(1) = 3600
+    PCpCfdi.Text = "Nombre"
+
+    PCpCfdi.col = 2
+    PCpCfdi.CellAlignment = 4
+    PCpCfdi.ColWidth(2) = 2400
+    PCpCfdi.Text = "Direccion"
+
+    PCpCfdi.col = 3
+    PCpCfdi.CellAlignment = 4
+    PCpCfdi.ColWidth(3) = 2400
+    PCpCfdi.Text = "Colonia"
+
+    PCpCfdi.col = 4
+    PCpCfdi.CellAlignment = 4
+    PCpCfdi.ColWidth(4) = 2400
+    PCpCfdi.Text = "Ciudad"
+
+    PCpCfdi.col = 5
+    PCpCfdi.CellAlignment = 4
+    PCpCfdi.ColWidth(5) = 2400
+    PCpCfdi.Text = "Estado"
+
+    PCpCfdi.col = 6
+    PCpCfdi.CellAlignment = 4
+    PCpCfdi.ColWidth(6) = 2400
+    PCpCfdi.Text = "Delegacion"
+
+    PCpCfdi.col = 7
+    PCpCfdi.CellAlignment = 4
+    PCpCfdi.ColWidth(7) = 800
+    PCpCfdi.Text = "Codigo"
+
+    PCpCfdi.col = 8
+    PCpCfdi.CellAlignment = 4
+    PCpCfdi.ColWidth(8) = 2400
+    PCpCfdi.Text = "Correo "
 End Sub
 
-Private Sub ArCfAbr_Click()
-   Dim EmpNum As Long, nombre As String, Cadena1
-   PCpCfdi.Rows = 1
-    Close 1, 2
-    
-    Open "Personal.dno" For Random As 2 Len = Len(personal)
-    cm = LOF(2) / Len(personal)
-    Open "Perscfdi.dno" For Random As 1 Len = Len(Empleado_1)
-    
-    For i = 1 To cm: Get 2, i, personal: Get 1, i, Empleado_1
-    
-    If IsNumeric(Empleado_1.Cpostal) Then
-           nombre = (Trim(personal.nom) + " " + Trim(personal.ape1) + " " + Trim(personal.ape2))
-           Cadena1 = Format(i, "####0") & Chr(9) & nombre & Chr(9) & Empleado_1.Direccion _
-                     & Chr(9) & Empleado_1.Colonia & Chr(9) & Empleado_1.Ciudad _
-                     & Chr(9) & Empleado_1.Estado & Chr(9) & Empleado_1.Delegacion _
-                     & Chr(9) & Empleado_1.Cpostal & Chr(9) & Empleado_1.correo
-          PCpCfdi.AddItem Cadena1
-    End If
-   Next i
+Private Sub Form_Resize()
+    PCpCfdi.Height = PeCfdi.Height * 0.85
+    PCpCfdi.Width = PeCfdi.Width * 0.95
 End Sub
 
-Private Sub ArCfGuarda_Click()
-Dim EmpNum As Long
-    Close 1
-    Open "Perscfdi.dno" For Random As 1 Len = Len(Empleado_1)
-    cm = LOF(1) / Len(Empleado_1)
-    For renglon = 1 To PCpCfdi.Rows - 1
-    
-    If IsNumeric(PCpCfdi.TextMatrix(renglon, 0)) Then
-                EmpNum = PCpCfdi.TextMatrix(renglon, 0)
-                Empleado_1.Direccion = PCpCfdi.TextMatrix(renglon, 2)
-                Empleado_1.Colonia = PCpCfdi.TextMatrix(renglon, 3)
-                Empleado_1.Ciudad = PCpCfdi.TextMatrix(renglon, 4)
-                Empleado_1.Estado = PCpCfdi.TextMatrix(renglon, 5)
-                Empleado_1.Delegacion = PCpCfdi.TextMatrix(renglon, 6)
-                Empleado_1.Cpostal = PCpCfdi.TextMatrix(renglon, 7)
-                Empleado_1.correo = PCpCfdi.TextMatrix(renglon, 8)
-                Put 1, EmpNum, Empleado_1
-                
-    End If
-    Next renglon
-    Close 1
-    
-End Sub
-
-Private Sub ArCfSale_Click()
-   Close
-   Unload PeCfdi
-End Sub
-Private Sub DB_Click()
-
-    If EsEmpresaLocal(emp) Then
-        MsgBox "Esta empresa trabaja de forma local, no hay sincronización con el SAT remoto.", vbInformation
-        Exit Sub
-    End If
-
-    On Error GoTo ErrHandler
-    On Error GoTo ErrHandler
-
-    Dim oRS As ADODB.Recordset
-    Dim con As ADODB.Connection
-    Dim sSQL As String
-    Dim abrEmpresa As String
-    Dim i As Integer, j As Integer
-    Dim strconnect As String
-
-    Set oRS = New ADODB.Recordset
-    Set con = New ADODB.Connection
-
-    ' Conexión a SQL Server
-    strconnect = "Provider=SQLOLEDB;Data Source=SQL6012.site4now.net;Initial Catalog=db_a4091b_sacmag"
-    con.Open strconnect, "db_a4091b_sacmag_admin", "Sacmag2020"
-
-    ' Asegurarse de que emp tenga valor
-    If IsNull(emp) Or Trim(emp) = "" Then
-        MsgBox "No se especificó la empresa.", vbExclamation, "Aviso"
-        GoTo CleanUp
-    End If
-
-    ' Construir llamada al procedimiento almacenado
-    sSQL = "EXEC sp_ObtenerDatosSatPorEmpresa '" & Replace(Trim(emp), "'", "''") & "'"
-
-    ' Ejecutar el procedimiento
-    oRS.Open sSQL, con, adOpenStatic, adLockReadOnly
-
-    ' Verificar si hay datos
-    If oRS.EOF Then
-        MsgBox "No se encontraron datos.", vbInformation, "Consulta"
-        GoTo CleanUp
-    End If
-
-    ' Configurar grid
-    PCpCfdi.Rows = 1
-    PCpCfdi.Cols = oRS.Fields.Count
-
-    ' Llenar el MSFlexGrid
-    i = 1
-    Do While Not oRS.EOF
-        PCpCfdi.Rows = PCpCfdi.Rows + 1
-        For j = 0 To oRS.Fields.Count - 1
-            PCpCfdi.TextMatrix(i, j) = oRS.Fields(j).Value & ""
-        Next j
-        oRS.MoveNext
-        i = i + 1
-    Loop
-
-CleanUp:
-    If Not oRS Is Nothing Then If oRS.State = 1 Then oRS.Close
-    If Not con Is Nothing Then If con.State = 1 Then con.Close
-    Set oRS = Nothing
-    Set con = Nothing
-    Exit Sub
-
-ErrHandler:
-    MsgBox "Error " & Err.Number & ": " & Err.Description, vbCritical, "Error"
-    Resume CleanUp
-End Sub
-
-
-Private Sub EdCfCopia_Click()
- Dim Temporal1
- Clipboard.Clear
-   
-   difer = PCpCfdi.RowSel - PCpCfdi.Row
-   For i = PCpCfdi.Row To PCpCfdi.RowSel
-      
-      For f = PCpCfdi.Col To PCpCfdi.ColSel
-            Temporal1 = Temporal1 + PCpCfdi.TextMatrix(i, f)
-            If f < PCpCfdi.ColSel Then
-                Temporal1 = Temporal1 & Chr(9)
-            End If
-      Next f
-      Temporal1 = Temporal1 & Chr(13) & Chr(10)
-      
-   Next i
-    Clipboard.SetText Temporal1
-
-End Sub
-
-Private Sub EdCfEliminar_Click()
- Dim w1 As Long
-  For w1 = PCpCfdi.Row To PCpCfdi.RowSel
-            PCpCfdi.RemoveItem PCpCfdi.Row
-   Next w1
-
-End Sub
-
-Private Sub EdCfInsertar_Click()
-  Dim W As Long
-      For W = PCpCfdi.Row To PCpCfdi.RowSel
-     PCpCfdi.AddItem (""), PCpCfdi.Row
-    Next W
-
-End Sub
-
-Private Sub EdCfPegar_Click()
-  Dim DeAqui As Integer, RetornoCarro As Long, InicioCopia As Long
-  Temporal1 = ""
-  temporal = Clipboard.GetText(vbCFText)
-
-  RetornoCarro = PCpCfdi.Col
-  InicioCopia = PCpCfdi.Row: DeAqui = InicioCopia
-  InIPGr = InicioCopia: InIPGc = RetornoCarro
-If temporal <> "" Then
-  Clipboard.Clear
-  DeAqui = 1
-For i = 1 To Len(temporal)
-    Select Case Mid(temporal, i, 1)
-          Case Chr(9)
-          LTXT.Text = Mid(temporal, DeAqui, (i - DeAqui))
-          Temporal1 = Temporal1 + PCpCfdi.TextMatrix(PCpCfdi.Row, PCpCfdi.Col) & Chr(9)
-          PCpCfdi.Text = Mid(temporal, DeAqui, (i - DeAqui))
-          PCpCfdi.Col = PCpCfdi.Col + 1
-          DeAqui = i + 1
-          Case Chr(13)
-          Temporal1 = Temporal1 + PCpCfdi.TextMatrix(PCpCfdi.Row, PCpCfdi.Col) & Chr(13)
-          LTXT.Text = Mid(temporal, DeAqui, (i - DeAqui))
-          PCpCfdi.Text = Mid(temporal, DeAqui, (i - DeAqui))
-          If (PCpCfdi.Rows - 1) <= PCpCfdi.Row Then PCpCfdi.Rows = PCpCfdi.Rows + 1:
-          PCpCfdi.Row = PCpCfdi.Row + 1: PCpCfdi.TopRow = 1
-          DeAqui = i + 1
-          Case Chr(10)
-          Temporal1 = Temporal1 & Chr(10)
-          PCpCfdi.Col = RetornoCarro
-          DeAqui = i + 1
-          Case Else
-          Rem nada
-    End Select
- Next i
- Rem pcpcfdi.Row = InicioCopia:
- PCpCfdi.Col = RetornoCarro
-End If
- 
- Clipboard.Clear
- Clipboard.SetText Clipboard.GetText + Temporal1
-End Sub
-
-Private Sub EdCfSelT_Click()
-    Dim limite As Long
-    Clipboard.Clear
-    PCpCfdi.Row = 1: PCpCfdi.Col = 0
-   For limite = 1 To PCpCfdi.Rows - 1
-       renglon = limite
-    If IsNumeric(PCpCfdi.TextMatrix(renglon, 0)) Then
-           PCpCfdi.RowSel = PCpCfdi.Row
-    End If
-   Next limite
-    PCpCfdi.ColSel = PCpCfdi.Cols - 1
-End Sub
+' ============================================================
+' CARGA DEL FORMULARIO / SINCRONIZACION INICIAL
+' ============================================================
 
 Private Sub Form_Load()
     Dim oRS As New ADODB.Recordset
     Dim sSQL
     Dim abrEmpresa
+
     Col_Def
+
     On Error GoTo Error
 
     If EsEmpresaLocal(emp) Then
@@ -331,26 +173,10 @@ Private Sub Form_Load()
         Exit Sub
     End If
 
-    abrEmpresa = Left(Trim(emp), 4)
-
-    If (UCase(abrEmpresa) = "SACM") Then
-        abrEmpresa = "SACMAG"
-    End If
-    If (UCase(abrEmpresa) = "SUPT") Then
-        abrEmpresa = "SUPTER"
-    End If
-    If (UCase(abrEmpresa) = "COOR") Then
-        abrEmpresa = "CORDINA"
-    End If
-    If (UCase(abrEmpresa) = "EPES") Then
-        abrEmpresa = "EPESA"
-    End If
-    If (UCase(abrEmpresa) = "SUPE") Then
-        abrEmpresa = "SUPERVISA"
-    End If
+    abrEmpresa = ObtenerEmpresaSAT
 
     sSQL = "SELECT idNomina, nombre, apellidoP, apellidoM, nombreDeVialidad, nombreColonia, nombreLocalidad, entidadFederativa, nombreMunicipio, cp , correoElectronico " & _
-             "FROM datosSat where empresa = '" & abrEmpresa & "'"
+           "FROM datosSat where empresa = '" & abrEmpresa & "'"
 
     Set oRS = New ADODB.Recordset
     oRS.CursorLocation = adUseClient
@@ -358,20 +184,104 @@ Private Sub Form_Load()
 
     oRS.MoveFirst
 
+    ConfigurarGridDatosSat oRS
+    CargarDatosSatEnGrid oRS
+
+    oRS.MarshalOptions = adMarshalModifiedOnly
+
+    Set oRS.ActiveConnection = Nothing
+    oRS.Close
+    Set oRS = Nothing
+
+    GuardarDatosSatEnArchivoLocal
+
+    PeCfdi.Caption = "Datos complementarios de Personal" & " - " & "Estas conectado"
+
+    Close 1, 2
+
+    Exit Sub
+
+Error:
+    MsgBox ("Ocurrió un error:" + Err.Description)
+End Sub
+
+Private Function ObtenerEmpresaSAT()
+    Dim abrEmpresa
+
+    abrEmpresa = Left(Trim(emp), 4)
+
+    If (UCase(abrEmpresa) = "SACM") Then abrEmpresa = "SACMAG"
+    If (UCase(abrEmpresa) = "SUPT") Then abrEmpresa = "SUPTER"
+    If (UCase(abrEmpresa) = "COOR") Then abrEmpresa = "CORDINA"
+    If (UCase(abrEmpresa) = "EPES") Then abrEmpresa = "EPESA"
+    If (UCase(abrEmpresa) = "SUPE") Then abrEmpresa = "SUPERVISA"
+
+    ObtenerEmpresaSAT = abrEmpresa
+End Function
+
+Private Sub ConfigurarGridDatosSat(ByVal oRS As ADODB.Recordset)
     dat.Rows = oRS.RecordCount + 1
     dat.Cols = oRS.Fields.Count
-    dat.Row = 0: dat.Col = 0
-    dat.Col = 0: dat.CellAlignment = 4: dat.ColWidth(0) = 2800: dat.Text = "ID NÓMINA"
-    dat.Col = 1: dat.CellAlignment = 4: dat.ColWidth(1) = 2800: dat.Text = "NOMBRE"
-    dat.Col = 2: dat.CellAlignment = 4: dat.ColWidth(2) = 2800: dat.Text = "APELLIDO P"
-    dat.Col = 3: dat.CellAlignment = 4: dat.ColWidth(3) = 2800: dat.Text = "APELLIDO M"
-    dat.Col = 4: dat.CellAlignment = 4: dat.ColWidth(4) = 2800: dat.Text = "DIRECCIÓN"
-    dat.Col = 5: dat.CellAlignment = 4: dat.ColWidth(5) = 2800: dat.Text = "COLONIA"
-    dat.Col = 6: dat.CellAlignment = 4: dat.ColWidth(6) = 2800: dat.Text = "CIUDAD"
-    dat.Col = 7: dat.CellAlignment = 4: dat.ColWidth(7) = 2800: dat.Text = "ESTADO"
-    dat.Col = 8: dat.CellAlignment = 4: dat.ColWidth(8) = 2800: dat.Text = "DELEGACIÓN"
-    dat.Col = 9: dat.CellAlignment = 4: dat.ColWidth(9) = 2800: dat.Text = "CÓDIGO POSTAL"
-    dat.Col = 10: dat.CellAlignment = 4: dat.ColWidth(10) = 2800: dat.Text = "CORREO"
+    dat.Row = 0
+    dat.col = 0
+
+    dat.col = 0
+    dat.CellAlignment = 4
+    dat.ColWidth(0) = 2800
+    dat.Text = "ID NÓMINA"
+
+    dat.col = 1
+    dat.CellAlignment = 4
+    dat.ColWidth(1) = 2800
+    dat.Text = "NOMBRE"
+
+    dat.col = 2
+    dat.CellAlignment = 4
+    dat.ColWidth(2) = 2800
+    dat.Text = "APELLIDO P"
+
+    dat.col = 3
+    dat.CellAlignment = 4
+    dat.ColWidth(3) = 2800
+    dat.Text = "APELLIDO M"
+
+    dat.col = 4
+    dat.CellAlignment = 4
+    dat.ColWidth(4) = 2800
+    dat.Text = "DIRECCIÓN"
+
+    dat.col = 5
+    dat.CellAlignment = 4
+    dat.ColWidth(5) = 2800
+    dat.Text = "COLONIA"
+
+    dat.col = 6
+    dat.CellAlignment = 4
+    dat.ColWidth(6) = 2800
+    dat.Text = "CIUDAD"
+
+    dat.col = 7
+    dat.CellAlignment = 4
+    dat.ColWidth(7) = 2800
+    dat.Text = "ESTADO"
+
+    dat.col = 8
+    dat.CellAlignment = 4
+    dat.ColWidth(8) = 2800
+    dat.Text = "DELEGACIÓN"
+
+    dat.col = 9
+    dat.CellAlignment = 4
+    dat.ColWidth(9) = 2800
+    dat.Text = "CÓDIGO POSTAL"
+
+    dat.col = 10
+    dat.CellAlignment = 4
+    dat.ColWidth(10) = 2800
+    dat.Text = "CORREO"
+End Sub
+
+Private Sub CargarDatosSatEnGrid(ByVal oRS As ADODB.Recordset)
     vardatarows = oRS.GetRows()
 
     For i = 1 To dat.Rows - 1
@@ -383,19 +293,21 @@ Private Sub Form_Load()
             End If
         Next h
     Next i
-    oRS.MarshalOptions = adMarshalModifiedOnly
+End Sub
 
-    Set oRS.ActiveConnection = Nothing
-    oRS.Close
-    Set oRS = Nothing
+Private Sub GuardarDatosSatEnArchivoLocal()
     Close 1, 2
+
     Open "personal.dno" For Random As 2 Len = Len(personal)
     Dm = LOF(2) / Len(personal)
+
     Open "Perscfdi.dno" For Random As 1 Len = Len(Empleado_1)
 
     For i = 1 To dat.Rows - 1
         idNomina = dat.TextMatrix(i, 0)
+
         Get 1, CInt(idNomina), Empleado_1
+
         Empleado_1.Direccion = UCase(Trim(dat.TextMatrix(i, 4)))
         Empleado_1.Colonia = UCase(Trim(dat.TextMatrix(i, 5)))
         Empleado_1.Ciudad = UCase(Trim(dat.TextMatrix(i, 6)))
@@ -403,24 +315,263 @@ Private Sub Form_Load()
         Empleado_1.Delegacion = UCase(Trim(dat.TextMatrix(i, 8)))
         Empleado_1.Cpostal = UCase(Trim(dat.TextMatrix(i, 9)))
         Empleado_1.correo = UCase(Trim(dat.TextMatrix(i, 10)))
+
         Put 1, idNomina, Empleado_1
     Next i
+End Sub
 
-    PeCfdi.Caption = "Datos complementarios de Personal" & " - " & "Estas conectado"
+' ============================================================
+' ARCHIVO LOCAL CFDI
+' ============================================================
+
+Private Sub ArCfAbr_Click()
+    Dim EmpNum As Long
+    Dim nombre As String
+    Dim Cadena1
+
+    PCpCfdi.Rows = 1
 
     Close 1, 2
+
+    Open "Personal.dno" For Random As 2 Len = Len(personal)
+    cm = LOF(2) / Len(personal)
+
+    Open "Perscfdi.dno" For Random As 1 Len = Len(Empleado_1)
+
+    For i = 1 To cm
+        Get 2, i, personal
+        Get 1, i, Empleado_1
+
+        If IsNumeric(Empleado_1.Cpostal) Then
+            nombre = (Trim(personal.nom) + " " + Trim(personal.ape1) + " " + Trim(personal.ape2))
+            Cadena1 = Format(i, "####0") & Chr(9) & nombre & Chr(9) & Empleado_1.Direccion _
+                      & Chr(9) & Empleado_1.Colonia & Chr(9) & Empleado_1.Ciudad _
+                      & Chr(9) & Empleado_1.Estado & Chr(9) & Empleado_1.Delegacion _
+                      & Chr(9) & Empleado_1.Cpostal & Chr(9) & Empleado_1.correo
+
+            PCpCfdi.AddItem Cadena1
+        End If
+    Next i
+End Sub
+
+Private Sub ArCfGuarda_Click()
+    Dim EmpNum As Long
+
+    Close 1
+
+    Open "Perscfdi.dno" For Random As 1 Len = Len(Empleado_1)
+    cm = LOF(1) / Len(Empleado_1)
+
+    For renglon = 1 To PCpCfdi.Rows - 1
+        If IsNumeric(PCpCfdi.TextMatrix(renglon, 0)) Then
+            EmpNum = PCpCfdi.TextMatrix(renglon, 0)
+            Empleado_1.Direccion = PCpCfdi.TextMatrix(renglon, 2)
+            Empleado_1.Colonia = PCpCfdi.TextMatrix(renglon, 3)
+            Empleado_1.Ciudad = PCpCfdi.TextMatrix(renglon, 4)
+            Empleado_1.Estado = PCpCfdi.TextMatrix(renglon, 5)
+            Empleado_1.Delegacion = PCpCfdi.TextMatrix(renglon, 6)
+            Empleado_1.Cpostal = PCpCfdi.TextMatrix(renglon, 7)
+            Empleado_1.correo = PCpCfdi.TextMatrix(renglon, 8)
+
+            Put 1, EmpNum, Empleado_1
+        End If
+    Next renglon
+
+    Close 1
+End Sub
+
+Private Sub ArCfSale_Click()
+    Close
+    Unload PeCfdi
+End Sub
+
+' ============================================================
+' CONSULTA REMOTA
+' ============================================================
+
+Private Sub DB_Click()
+    If EsEmpresaLocal(emp) Then
+        MsgBox "Esta empresa trabaja de forma local, no hay sincronización con el SAT remoto.", vbInformation
+        Exit Sub
+    End If
+
+    On Error GoTo ErrHandler
+
+    Dim oRS As ADODB.Recordset
+    Dim con As ADODB.Connection
+    Dim sSQL As String
+    Dim i As Integer
+    Dim j As Integer
+    Dim strconnect As String
+
+    Set oRS = New ADODB.Recordset
+    Set con = New ADODB.Connection
+
+    strconnect = "Provider=SQLOLEDB;Data Source=SQL6012.site4now.net;Initial Catalog=db_a4091b_sacmag"
+    con.Open strconnect, "db_a4091b_sacmag_admin", "Sacmag2020"
+
+    If IsNull(emp) Or Trim(emp) = "" Then
+        MsgBox "No se especificó la empresa.", vbExclamation, "Aviso"
+        GoTo CleanUp
+    End If
+
+    sSQL = "EXEC sp_ObtenerDatosSatPorEmpresa '" & Replace(Trim(emp), "'", "''") & "'"
+
+    oRS.Open sSQL, con, adOpenStatic, adLockReadOnly
+
+    If oRS.EOF Then
+        MsgBox "No se encontraron datos.", vbInformation, "Consulta"
+        GoTo CleanUp
+    End If
+
+    PCpCfdi.Rows = 1
+    PCpCfdi.Cols = oRS.Fields.Count
+
+    i = 1
+    Do While Not oRS.EOF
+        PCpCfdi.Rows = PCpCfdi.Rows + 1
+
+        For j = 0 To oRS.Fields.Count - 1
+            PCpCfdi.TextMatrix(i, j) = oRS.Fields(j).Value & ""
+        Next j
+
+        oRS.MoveNext
+        i = i + 1
+    Loop
+
+CleanUp:
+    If Not oRS Is Nothing Then If oRS.State = 1 Then oRS.Close
+    If Not con Is Nothing Then If con.State = 1 Then con.Close
+
+    Set oRS = Nothing
+    Set con = Nothing
+
     Exit Sub
-Error:
-    MsgBox ("Ocurrió un error:" + Err.Description)
+
+ErrHandler:
+    MsgBox "Error " & Err.Number & ": " & Err.Description, vbCritical, "Error"
+    Resume CleanUp
 End Sub
 
+' ============================================================
+' COPIAR / PEGAR / INSERTAR / ELIMINAR
+' ============================================================
 
-Private Sub Form_Resize()
+Private Sub EdCfCopia_Click()
+    Dim Temporal1
 
-    PCpCfdi.Height = PeCfdi.Height * 0.85
-    PCpCfdi.Width = PeCfdi.Width * 0.95
-    
+    Clipboard.Clear
+
+    difer = PCpCfdi.RowSel - PCpCfdi.Row
+
+    For i = PCpCfdi.Row To PCpCfdi.RowSel
+        For f = PCpCfdi.col To PCpCfdi.ColSel
+            Temporal1 = Temporal1 + PCpCfdi.TextMatrix(i, f)
+
+            If f < PCpCfdi.ColSel Then
+                Temporal1 = Temporal1 & Chr(9)
+            End If
+        Next f
+
+        Temporal1 = Temporal1 & Chr(13) & Chr(10)
+    Next i
+
+    Clipboard.SetText Temporal1
 End Sub
+
+Private Sub EdCfEliminar_Click()
+    Dim w1 As Long
+
+    For w1 = PCpCfdi.Row To PCpCfdi.RowSel
+        PCpCfdi.RemoveItem PCpCfdi.Row
+    Next w1
+End Sub
+
+Private Sub EdCfInsertar_Click()
+    Dim W As Long
+
+    For W = PCpCfdi.Row To PCpCfdi.RowSel
+        PCpCfdi.AddItem (""), PCpCfdi.Row
+    Next W
+End Sub
+
+Private Sub EdCfPegar_Click()
+    Dim DeAqui As Integer
+    Dim RetornoCarro As Long
+    Dim InicioCopia As Long
+
+    Temporal1 = ""
+    temporal = Clipboard.GetText(vbCFText)
+
+    RetornoCarro = PCpCfdi.col
+    InicioCopia = PCpCfdi.Row
+    DeAqui = InicioCopia
+    InIPGr = InicioCopia
+    InIPGc = RetornoCarro
+
+    If temporal <> "" Then
+        Clipboard.Clear
+        DeAqui = 1
+
+        For i = 1 To Len(temporal)
+            Select Case Mid(temporal, i, 1)
+                Case Chr(9)
+                    LTXT.Text = Mid(temporal, DeAqui, (i - DeAqui))
+                    Temporal1 = Temporal1 + PCpCfdi.TextMatrix(PCpCfdi.Row, PCpCfdi.col) & Chr(9)
+                    PCpCfdi.Text = Mid(temporal, DeAqui, (i - DeAqui))
+                    PCpCfdi.col = PCpCfdi.col + 1
+                    DeAqui = i + 1
+
+                Case Chr(13)
+                    Temporal1 = Temporal1 + PCpCfdi.TextMatrix(PCpCfdi.Row, PCpCfdi.col) & Chr(13)
+                    LTXT.Text = Mid(temporal, DeAqui, (i - DeAqui))
+                    PCpCfdi.Text = Mid(temporal, DeAqui, (i - DeAqui))
+
+                    If (PCpCfdi.Rows - 1) <= PCpCfdi.Row Then PCpCfdi.Rows = PCpCfdi.Rows + 1
+
+                    PCpCfdi.Row = PCpCfdi.Row + 1
+                    PCpCfdi.TopRow = 1
+                    DeAqui = i + 1
+
+                Case Chr(10)
+                    Temporal1 = Temporal1 & Chr(10)
+                    PCpCfdi.col = RetornoCarro
+                    DeAqui = i + 1
+
+                Case Else
+                    Rem nada
+            End Select
+        Next i
+
+        PCpCfdi.col = RetornoCarro
+    End If
+
+    Clipboard.Clear
+    Clipboard.SetText Clipboard.GetText + Temporal1
+End Sub
+
+Private Sub EdCfSelT_Click()
+    Dim limite As Long
+
+    Clipboard.Clear
+
+    PCpCfdi.Row = 1
+    PCpCfdi.col = 0
+
+    For limite = 1 To PCpCfdi.Rows - 1
+        renglon = limite
+
+        If IsNumeric(PCpCfdi.TextMatrix(renglon, 0)) Then
+            PCpCfdi.RowSel = PCpCfdi.Row
+        End If
+    Next limite
+
+    PCpCfdi.ColSel = PCpCfdi.Cols - 1
+End Sub
+
+' ============================================================
+' EDICION DE CELDAS
+' ============================================================
 
 Private Sub LTXT_Change()
     PCpCfdi.Text = LTXT.Text
@@ -430,30 +581,25 @@ Private Sub pcpcfdi_EnterCell()
     PCpCfdi.CellBackColor = vbYellow
     valcelant = PCpCfdi.Text
     LTXT.Text = valcelant
-    Rem If pcpcfdi.Row > 25 Then pcpcfdi.TopRow = pcpcfdi.TopRow + 1
-    
 End Sub
 
 Private Sub pcpcfdi_KeyDown(KeyCode As Integer, Shift As Integer)
     Select Case KeyCode
-            Case vbKeyDelete
-               
-               For q = PCpCfdi.Row To PCpCfdi.RowSel
-                 
-                 For W = PCpCfdi.Col To PCpCfdi.ColSel
-                    
+        Case vbKeyDelete
+            For q = PCpCfdi.Row To PCpCfdi.RowSel
+                For W = PCpCfdi.col To PCpCfdi.ColSel
                     PCpCfdi.TextMatrix(q, W) = ""
-                 Next W
-               Next q
-               
-                LTXT.Text = PCpCfdi.Text
-            Case vbKeyF2
-                If PCpCfdi.Text <> "" Then valcelant = PCpCfdi.Text
-                LTXT.Text = LTrim(RTrim(PCpCfdi.Text))
-                LTXT.SetFocus
-               
-       End Select
+                Next W
+            Next q
 
+            LTXT.Text = PCpCfdi.Text
+
+        Case vbKeyF2
+            If PCpCfdi.Text <> "" Then valcelant = PCpCfdi.Text
+
+            LTXT.Text = LTrim(RTrim(PCpCfdi.Text))
+            LTXT.SetFocus
+    End Select
 End Sub
 
 Private Sub pcpcfdi_KeyPress(KeyAscii As Integer)
@@ -463,7 +609,7 @@ Private Sub pcpcfdi_KeyPress(KeyAscii As Integer)
 End Sub
 
 Private Sub pcpcfdi_LeaveCell()
-   PCpCfdi.CellBackColor = vbWhite
+    PCpCfdi.CellBackColor = vbWhite
 End Sub
 
-' comentario
+

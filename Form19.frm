@@ -34,7 +34,7 @@ Begin VB.Form Form19
          Width           =   2535
       End
       Begin VB.Label Label7 
-         Caption         =   "15/07/2026"
+         Caption         =   "08/10/2026"
          BeginProperty Font 
             Name            =   "Ebrima"
             Size            =   12
@@ -51,7 +51,7 @@ Begin VB.Form Form19
          Width           =   2535
       End
       Begin VB.Label Label6 
-         Caption         =   "3.2.1"
+         Caption         =   "3.3.0"
          BeginProperty Font 
             Name            =   "Ebrima"
             Size            =   12

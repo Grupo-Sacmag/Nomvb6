@@ -125,6 +125,7 @@ Const adLockReadOnly As Integer = 1
 Const TOTAL_COLUMNAS As Long = 296
 Const COL_2DA_RFC As Long = 98
 Const COL_2DA_BANDERA As Long = 295   ' GP
+Private Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
     
 Sub IniCols()
 On Error GoTo ErrorHandler
@@ -520,22 +521,24 @@ If Me.WindowState <> 1 Then
 End Sub
 
 Private Sub NCfEdCop_Click()
-      Dim Temporal1
- Clipboard.Clear
-   
-   difer = NOMCF.RowSel - NOMCF.Row
-   For i = NOMCF.Row To NOMCF.RowSel
-      
-      For f = NOMCF.Col To NOMCF.ColSel
-            Temporal1 = Temporal1 + NOMCF.TextMatrix(i, f)
-            If f < NOMCF.ColSel Then
-                Temporal1 = Temporal1 & Chr(9)
-            End If
-      Next f
-      Temporal1 = Temporal1 & Chr(13) & Chr(10)
-      
-   Next i
-    Clipboard.SetText Temporal1
+    Dim i As Long, f As Long
+    Dim Temporal1 As String
+    Dim r1 As Long, r2 As Long, c1 As Long, c2 As Long
+
+    r1 = IIf(NOMCF.Row < NOMCF.RowSel, NOMCF.Row, NOMCF.RowSel)
+    r2 = IIf(NOMCF.Row < NOMCF.RowSel, NOMCF.RowSel, NOMCF.Row)
+    c1 = IIf(NOMCF.Col < NOMCF.ColSel, NOMCF.Col, NOMCF.ColSel)
+    c2 = IIf(NOMCF.Col < NOMCF.ColSel, NOMCF.ColSel, NOMCF.Col)
+
+    For i = r1 To r2
+        For f = c1 To c2
+            Temporal1 = Temporal1 & NOMCF.TextMatrix(i, f)
+            If f < c2 Then Temporal1 = Temporal1 & vbTab
+        Next f
+        Temporal1 = Temporal1 & vbCrLf
+    Next i
+
+    CopiarAlPortapapeles Temporal1
 End Sub
 Private Sub LTXT1_Change()
     NOMCF.Text = LTXT1.Text
@@ -543,27 +546,26 @@ End Sub
 
 
 Private Sub NCFEDPRIM_Click()
-Clipboard.Clear
-    NOMCF.Row = 1
-    NOMCF.Col = 0
+    Dim i As Long, f As Long
+    Dim Temporal1 As String
+
+    Screen.MousePointer = vbHourglass
+
+    ' Selección visual (opcional)
+    NOMCF.Row = 1: NOMCF.Col = 0
     NOMCF.RowSel = NOMCF.Rows - 1
     NOMCF.ColSel = 97
-    
-Dim Temporal1
-    Clipboard.Clear
-    difer = NOMCF.RowSel - NOMCF.Row
-    For i = NOMCF.Row To NOMCF.RowSel
-      ' For f = ConNom1.Col To ConNom1.ColSel
-      For f = 0 To NOMCF.ColSel ' esta modificacion permite copiar todas las columnas, desde la 0
-            Temporal1 = Temporal1 + NOMCF.TextMatrix(i, f)
-            If f < NOMCF.ColSel Then
-                Temporal1 = Temporal1 & Chr(9)
-            End If
-      Next f
-      Temporal1 = Temporal1 & Chr(13) & Chr(10)
-    Next i
-    Clipboard.SetText Temporal1
 
+    For i = 1 To NOMCF.Rows - 1
+        For f = 0 To 97
+            Temporal1 = Temporal1 & NOMCF.TextMatrix(i, f)
+            If f < 97 Then Temporal1 = Temporal1 & vbTab
+        Next f
+        Temporal1 = Temporal1 & vbCrLf
+    Next i
+
+    CopiarAlPortapapeles Temporal1
+    Screen.MousePointer = vbDefault
 End Sub
 
 Private Sub NCfEdSel_Click()
@@ -580,26 +582,21 @@ Private Sub NCfEdSel_Click()
 End Sub
 
 Private Sub NCFEDSG_Click()
-
-Debug.Print COL_2DA_RFC, COL_2DA_BANDERA
-
     Dim i As Long, c As Long
     Dim Temporal1 As String
 
-    Clipboard.Clear
-    Temporal1 = ""
+    Screen.MousePointer = vbHourglass
 
     For i = 1 To NOMCF2.NOMCF.Rows - 1
         For c = COL_2DA_RFC To COL_2DA_BANDERA
             Temporal1 = Temporal1 & NOMCF2.NOMCF.TextMatrix(i, c)
-            If c < COL_2DA_BANDERA Then
-                Temporal1 = Temporal1 & Chr(9) ' TAB
-            End If
+            If c < COL_2DA_BANDERA Then Temporal1 = Temporal1 & vbTab
         Next c
         Temporal1 = Temporal1 & vbCrLf
     Next i
 
-    Clipboard.SetText Temporal1
+    CopiarAlPortapapeles Temporal1
+    Screen.MousePointer = vbDefault
 End Sub
 
 Private Sub NCFEspr_Click()
@@ -746,14 +743,9 @@ End If
     
     '25 26 TOTALSEPARACIONINDEMNIZACION
     If g_TipoNominaActiva = tnLiquidacionFiniquito Then
-    
         NOMCF2.NOMCF.TextMatrix(I7, 24) = Format(Val(GridOrigen.TextMatrix(I7, 4)) + Val(GridOrigen.TextMatrix(I7, 5)) + Val(GridOrigen.TextMatrix(I7, 6)), "#,##0.00")
-    
     Else
-    
-        NOMCF2.NOMCF.TextMatrix(I7, 24) = _
-            Format(0, "#,##0.00")
-    
+        NOMCF2.NOMCF.TextMatrix(I7, 24) = Format(0, "#,##0.00")
     End If
     '26 27 TOTALJUBILACIONPENSIONRETIRO
         NOMCF2.NOMCF.TextMatrix(I7, 25) = Format(0, "#,##0.00")
@@ -986,8 +978,17 @@ End If
             NOMCF2.NOMCF.TextMatrix(I7, 103) = Format(0, "#,##0.00")
     End If
     
-    '103 104 P004GGTOS.MEDICOS
+    '103 104 P004G - BONO / PREMIO DE PUNTUALIDAD
+    If N_ormal = 1 Then
+        If IsNumeric(GridOrigen.TextMatrix(I7, 7)) Then
+            NOMCF2.NOMCF.TextMatrix(I7, 104) = Format(Val(GridOrigen.TextMatrix(I7, 7)) + Val(GridOrigen.TextMatrix(I7, 10)), "###0.00")
+        Else
+            NOMCF2.NOMCF.TextMatrix(I7, 104) = Format(0, "#,##0.00")
+        End If
+    Else
         NOMCF2.NOMCF.TextMatrix(I7, 104) = Format(0, "#,##0.00")
+    End If
+
     '105 P004E
         NOMCF2.NOMCF.TextMatrix(I7, 105) = Format(0, "#,##0.00")
     '106 P005G
@@ -1000,7 +1001,7 @@ End If
         NOMCF2.NOMCF.TextMatrix(I7, 109) = Format(0, "#,##0.00")
     '110 P009G
         NOMCF2.NOMCF.TextMatrix(I7, 110) = Format(0, "#,##0.00")
-    '111 P010G PREMIO DE PUNTUALIDAD
+    '111 P010G
         NOMCF2.NOMCF.TextMatrix(I7, 111) = Format(0, "#,##0.00")
     '112 P011G
         NOMCF2.NOMCF.TextMatrix(I7, 112) = Format(0, "#,##0.00")
@@ -1436,3 +1437,25 @@ Gestionaerror:
             MsgBox "Se ha producido un error. Tipo de error = " & Err.Number & ". Descripción: " & Err.Description & Chr(13) & "Debes verificar que tengas el directorio C:\salarioDI\Archivo.cg", vbOKOnly, "C:\salarioDI\Archivo.cg"
         End If
 End Sub
+
+Private Function CopiarAlPortapapeles(ByVal texto As String) As Boolean
+    Dim intentos As Integer
+
+    For intentos = 1 To 15
+        Err.Clear
+        On Error Resume Next
+        Clipboard.Clear
+        If Err.Number = 0 Then Clipboard.SetText texto
+        If Err.Number = 0 Then
+            On Error GoTo 0
+            CopiarAlPortapapeles = True
+            Exit Function
+        End If
+        On Error GoTo 0
+
+        DoEvents
+        Sleep 100          ' espera 0.1 s y reintenta (máx. ~1.5 s)
+    Next intentos
+
+    MsgBox "No se pudo acceder al portapapeles. Intenta de nuevo.", vbExclamation
+End Function
