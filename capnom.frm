@@ -7,7 +7,7 @@ Begin VB.Form Form8
    ClientHeight    =   7995
    ClientLeft      =   7680
    ClientTop       =   2640
-   ClientWidth     =   11865
+   ClientWidth     =   15270
    BeginProperty Font 
       Name            =   "Verdana"
       Size            =   9.75
@@ -20,15 +20,15 @@ Begin VB.Form Form8
    Icon            =   "capnom.frx":0000
    LinkTopic       =   "Form8"
    ScaleHeight     =   7995
-   ScaleWidth      =   11865
+   ScaleWidth      =   15270
    WindowState     =   2  'Maximized
    Begin VB.TextBox txtSuf 
       Height          =   375
-      Left            =   6000
+      Left            =   6120
       MaxLength       =   4
       TabIndex        =   21
       Text            =   "Text5"
-      Top             =   600
+      Top             =   960
       Width           =   2295
    End
    Begin VB.TextBox txtPre 
@@ -37,15 +37,15 @@ Begin VB.Form Form8
       MaxLength       =   4
       TabIndex        =   20
       Text            =   "Text5"
-      Top             =   1200
-      Width           =   2295
+      Top             =   960
+      Width           =   2415
    End
    Begin VB.ComboBox cboEspecial 
       Height          =   360
-      Left            =   3360
+      Left            =   5400
       Style           =   2  'Dropdown List
       TabIndex        =   19
-      Top             =   600
+      Top             =   240
       Width           =   2295
    End
    Begin VB.TextBox Text4 
@@ -60,9 +60,9 @@ Begin VB.Form Form8
          Strikethrough   =   0   'False
       EndProperty
       Height          =   360
-      Left            =   7800
+      Left            =   9600
       TabIndex        =   16
-      Top             =   600
+      Top             =   1320
       Width           =   2295
    End
    Begin MSComctlLib.ProgressBar ProgressBar1 
@@ -102,9 +102,9 @@ Begin VB.Form Form8
          Strikethrough   =   0   'False
       EndProperty
       Height          =   360
-      Left            =   8520
+      Left            =   4920
       TabIndex        =   13
-      Top             =   1080
+      Top             =   1440
       Width           =   1815
    End
    Begin VB.TextBox Text2 
@@ -160,9 +160,9 @@ Begin VB.Form Form8
          Strikethrough   =   0   'False
       EndProperty
       Height          =   360
-      Left            =   3360
+      Left            =   5400
       TabIndex        =   7
-      Top             =   600
+      Top             =   240
       Visible         =   0   'False
       Width           =   2295
    End
@@ -179,10 +179,10 @@ Begin VB.Form Form8
       EndProperty
       Height          =   360
       ItemData        =   "capnom.frx":0442
-      Left            =   3360
+      Left            =   3480
       List            =   "capnom.frx":0444
       TabIndex        =   6
-      Top             =   1200
+      Top             =   960
       Width           =   2295
    End
    Begin VB.Frame Frame2 
@@ -299,34 +299,26 @@ Begin VB.Form Form8
          Strikethrough   =   0   'False
       EndProperty
       Height          =   330
-      Left            =   10200
+      Left            =   12000
       TabIndex        =   18
-      Top             =   600
+      Top             =   1320
       Visible         =   0   'False
       Width           =   1560
    End
    Begin VB.Label lblSuf 
       Caption         =   "Despues:"
       Height          =   255
-      Left            =   6000
-      TabIndex        =   24
-      Top             =   240
-      Width           =   1095
-   End
-   Begin VB.Label Label2 
-      Caption         =   "Antes:"
-      Height          =   255
-      Left            =   0
+      Left            =   6120
       TabIndex        =   23
-      Top             =   0
-      Width           =   735
+      Top             =   720
+      Width           =   1095
    End
    Begin VB.Label lblPre 
       Caption         =   "Antes:"
       Height          =   255
-      Left            =   5880
+      Left            =   3360
       TabIndex        =   22
-      Top             =   1200
+      Top             =   720
       Width           =   735
    End
    Begin VB.Label Label1 
@@ -341,10 +333,10 @@ Begin VB.Form Form8
          Strikethrough   =   0   'False
       EndProperty
       Height          =   255
-      Left            =   6120
+      Left            =   8760
       TabIndex        =   17
-      Top             =   600
-      Width           =   975
+      Top             =   1440
+      Width           =   735
    End
    Begin VB.Label Label9 
       Caption         =   "   Usando tarifas de impuestos : "
@@ -366,9 +358,9 @@ Begin VB.Form Form8
          Strikethrough   =   0   'False
       EndProperty
       Height          =   255
-      Left            =   6840
+      Left            =   3360
       TabIndex        =   12
-      Top             =   1080
+      Top             =   1560
       Width           =   1455
    End
    Begin VB.Label Label7 
@@ -383,15 +375,15 @@ Begin VB.Form Form8
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      Height          =   615
-      Left            =   0
+      Height          =   375
+      Left            =   360
       TabIndex        =   9
-      Top             =   1560
+      Top             =   1920
       Width           =   9375
    End
    Begin VB.Label Label5 
       Alignment       =   2  'Center
-      Caption         =   "Nombre de la nomina especial"
+      Caption         =   "Tipo de la nomina especial:"
       BeginProperty Font 
          Name            =   "Arial"
          Size            =   8.25
@@ -402,9 +394,9 @@ Begin VB.Form Form8
          Strikethrough   =   0   'False
       EndProperty
       Height          =   255
-      Left            =   3360
+      Left            =   3240
       TabIndex        =   8
-      Top             =   240
+      Top             =   360
       Width           =   2175
    End
    Begin VB.Menu capnoar 
@@ -903,6 +895,7 @@ Dim Slinimpte As Currency, Slincam As Currency, Sabono As Integer
 Dim porc_apli As Currency, p_vacacional As Currency, Detener As Integer, Detener1 As Integer
 Dim PrincIngr As Long, PrincDesc As Long, Color_gris As Long, Nu_mero As Double, M_aximo As Long
 Public subsidioParaElEmpleo As Currency
+Private ActualizandoNombre As Boolean
 
 Private Sub Borrarblancos_Click(Index As Integer)
     Dim i As Integer
@@ -938,12 +931,6 @@ End Sub
 
 Private Sub cboEspecial_Click()
     ActualizarNombreEspecial
-
-    If cboEspecial.Text = "PTU" Then
-        Text3.Text = empresa.sm * 15
-    End If
-
-    If txtPre.Visible Then txtPre.SetFocus
 End Sub
 
 Private Sub Form_Load()
@@ -1026,6 +1013,16 @@ Private Sub nomcap_ini_Click(Index As Integer)
     Dim lockDate As Date
     Dim modDate As Date
 
+    ActualizarNombreEspecial
+    Arch = Trim$(Text1.Text)
+    
+    If Arch = "" Then
+        MsgBox "Debes indicar el nombre de la nómina.", vbExclamation
+        Exit Sub
+    End If
+    
+    AplicarTipoNomina Arch
+    
     ' =======================================================
     ' 1. CONSTRUIR EL NOMBRE DEL ARCHIVO
     ' =======================================================
@@ -4535,11 +4532,19 @@ Private Sub Text2_Change()
     ConNom1.Text = Text2.Text
 End Sub
 Private Sub Text2_GotFocus()
- On Error Resume Next
-     antiguo = ConNom1.Col
-     ConNom1.Col = 1: ConNom1.CellBackColor = &H80FF80
-     ConNom1.Col = antiguo
-     SendKeys "{end}"
+
+    On Error Resume Next
+
+    antiguo = ConNom1.Col
+
+    ConNom1.Col = 1
+    ConNom1.CellBackColor = &H80FF80
+
+    ConNom1.Col = antiguo
+
+    ' Colocar el cursor al final del contenido.
+    Text2.SelStart = Len(Text2.Text)
+
 End Sub
 
 Private Sub Text2_KeyDown(KeyCode As Integer, Shift As Integer)
@@ -4769,35 +4774,49 @@ Private Sub MostrarControlesEspecial(ByVal v As Boolean)
 
 End Sub
 
-Private Function SoloDigitos(ByVal s As String) As String
-
+Private Function SoloDigitos(ByVal texto As String) As String
     Dim i As Long
-    Dim r As String
+    Dim caracter As String
+    Dim resultado As String
 
-    For i = 1 To Len(s)
-        If Mid$(s, i, 1) >= "0" And Mid$(s, i, 1) <= "9" Then
-            r = r & Mid$(s, i, 1)
+    resultado = ""
+
+    For i = 1 To Len(texto)
+        caracter = Mid$(texto, i, 1)
+
+        If caracter >= "0" And caracter <= "9" Then
+            resultado = resultado & caracter
         End If
     Next i
 
-    SoloDigitos = r
-
+    SoloDigitos = resultado
 End Function
 
 Private Sub ActualizarNombreEspecial()
+If ActualizandoNombre Then Exit Sub
 
-    If cboEspecial.ListIndex < 0 Then
-        Text1.Text = ""
-        Label7.Caption = ""
-        Exit Sub
+    On Error GoTo Salida
+
+    ActualizandoNombre = True
+
+    ' Solo permitir números en txtPre
+    If txtPre.Text <> SoloDigitos(txtPre.Text) Then
+        txtPre.Text = SoloDigitos(txtPre.Text)
+        txtPre.SelStart = Len(txtPre.Text)
     End If
 
-    Text1.Text = SoloDigitos(txtPre.Text) & cboEspecial.Text & SoloDigitos(txtSuf.Text)
+    ' Construir nombre final
+    txtSuf.Text = Trim$(txtPre.Text) & Trim$(cboEspecial.Text)
 
-    Label7.Caption = Text1.Text + " " + Str$(empresa.ao)
+    ' Mostrar también el nombre final en Label7
+    Label7.Caption = txtSuf.Text
 
+    ' Si Text1 se utiliza como nombre interno:
+    Text1.Text = txtSuf.Text
+
+Salida:
+    ActualizandoNombre = False
 End Sub
-
 Private Sub ConfirmarNombreEspecial()
 
     ActualizarNombreEspecial
@@ -4816,15 +4835,6 @@ Private Sub ConfirmarNombreEspecial()
 End Sub
 
 Private Sub txtPre_Change()
- Dim s As String
-
-    s = SoloDigitos(txtPre.Text)
-
-    If txtPre.Text <> s Then
-        txtPre.Text = s
-        txtPre.SelStart = Len(txtPre.Text)
-    End If
-
     ActualizarNombreEspecial
 End Sub
 
@@ -4843,15 +4853,6 @@ Private Sub txtPre_KeyPress(KeyAscii As Integer)
 End Sub
 
 Private Sub txtSuf_Change()
-    Dim s As String
-
-    s = SoloDigitos(txtSuf.Text)
-
-    If txtSuf.Text <> s Then
-        txtSuf.Text = s
-        txtSuf.SelStart = Len(txtSuf.Text)
-    End If
-
     ActualizarNombreEspecial
 End Sub
 
@@ -4869,3 +4870,66 @@ Private Sub txtSuf_KeyPress(KeyAscii As Integer)
 
 End Sub
 
+Private Sub CargarPartesNombreEspecial()
+
+    Dim nombre As String
+    Dim concepto As String
+    Dim i As Long
+    Dim posicion As Long
+
+    nombre = Trim$(Text1.Text)
+
+    If nombre = "" Then
+        ActualizarNombreEspecial
+        Exit Sub
+    End If
+
+    ActualizandoNombre = True
+
+    ' Buscar el concepto dentro del nombre existente.
+    posicion = 0
+    concepto = ""
+
+    For i = 0 To cboEspecial.ListCount - 1
+
+        If Trim$(cboEspecial.List(i)) <> "" Then
+
+            If InStr(1, nombre, Trim$(cboEspecial.List(i)), vbTextCompare) > 0 Then
+                concepto = Trim$(cboEspecial.List(i))
+                posicion = InStr(1, nombre, concepto, vbTextCompare)
+                Exit For
+            End If
+
+        End If
+
+    Next i
+
+    If posicion > 0 Then
+
+        txtPre.Text = Left$(nombre, posicion - 1)
+
+        cboEspecial.ListIndex = -1
+
+        For i = 0 To cboEspecial.ListCount - 1
+            If StrComp(Trim$(cboEspecial.List(i)), concepto, vbTextCompare) = 0 Then
+                cboEspecial.ListIndex = i
+                Exit For
+            End If
+        Next i
+
+        txtSuf.Text = Mid$(nombre, posicion + Len(concepto))
+
+    Else
+
+        ' No se identificó ningún concepto conocido.
+        txtPre.Text = ""
+        txtSuf.Text = ""
+
+    End If
+
+    ActualizandoNombre = False
+
+    ' Volver a construir el nombre con los controles.
+    ActualizarNombreEspecial
+
+End Sub
