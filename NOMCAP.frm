@@ -348,18 +348,8 @@ DENUEVO:
     Dim x9 As Long
     
     I8 = 0
-       
-    If OrigenCFDI = 1 Then
-
-    If IsNumeric(FormViewer.ConNom1.TextMatrix(I7, 0)) Then
-        NumerodePersonal = FormViewer.ConNom1.TextMatrix(I7, 0)
-    End If
-
-    Else
-        If IsNumeric(Form8.ConNom1.TextMatrix(I7, 0)) Then
-            NumerodePersonal = Form8.ConNom1.TextMatrix(I7, 0)
-        End If
-    End If
+    
+    
     
    Rem ActualizarCorreos
     
@@ -369,41 +359,83 @@ DENUEVO:
         
     SDI_Click (Index)
     fila = 0
+        '=========================================================
+        ' GENERACION CFDI DESDE FORM8 O FORMVIEWER
+        '=========================================================
+        
+        Dim GridOrigenCFDI As Object
+        Dim ultimaFila As Long
+        
         If OrigenCFDI = 1 Then
-
-    For I7 = 1 To UltimaFilaCFDI
-
-        If IsNumeric(FormViewer.ConNom1.TextMatrix(I7, 0)) Then
-
-            NumerodePersonal = _
-                CLng(FormViewer.ConNom1.TextMatrix(I7, 0))
-
-            reng
-            MdAbr_1
-
+            Set GridOrigenCFDI = FormViewer.ConNom1
+        Else
+            Set GridOrigenCFDI = Form8.ConNom1
         End If
-
-    Next I7
-
-    Else
-        For I7 = 1 To Form8.ConNom1.Rows - 2
-            If IsNumeric(Form8.ConNom1.TextMatrix(I7, 0)) Then
-                NumerodePersonal = CLng(Form8.ConNom1.TextMatrix(I7, 0))
-                reng
-                MdAbr_1
+        
+        ' Evitar recorrer filas inexistentes o la fila de totales.
+        If GridOrigenCFDI.Rows < 3 Then
+            MsgBox "No hay empleados para generar el CFDI.", _
+                   vbExclamation, "CFDI"
+            GoTo FinGeneracionCFDI
+        End If
+        
+        ultimaFila = GridOrigenCFDI.Rows - 2
+        
+        Debug.Print "=================================="
+        Debug.Print "INICIO GENERACION CFDI"
+        Debug.Print "Origen: "; OrigenCFDI
+        Debug.Print "Rows origen: "; GridOrigenCFDI.Rows
+        Debug.Print "Ultima fila: "; ultimaFila
+        Debug.Print "Cols origen: "; GridOrigenCFDI.Cols
+        
+        For I7 = 1 To ultimaFila
+        
+            If Len(Trim$(GridOrigenCFDI.TextMatrix(I7, C_NUM))) > 0 Then
+        
+                If IsNumeric(GridOrigenCFDI.TextMatrix(I7, C_NUM)) Then
+        
+                    NumerodePersonal = _
+                        CLng(GridOrigenCFDI.TextMatrix(I7, C_NUM))
+        
+                    If NumerodePersonal > 0 Then
+        
+                        Debug.Print "Empleado: "; NumerodePersonal
+                        Debug.Print "Fila origen: "; I7
+        
+                        reng
+                        MdAbr_1
+        
+                    End If
+        
+                End If
+        
             End If
+        
         Next I7
-    End If
+        
+FinGeneracionCFDI:
     
     Close 7, 9
     
-    Do While (NOMCF.Rows - 1)
-        fila = fila + 1
-        On Error GoTo handler
-        If (CDbl(Trim(NOMCF.TextMatrix(fila, 56))) >= CDbl(Trim(NOMCF.TextMatrix(fila, 58)))) Then
-            pintarRojo (fila)
+    '=========================================================
+    ' VALIDACION DE SALARIOS EN EL GRID CFDI
+    '=========================================================
+    
+    For fila = 1 To NOMCF.Rows - 2
+    
+        If IsNumeric(NOMCF.TextMatrix(fila, 56)) And _
+           IsNumeric(NOMCF.TextMatrix(fila, 58)) Then
+    
+            If CCur(NOMCF.TextMatrix(fila, 56)) >= _
+               CCur(NOMCF.TextMatrix(fila, 58)) Then
+    
+                pintarRojo fila
+    
+            End If
+    
         End If
-    Loop
+    
+    Next fila
     
 handler:
 

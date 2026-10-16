@@ -93,10 +93,18 @@ Dim GridOrigen As Object
     t_grav = 0: t_ext = 0: t_gravded = 0: t_extded = 0
     t_oded = 0
     
-    If IsNumeric(GridOrigen.TextMatrix(I7, 13)) Then
-        sub13 = (GridOrigen.TextMatrix(I7, 13) * -1)
+    '====================================================
+    ' SUBSIDIO AL EMPLEO - COLUMNA DINAMICA
+    '====================================================
+    
+    If IsNumeric(GridOrigen.TextMatrix(I7, C_SUBEMP)) Then
+    
+        sub13 = CCur(GridOrigen.TextMatrix(I7, C_SUBEMP)) * -1
+    
     Else
+    
         sub13 = 0
+    
     End If
     
     If IsNumeric(GridOrigen.TextMatrix(I7, 0)) Then
@@ -290,8 +298,8 @@ Dim GridOrigen As Object
     t_ext = pee10 + g_ExentoAguiLiq + g_ExentoPVacLiq
     
     'deducciones-----------------------------------------------------
-    If IsNumeric(GridOrigen.TextMatrix(I7, 12)) Then
-        isr12 = GridOrigen.TextMatrix(I7, 12)
+    If IsNumeric(GridOrigen.TextMatrix(I7, C_ISPT)) Then
+        isr12 = GridOrigen.TextMatrix(I7, C_ISPT)
         c_ded = c_ded + 1: t_ded = t_ded + isr12
     Else
         If sub13 > 0 Then
@@ -301,32 +309,32 @@ Dim GridOrigen As Object
     End If
     If isr12 = 0 Then isr12 = 0.01: t_ded = t_ded + isr12
     
-    If IsNumeric(GridOrigen.TextMatrix(I7, 14)) Then
-        ims14 = GridOrigen.TextMatrix(I7, 14)
+    If IsNumeric(GridOrigen.TextMatrix(I7, C_IMSS)) Then
+        ims14 = GridOrigen.TextMatrix(I7, C_IMSS)
         c_ded = c_ded + 1: t_ded = t_ded + ims14
     Else
         ims14 = 0
     End If
-    If IsNumeric(GridOrigen.TextMatrix(I7, 15)) Then
-        pre15 = GridOrigen.TextMatrix(I7, 15)
+    If IsNumeric(GridOrigen.TextMatrix(I7, C_PRESTAMOS)) Then
+        pre15 = GridOrigen.TextMatrix(I7, C_PRESTAMOS)
         c_ded = c_ded + 1: t_ded = t_ded + pre15
     Else
         pre15 = 0
     End If
-    If IsNumeric(GridOrigen.TextMatrix(I7, 16)) Then
-        fon16 = GridOrigen.TextMatrix(I7, 16)
+    If IsNumeric(GridOrigen.TextMatrix(I7, C_FONACOT)) Then
+        fon16 = GridOrigen.TextMatrix(I7, C_FONACOT)
         c_ded = c_ded + 1: t_ded = t_ded + fon16
     Else
         fon16 = 0
     End If
-    If IsNumeric(GridOrigen.TextMatrix(I7, 17)) Then
-        pea17 = GridOrigen.TextMatrix(I7, 17)
+    If IsNumeric(GridOrigen.TextMatrix(I7, C_PENSION)) Then
+        pea17 = GridOrigen.TextMatrix(I7, C_PENSION)
         c_ded = c_ded + 1: t_ded = t_ded + pea17
     Else
         pea17 = 0
     End If
-    If IsNumeric(GridOrigen.TextMatrix(I7, 18)) Then
-        ifv18 = GridOrigen.TextMatrix(I7, 18)
+    If IsNumeric(GridOrigen.TextMatrix(I7, C_INFONAVIT)) Then
+        ifv18 = GridOrigen.TextMatrix(I7, C_INFONAVIT)
         c_ded = c_ded + 1: t_ded = t_ded + ifv18
     Else
         ifv18 = 0
@@ -335,11 +343,62 @@ Dim GridOrigen As Object
     t_oded = t_ded - isr12
     T_neto = t_per - t_ded
     t_extded = t_ded - isr12
-
+    
+    
+    Debug.Print "========== DESGLOSE CFDI =========="
+    Debug.Print "Origen: "; OrigenCFDI
+    Debug.Print "Empleado: "; GridOrigen.TextMatrix(I7, C_NUM)
+    Debug.Print "Sueldo: "; sue3
+    Debug.Print "Viaticos: "; via7
+    Debug.Print "Prima vacacional: "; pva8
+    Debug.Print "Otras: "; otr9
+    Debug.Print "Exenta: "; pee10
+    Debug.Print "Aguinaldo: "; agui5
+    Debug.Print "PTU gravada: "; ptu_1
+    Debug.Print "PTU exenta: "; ptu_2
+    Debug.Print "Total percepciones: "; t_per
+    Debug.Print "Total deducciones: "; t_ded
+    Debug.Print "Neto CFDI: "; T_neto
+    Debug.Print "=================================="
+    
+    '====================================================
+    ' DIAGNOSTICO DE IMPORTES PARA CFDI
+    '====================================================
+    
+    Debug.Print "=================================="
+    Debug.Print "ORIGEN CFDI: "; OrigenCFDI
+    Debug.Print "TIPO NOMINA: "; g_TipoNominaActiva
+    Debug.Print "EMPLEADO: "; GridOrigen.TextMatrix(I7, C_NUM)
+    
+    Debug.Print "SUELDO: "; GridOrigen.TextMatrix(I7, C_SUELDO)
+    Debug.Print "OTRAS: "; GridOrigen.TextMatrix(I7, C_OTRAS)
+    Debug.Print "EXENTA: "; GridOrigen.TextMatrix(I7, C_EXENTA)
+    
+    Debug.Print "ISR: "; GridOrigen.TextMatrix(I7, C_ISPT)
+    Debug.Print "NETO GRID: "; GridOrigen.TextMatrix(I7, C_NETO)
+    
+    Debug.Print "TOTAL PER CFDI: "; t_per
+    Debug.Print "TOTAL DED CFDI: "; t_ded
+    Debug.Print "NETO CFDI: "; T_neto
+    
+    If g_TipoNominaActiva = tnLiquidacionFiniquito Then
+    
+        Debug.Print "S. VAC: "; GridOrigen.TextMatrix(I7, C_LQ_SDOVAC)
+        Debug.Print "P. VAC: "; GridOrigen.TextMatrix(I7, C_LQ_PRIMAVAC)
+        Debug.Print "AGUI: "; GridOrigen.TextMatrix(I7, C_LQ_AGUI)
+        Debug.Print "ANTIG: "; GridOrigen.TextMatrix(I7, C_LQ_ANTIG)
+        Debug.Print "COMPENS: "; GridOrigen.TextMatrix(I7, C_LQ_COMPENS)
+        Debug.Print "INDEMN: "; GridOrigen.TextMatrix(I7, C_LQ_INDEMN)
+        Debug.Print "BONO: "; GridOrigen.TextMatrix(I7, C_LQ_BONO)
+    
+    End If
+    
+    Debug.Print "=================================="
+    
 End Sub
-Public Function ClasificarTipoNomina(ByVal NombreArch As String) As TipoNominaCFDI
+Public Function ClasificarTipoNomina(ByVal nombreArch As String) As TipoNominaCFDI
     Dim n As String
-    n = NombreBaseNomina(NombreArch)
+    n = NombreBaseNomina(nombreArch)
 
     ' Orden importa: primero la normal, luego los mas especificos
     If EsNominaNormal(n) Then

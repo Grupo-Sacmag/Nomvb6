@@ -1350,24 +1350,15 @@ Private Sub mnuCFDI_Click()
     'La última fila válida es la última fila de empleados.
     'La fila siguiente contiene los totales.
     UltimaFilaCFDI = limite
-
     AbrirArchivosParaCFDI
-
     NOMCF2.Show vbModal
-
     CerrarArchivosCFDI
 
     Exit Sub
 
 ErrorCFDI:
-
     CerrarArchivosCFDI
-
-    MsgBox "Error al generar el CFDI." & vbCrLf & _
-           "Error: " & Err.Number & vbCrLf & _
-           Err.Description, _
-           vbCritical, "CFDI"
-
+    MsgBox "Error al generar el CFDI." & vbCrLf & "Error: " & Err.Number & vbCrLf & Err.Description, vbCritical, "CFDI"
 End Sub
 
 Private Sub mnuCopiarSeleccion_Click()
