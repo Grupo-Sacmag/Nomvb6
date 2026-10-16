@@ -1,0 +1,419 @@
+﻿ajteMod.bas | Línea 21 | name As Integer
+ajteMod.bas | Línea 64 | Open "cheque.ajt" For Random As 8 Len = Len(formajte)
+ajteMod.bas | Línea 71 | Get 8, 1, formajte
+ajteMod.bas | Línea 115 | Put 8, 1, formajte
+AltaTB.frm | Línea 39 | Open "quin.txt" For Output As #11
+AltaTB.frm | Línea 41 | Get 13, 1, Dat_ide
+AltaTB.frm | Línea 47 | Get #2, rgtro, personal
+AltaTB.frm | Línea 48 | Get #8, rgtro, maestro
+AltaTB.frm | Línea 49 | Get #12, rgtro, Clbnx
+AplNom.frm | Línea 124 | Open "C:\GconTA\perma.dno" For Random As #7 Len = Len(basico)
+AplNom.frm | Línea 126 | Get 7, fin_basico, basico
+AplNom.frm | Línea 128 | Open Direc_torio + "DATOS" For Random As 10 Len = Len(Datos)
+AplNom.frm | Línea 130 | Get 10, 1, Datos
+AplNom.frm | Línea 147 | Open Direc_torio + "\" + ArcOper For Random As 11 Len = Len(oper)
+AplNom.frm | Línea 209 | Open Direc_torio + "\CATAUX" For Random As 12 Len = Len(CATAUX)
+AplNom.frm | Línea 225 | Open Direc_torio + "\CATMAY" For Random As 13 Len = Len(CATMAY)
+AplPer.frm | Línea 98 | Put 8, tar, maestro
+AplPer.frm | Línea 308 | Get 9, aqui, CATAUX: CATAUX.C1 = Left(Text1.Text, 4): CATAUX.C2 = ultimo.texto
+AplPer.frm | Línea 310 | Put 9, aqui, CATAUX
+AplPer.frm | Línea 311 | Get 9, (aqui + 400), CATAUX: CATAUX.C1 = Text1.Text: CATAUX.C2 = ultimo.texto
+AplPer.frm | Línea 312 | Put 9, (aqui + 400), CATAUX
+AplPer.frm | Línea 313 | Get 9, (aqui + 800), CATAUX: CATAUX.C1 = Text1.Text: CATAUX.C2 = ultimo.texto
+AplPer.frm | Línea 314 | Put 9, (aqui + 800), CATAUX
+Artic80.frm | Línea 137 | Put #3, i, articulo
+Artic80.frm | Línea 261 | Open SubT_Mes + "TABLA.ISR" For Random As #3 Len = Len(articulo)
+Artic80.frm | Línea 267 | Open SubT_Mes + "Tab08Mes.ISR" For Random As #3 Len = Len(articulo)
+Artic80.frm | Línea 271 | Open Trim(SubT_Mes) + "Tab08Kin.ISR" For Random As #3 Len = Len(articulo)
+Artic80.frm | Línea 275 | Open Trim(SubT_Mes) + "Tab08Sem.ISR" For Random As #3 Len = Len(articulo)
+Artic80.frm | Línea 281 | Open arch_tr For Random As #3 Len = Len(articulo)
+Artic80.frm | Línea 324 | Get #3, r, articulo
+capnom.frm | Línea 12 | Name            =   "Verdana"
+capnom.frm | Línea 45 | Name            =   "Consolas"
+capnom.frm | Línea 87 | Name            =   "Arial"
+capnom.frm | Línea 104 | Name            =   "Arial"
+capnom.frm | Línea 133 | Name            =   "Verdana"
+capnom.frm | Línea 145 | Name            =   "Arial"
+capnom.frm | Línea 163 | Name            =   "Arial"
+capnom.frm | Línea 182 | Name            =   "Arial"
+capnom.frm | Línea 198 | Name            =   "Arial"
+capnom.frm | Línea 215 | Name            =   "Arial"
+capnom.frm | Línea 233 | Name            =   "Arial"
+capnom.frm | Línea 249 | Name            =   "Arial"
+capnom.frm | Línea 266 | Name            =   "Arial"
+capnom.frm | Línea 284 | Name            =   "Arial"
+capnom.frm | Línea 310 | Name            =   "Arial"
+capnom.frm | Línea 335 | Name            =   "Arial"
+capnom.frm | Línea 353 | Name            =   "Arial"
+capnom.frm | Línea 371 | Name            =   "Arial"
+capnom.frm | Línea 954 | Open "personal.dno" For Random As 2 Len = Len(personal)
+capnom.frm | Línea 956 | Open "maestro.dno" For Random As 8 Len = Len(maestro)
+capnom.frm | Línea 959 | Get #8, 1, maestro
+capnom.frm | Línea 960 | Get #2, 1, personal
+capnom.frm | Línea 1214 | Open abre For Random As 9 Len = Len(CATAUX)
+capnom.frm | Línea 1241 | Open "bnxcla.dno" For Random As 12 Len = Len(Clbnx)
+capnom.frm | Línea 1242 | Open "quin.txt" For Output As #11
+capnom.frm | Línea 1243 | Open "Empcomp.dno" For Random As 13 Len = Len(Dat_ide)
+capnom.frm | Línea 1244 | Get 13, 1, Dat_ide
+capnom.frm | Línea 1251 | Get #2, rgtro, personal
+capnom.frm | Línea 1252 | Get #8, rgtro, maestro
+capnom.frm | Línea 1253 | Get #12, rgtro, Clbnx
+capnom.frm | Línea 1322 | Get #2, rgtro, personal
+capnom.frm | Línea 1323 | Get #8, rgtro, maestro
+capnom.frm | Línea 1324 | Get #12, rgtro, Clbnx
+capnom.frm | Línea 1475 | Get 14, rgtro, nom_com
+capnom.frm | Línea 1602 | Open "C:\GconTA\perma.dno" For Random As #7 Len = Len(basico)
+capnom.frm | Línea 1605 | Put #7, 2, basico
+capnom.frm | Línea 1943 | Get #8, rgtro, maestro
+capnom.frm | Línea 2059 | Get 8, 1, formajte
+capnom.frm | Línea 2064 | Get 2, numerillo, personal
+capnom.frm | Línea 2147 | Get #2, regtro, personal
+capnom.frm | Línea 2310 | Get 14, regtro, nom_com
+capnom.frm | Línea 2873 | Get 2, regtro, personal
+capnom.frm | Línea 2874 | Get 8, regtro, maestro
+capnom.frm | Línea 2882 | Open "personal.dno" For Random As 2 Len = Len(personal)
+capnom.frm | Línea 2884 | Open "maestro.dno" For Random As 8 Len = Len(maestro)
+capnom.frm | Línea 3030 | Put 2, regtro, personal
+capnom.frm | Línea 3085 | Open "bnxcla.dno" For Random As 12 Len = Len(Clbnx)
+capnom.frm | Línea 3091 | Put 12, W, Clbnx
+capnom.frm | Línea 3100 | Put 12, regtro, Clbnx
+capnom.frm | Línea 3228 | Open CStr(Trim(Form1.Dir1)) + "\" + mesNomina1 + "1" + AnoNomina1 + ".NOM" For Random As 39 Len = Len(nomina)
+capnom.frm | Línea 3229 | Get 39, regtro, nomina
+capnom.frm | Línea 3268 | Get #2, regtro, personal
+capnom.frm | Línea 3310 | Put 14, regtro, nom_com
+capnom.frm | Línea 3318 | Put 14, regtro, nom_com
+capnom.frm | Línea 3392 | Put 2, regtro, personal
+capnom.frm | Línea 3476 | Get 12, regtro, Clbnx
+capnom.frm | Línea 3660 | Get 12, regtro, Clbnx
+capnom.frm | Línea 3734 | Open Arch$ For Random As 6 Len = Len(nomina)
+capnom.frm | Línea 3743 | Put 6, f, nomina
+capnom.frm | Línea 3750 | Get #6, regtro, nomina
+capnom.frm | Línea 3752 | Put 6, regtro, nomina
+capnom.frm | Línea 3785 | Get #2, regtro, personal
+capnom.frm | Línea 3907 | Get 14, rgtro, nom_com
+capnom.frm | Línea 3926 | Get 14, rgtro, nom_com
+capnom.frm | Línea 4051 | Open ArchAnterior For Random As 95 Len = Len(nominaAnterior)
+capnom.frm | Línea 4077 | Open Arch$ For Random As 6 Len = Len(nomina)
+capnom.frm | Línea 4080 | Open Arch1 For Random As 14 Len = Len(nom_com)
+capnom.frm | Línea 4081 | Open "bnxcla.dno" For Random As 12 Len = Len(Clbnx)
+capnom.frm | Línea 4103 | Get #6, r, nomina
+capnom.frm | Línea 4104 | Get #2, r, personal
+capnom.frm | Línea 4105 | Get #8, r, maestro
+capnom.frm | Línea 4106 | Get #14, r, nom_com
+capnom.frm | Línea 4168 | Open "Empcomp.dno" For Random As 13 Len = Len(Dat_ide)
+capnom.frm | Línea 4169 | Get 13, 1, Dat_ide
+capnom.frm | Línea 4177 | Get #8, r, maestro
+capnom.frm | Línea 4295 | Get #6, r, nomina
+capnom.frm | Línea 4296 | Get #2, r, personal
+capnom.frm | Línea 4297 | Get #8, r, maestro
+capnom.frm | Línea 4298 | Get #14, r, nom_com
+capnom.frm | Línea 4352 | Open "Empcomp.dno" For Random As 13 Len = Len(Dat_ide)
+capnom.frm | Línea 4353 | Get 13, 1, Dat_ide
+capnom.frm | Línea 4359 | Get #8, r, maestro
+capnom.frm | Línea 4395 | Put 14, g, nom_com
+capnom.frm | Línea 4616 | Get 4, 1, subsidio
+capnom.frm | Línea 4618 | Get 3, i, articulo
+capnom.frm | Línea 4655 | Put 14, regtro, nom_com
+capnom.frm | Línea 4666 | Get 35, regtro, nomina: Get 36, regtro, nom_com
+capnom.frm | Línea 4681 | Get 3, i, articulo
+CG.frm | Línea 120 | Get 8, Apl1.TextMatrix(Apl1.Row, 0), maestro
+CG.frm | Línea 330 | Get 2, regtro, personal
+CG.frm | Línea 334 | Get 8, regtro, maestro
+CG.frm | Línea 342 | Put 8, regtro, maestro
+CG.frm | Línea 367 | Get 8, regtro, maestro
+CnvNom.frm | Línea 126 | Open DialogoAbrir.FileName For Random As 7 Len = Len(NxF)
+CnvNom.frm | Línea 133 | Get 2, NxF.Empleado, personal
+CREDITO.frm | Línea 107 | Put #5, i, credito
+CREDITO.frm | Línea 140 | Open SubT_Mes + "TABLA.CRE" For Random As #5 Len = Len(credito)
+CREDITO.frm | Línea 142 | Open arch_tr For Random As #5 Len = Len(credito)
+CREDITO.frm | Línea 177 | Get #5, r, credito
+empresa.frm | Línea 14 | Name            =   "MS Sans Serif"
+empresa.frm | Línea 31 | Name            =   "Arial"
+empresa.frm | Línea 47 | Name            =   "MS Sans Serif"
+empresa.frm | Línea 63 | Name            =   "MS Sans Serif"
+empresa.frm | Línea 79 | Name            =   "Arial"
+empresa.frm | Línea 95 | Name            =   "MS Sans Serif"
+empresa.frm | Línea 113 | Name            =   "Arial"
+empresa.frm | Línea 131 | Name            =   "Arial"
+empresa.frm | Línea 149 | Name            =   "Arial"
+empresa.frm | Línea 167 | Name            =   "Arial"
+empresa.frm | Línea 185 | Name            =   "Arial"
+empresa.frm | Línea 219 | Get 1, cm, empresa
+empresa.frm | Línea 239 | Open "EMPRESA.dno" For Random As 1 Len = Len(empresa)
+empresa.frm | Línea 243 | Put 1, cm, empresa
+EstadisticasPersonal.frm | Línea 35 | Open "PerOtre.dno" For Random As #3 Len = Len(registro)
+EstadisticasPersonal.frm | Línea 47 | Get #3, i, registro
+Form19.frm | Línea 22 | Name            =   "Ebrima"
+Form19.frm | Línea 39 | Name            =   "Ebrima"
+Form19.frm | Línea 56 | Name            =   "Ebrima"
+Form19.frm | Línea 73 | Name            =   "Ebrima"
+Form19.frm | Línea 90 | Name            =   "Ebrima"
+Form19.frm | Línea 107 | Name            =   "Ebrima"
+Form19.frm | Línea 124 | Name            =   "Ebrima"
+Form19.frm | Línea 141 | Name            =   "Ebrima"
+Form2.frm | Línea 10 | Name            =   "Arial"
+Form2.frm | Línea 27 | Name            =   "Arial"
+Form2.frm | Línea 44 | Name            =   "Arial"
+Form2.frm | Línea 133 | Name            =   "Arial"
+Form2.frm | Línea 191 | Name            =   "Arial"
+Form2.frm | Línea 208 | Name            =   "Arial"
+Form2.frm | Línea 225 | Name            =   "Arial"
+Form2.frm | Línea 304 | Name            =   "Arial"
+Form2.frm | Línea 396 | Name            =   "Arial"
+Form2.frm | Línea 473 | Get 2, 1, personal
+Form2.frm | Línea 475 | Get 2, largoPersonal, personal
+Form2.frm | Línea 501 | Open "personal.dno" For Random As 2 Len = Len(personal)
+Form2.frm | Línea 504 | Open "PerOtre.dno" For Random As 3 Len = Len(Otros_Rgtros)
+Form2.frm | Línea 507 | Open "maestro.dno" For Random As 8 Len = Len(maestro)
+Form2.frm | Línea 514 | FileCopy "personal.dno", "personal.bak"
+Form2.frm | Línea 515 | FileCopy "PerOtre.dno", "PerOtre.bak"
+Form2.frm | Línea 517 | If Dir("maestro.dno") <> "" Then FileCopy "maestro.dno", "maestro.bak"
+Form2.frm | Línea 518 | If Dir("Bnxcla.dno") <> "" Then FileCopy "Bnxcla.dno", "Bnxcla.bak"
+Form2.frm | Línea 524 | FileCopy "personal.bak", "personal.dno"
+Form2.frm | Línea 525 | FileCopy "PerOtre.bak", "PerOtre.dno"
+Form2.frm | Línea 527 | If Dir("maestro.bak") <> "" Then FileCopy "maestro.bak", "maestro.dno"
+Form2.frm | Línea 528 | If Dir("Bnxcla.bak") <> "" Then FileCopy "Bnxcla.bak", "Bnxcla.dno"
+Form2.frm | Línea 700 | Get 2, id, personal
+Form2.frm | Línea 701 | Get 3, id, Otros_Rgtros
+Form2.frm | Línea 702 | Get 8, id, maestro
+Form2.frm | Línea 791 | Open (Trim(Dir_imptos) + "Tab08Mes.ISR") For Random As 99 Len = Len(articulo)
+Form2.frm | Línea 796 | Get 99, i, articulo
+Form2.frm | Línea 876 | Get 2, i, personal
+Form2.frm | Línea 934 | Get 2, id, personal
+Form2.frm | Línea 935 | Get 3, id, Otros_Rgtros
+Form2.frm | Línea 936 | Get 8, id, maestro
+Form2.frm | Línea 957 | Put 2, id, personal
+Form2.frm | Línea 958 | Put 3, id, Otros_Rgtros
+Form2.frm | Línea 959 | Put 8, id, maestro
+Form2.frm | Línea 995 | Get 2, i, personalList(i)
+Form2.frm | Línea 999 | Get 3, i, otrosList(i)
+Form2.frm | Línea 1003 | Get 8, i, maestroList(i)
+Form2.frm | Línea 1034 | Open "personal.dno" For Output As #2
+Form2.frm | Línea 1035 | Open "PerOtre.dno" For Output As #3
+Form2.frm | Línea 1036 | Open "maestro.dno" For Output As #8
+Form2.frm | Línea 1042 | Open "personal.dno" For Random As 2 Len = Len(personal)
+Form2.frm | Línea 1043 | Open "PerOtre.dno" For Random As 3 Len = Len(Otros_Rgtros)
+Form2.frm | Línea 1044 | Open "maestro.dno" For Random As 8 Len = Len(maestro)
+Form2.frm | Línea 1047 | Put 2, i, personalList(i)
+Form2.frm | Línea 1051 | Put 3, i, otrosList(i)
+Form2.frm | Línea 1055 | Put 8, i, maestroList(i)
+Form2.frm | Línea 1078 | Open "Bnxcla.dno" For Random As #4 Len = Len(Clbnx)
+Form2.frm | Línea 1082 | Get #4, idNomina, Clbnx
+Form2.frm | Línea 1098 | Put #4, idNomina, Clbnx
+FormCedulaFiscal.frm | Línea 105 | Name            =   "MS Sans Serif"
+FormCedulaFiscal.frm | Línea 555 | Name            =   "Arial Narrow"
+FormViewer.frm | Línea 88 | Name            =   "Arial"
+FormViewer.frm | Línea 388 | Open rutaBase & "personal.dno" For Random As #2 _
+FormViewer.frm | Línea 451 | Open Arch For Random As #6 Len = Len(nomina)
+FormViewer.frm | Línea 473 | Open Arch1 For Random As #14 Len = Len(nom_com)
+FormViewer.frm | Línea 475 | Open rutaBase & "bnxcla.dno" For Random As #12 _
+FormViewer.frm | Línea 478 | Open rutaBase & "maestro.dno" For Random As #8 _
+FormViewer.frm | Línea 578 | Get #6, r, nomina
+FormViewer.frm | Línea 586 | Get #2, r, personal
+FormViewer.frm | Línea 595 | Get #8, r, maestro
+FormViewer.frm | Línea 605 | Get #14, r, nom_com
+FormViewer.frm | Línea 937 | Get #12, regtro, Clbnx
+FormViewer.frm | Línea 1599 | Open rutaCFDI & "personal.dno" _
+FormViewer.frm | Línea 1604 | Open Arch _
+FormViewer.frm | Línea 1609 | Open rutaCFDI & "maestro.dno" _
+FormViewer.frm | Línea 1614 | Open rutaCFDI & "bnxcla.dno" _
+FormViewer.frm | Línea 1619 | Open Arch1 _
+geneacu.bas | Línea 50 | Get 2, r, acumulado
+geneacu.bas | Línea 51 | Get 1, r, nomina
+geneacu.bas | Línea 87 | Put #2, r, acumulado
+geneacu.bas | Línea 95 | Get 2, r, acumulado
+geneacu.bas | Línea 114 | Put 2, r, acumulado
+ModuloAbril.bas | Línea 11 | Get 2, NumerodePersonal, personal:
+ModuloAbril.bas | Línea 15 | Get 7, NumerodePersonal, Empleado_1
+NOMCAP.frm | Línea 163 | Open "DatCFDI.dno" For Random As 7 Len = Len(DATcf)
+NOMCAP.frm | Línea 171 | Get 7, (I_7 + 1), DATcf
+NOMCAP.frm | Línea 302 | Open "EMP_CFDI.DNO" For Random As 10 Len = Len(EmpCFDI)
+NOMCAP.frm | Línea 303 | Open "Perscfdi.dno" For Random As 7 Len = Len(Empleado_1)
+NOMCAP.frm | Línea 304 | Open "PerOtre.dno" For Random As 9 Len = Len(Otros_Rgtros)
+NOMCAP.frm | Línea 306 | Get 10, 1, EmpCFDI
+NOMCAP.frm | Línea 346 | Put 10, 1, EmpCFDI
+NOMCAP.frm | Línea 366 | Get 10, 1, EmpCFDI: EmpCFDI.Folio = Folio
+NOMCAP.frm | Línea 367 | Put 10, 1, EmpCFDI
+NOMCAP.frm | Línea 694 | Get 2, NumerodePersonal, personal:
+NOMCAP.frm | Línea 698 | Get 7, NumerodePersonal, Empleado_1
+NOMCAP.frm | Línea 791 | Get 9, NumerodePersonal, Otros_Rgtros
+NOMCAP.frm | Línea 1428 | Open "C:\salarioDI\Archivo.cg" For Random As 19 Len = Len(salarioDI)
+NOMCAP.frm | Línea 1430 | Get 19, f, salarioDI
+NomCf.frm | Línea 56 | Open "DatCFDI.dno" For Random As 7 Len = Len(DATcf)
+NomCf.frm | Línea 79 | Open "EMP_CFDI.DNO" For Random As 10 Len = Len(EmpCFDI)
+NomCf.frm | Línea 80 | Get 10, 1, EmpCFDI
+NomCf.frm | Línea 81 | Open "Perscfdi.dno" For Random As 7 Len = Len(Empleado_1)
+NomCf.frm | Línea 82 | Open "PerOtre.dno" For Random As 9 Len = Len(Otros_Rgtros)
+NomCf.frm | Línea 97 | Put 10, 1, EmpCFDI
+NomCf.frm | Línea 115 | Get 9, NumerodePersonal, Otros_Rgtros
+NomCf.frm | Línea 116 | Get 2, NumerodePersonal, personal
+NomCf.frm | Línea 117 | Get 7, NumerodePersonal, Empleado_1
+NomCf.frm | Línea 261 | Get 10, 1, EmpCFDI: EmpCFDI.Folio = Folio: Put 10, 1, EmpCFDI
+NOMCF3.frm | Línea 56 | Open "DatCFDI.dno" For Random As 7 Len = Len(DATcf)
+NOMCF3.frm | Línea 131 | Open "EMP_CFDI.DNO" For Random As 10 Len = Len(EmpCFDI)
+NOMCF3.frm | Línea 132 | Get 10, 1, EmpCFDI
+NOMCF3.frm | Línea 133 | Open "Perscfdi.dno" For Random As 7 Len = Len(Empleado_1)
+NOMCF3.frm | Línea 134 | Open "PerOtre.dno" For Random As 9 Len = Len(Otros_Rgtros)
+NOMCF3.frm | Línea 149 | Put 10, 1, EmpCFDI
+NOMCF3.frm | Línea 169 | Get 2, NumerodePersonal, personal:
+NOMCF3.frm | Línea 173 | Get 7, NumerodePersonal, Empleado_1
+NOMCF3.frm | Línea 221 | Get 9, NumerodePersonal, Otros_Rgtros
+NOMCF3.frm | Línea 263 | Get 10, 1, EmpCFDI: EmpCFDI.Folio = Folio: Put 10, 1, EmpCFDI
+nomedi.frm | Línea 202 | Open "personal.dno" For Random As 1 Len = Len(personal)
+nomedi.frm | Línea 203 | Get 1, rgtro, personal
+nomedi.frm | Línea 205 | Open "PerOtre.dno" For Random As 3 Len = Len(Otros_Rgtros)
+nomedi.frm | Línea 206 | Get 3, rgtro, Otros_Rgtros
+nomedi.frm | Línea 213 | Put 1, rgtro, personal
+nomedi.frm | Línea 216 | Put 3, rgtro, Otros_Rgtros
+nomedi.frm | Línea 219 | Put 1, rgtro, personal
+nomedi.frm | Línea 249 | Put 1, rgtro, personal
+nomedi.frm | Línea 280 | Put 1, rgtro, personal
+nomedi.frm | Línea 299 | Put 1, rgtro, personal
+nomedi.frm | Línea 317 | Put 1, rgtro, personal
+nomedi.frm | Línea 336 | Put 1, rgtro, personal
+nomedi.frm | Línea 512 | Open empFile For Random As #fNum Len = Len(empresa)
+nomedi.frm | Línea 515 | Get #fNum, empRecord, empresa
+nomedi.frm | Línea 528 | Open dbFile For Random As #file2 Len = Len(personal)
+nomedi.frm | Línea 535 | Get #file2, idEmp, personal
+nomedi.frm | Línea 547 | Put #file2, idEmp, personal
+nomedi.frm | Línea 597 | Open "personal.dno" For Random As 2 Len = Len(personal)
+nomedi.frm | Línea 600 | Open "MAESTRO" For Random As 8 Len = Len(maestro)
+nomedi.frm | Línea 614 | Get 2, rgtro, personal
+nomedi.frm | Línea 630 | Open "personal.dno" For Random As 2 Len = Len(personal)
+nomedi.frm | Línea 632 | Open "maestro" For Random As 8 Len = Len(maestro)
+nomedi.frm | Línea 645 | Get 2, r, personal
+nomedi.frm | Línea 731 | Open empFile For Random As #fNum Len = Len(empresa)
+nomedi.frm | Línea 734 | Get #fNum, empRecord, empresa
+nomedi.frm | Línea 795 | Open "personal.dno" For Random As 2 Len = Len(personal)
+nomedi.frm | Línea 798 | Open "PerOtre.dno" For Random As 3 Len = Len(Otros_Rgtros)
+nomedi.frm | Línea 803 | Open "deon.dno" For Random As 15 Len = Len(DEON)
+nomedi.frm | Línea 808 | Get 2, CInt(idNomina), personal
+nomedi.frm | Línea 809 | Get 3, CInt(idNomina), Otros_Rgtros
+nomedi.frm | Línea 815 | Put 2, idNomina, personal
+nomedi.frm | Línea 816 | Put 3, idNomina, Otros_Rgtros
+nomedi.frm | Línea 846 | Get 2, r, personal
+nomedi.frm | Línea 847 | Get 3, r, Otros_Rgtros
+nomedi.frm | Línea 848 | Get 4, r, Clbnx
+nomedi.frm | Línea 908 | Open "personal.dno" For Random As 2 Len = Len(personal)
+nomedi.frm | Línea 909 | Get 2, rgtro, personal
+nomedi.frm | Línea 911 | Open "PerOtre.dno" For Random As 3 Len = Len(Otros_Rgtros)
+nomedi.frm | Línea 1032 | Open empFile For Random As #fNum Len = Len(empresa)
+nomedi.frm | Línea 1035 | Get #fNum, empRecord, empresa
+nomedi.frm | Línea 1094 | Open "personal.dno" For Random As 2 Len = Len(personal)
+nomedi.frm | Línea 1097 | Open "PerOtre.dno" For Random As 3 Len = Len(Otros_Rgtros)
+nomedi.frm | Línea 1100 | Open "Bnxcla.dno" For Random As 4 Len = Len(Clbnx)
+nomedi.frm | Línea 1102 | Open "deon.dno" For Random As 15 Len = Len(DEON)
+nomedi.frm | Línea 1107 | Get 2, CInt(idNomina), personal
+nomedi.frm | Línea 1108 | Get 3, CInt(idNomina), Otros_Rgtros
+nomedi.frm | Línea 1114 | Put 2, idNomina, personal
+nomedi.frm | Línea 1115 | Put 3, idNomina, Otros_Rgtros
+nomedi.frm | Línea 1128 | Open "personal.dno" For Random As 2 Len = Len(personal)
+nomedi.frm | Línea 1130 | Open "PerOtre.dno" For Random As 3 Len = Len(Otros_Rgtros)
+nomedi.frm | Línea 1132 | Open "Bnxcla.dno" For Random As 4 Len = Len(Clbnx)
+nomedi.frm | Línea 1133 | Open "deon.dno" For Random As 15 Len = Len(DEON)
+nomedi.frm | Línea 1141 | Put 3, r, Otros_Rgtros
+nomedi.frm | Línea 1177 | Put 2, r, personal
+nomedi.frm | Línea 1237 | Open filePath For Random As #99 Len = Len(articulo)
+nomedi.frm | Línea 1243 | Get #99, j, articulo
+nomedi.frm | Línea 1312 | FileCopy "personal.dno", "personal.bak"
+nomedi.frm | Línea 1313 | FileCopy "PerOtre.dno", "PerOtre.bak"
+nomedi.frm | Línea 1314 | If Dir("Bnxcla.dno") <> "" Then FileCopy "Bnxcla.dno", "Bnxcla.bak"
+nomedi.frm | Línea 1315 | If Dir("deon.dno") <> "" Then FileCopy "deon.dno", "deon.bak"
+nomedi.frm | Línea 1320 | FileCopy "personal.bak", "personal.dno"
+nomedi.frm | Línea 1321 | FileCopy "PerOtre.bak", "PerOtre.dno"
+nomedi.frm | Línea 1322 | If Dir("Bnxcla.bak") <> "" Then FileCopy "Bnxcla.bak", "Bnxcla.dno"
+nomedi.frm | Línea 1323 | If Dir("deon.bak") <> "" Then FileCopy "deon.bak", "deon.dno"
+nomedi.frm | Línea 1342 | Open "personal.dno" For Random As 2 Len = Len(personal)
+nomedi.frm | Línea 1344 | Open "PerOtre.dno" For Random As 3 Len = Len(Otros_Rgtros)
+nomedi.frm | Línea 1346 | Open "Bnxcla.dno" For Random As 4 Len = Len(Clbnx)   ' <- estaba comentada; sin esto, Get/Put 4 fallan
+nomedi.frm | Línea 1347 | Open "deon.dno" For Random As 15 Len = Len(DEON)
+nomedi.frm | Línea 1355 | Put 3, r, Otros_Rgtros
+Nomina.frm | Línea 10 | Name            =   "Arial"
+Nomina.frm | Línea 49 | Name            =   "MS Sans Serif"
+Nomina.frm | Línea 66 | Name            =   "MS Sans Serif"
+Nomina.frm | Línea 85 | Name            =   "MS Sans Serif"
+Nomina.frm | Línea 103 | Name            =   "MS Sans Serif"
+Nomina.frm | Línea 120 | Name            =   "MS Sans Serif"
+Nomina.frm | Línea 138 | Name            =   "Arial"
+Nomina.frm | Línea 155 | Name            =   "Arial"
+Nomina.frm | Línea 172 | Name            =   "Arial"
+Nomina.frm | Línea 396 | Open DIR_CALC For Input As #9
+Nomina.frm | Línea 437 | Open DIR_CALC For Output As 9
+Nomina.frm | Línea 463 | Open AbreEmpr For Random As #1 Len = Len(empresa)
+Nomina.frm | Línea 468 | Get #1, cm, empresa
+Nomina.frm | Línea 590 | Open "C:\GconTA\perma.dno" For Random As #7 Len = Len(basico)
+Nomina.frm | Línea 595 | Put #7, 1, basico
+Nomina.frm | Línea 734 | Open "personal.dno" For Random As 2 Len = Len(personal)
+PeCfdi.frm | Línea 301 | Open "personal.dno" For Random As 2 Len = Len(personal)
+PeCfdi.frm | Línea 304 | Open "Perscfdi.dno" For Random As 1 Len = Len(Empleado_1)
+PeCfdi.frm | Línea 309 | Get 1, CInt(idNomina), Empleado_1
+PeCfdi.frm | Línea 319 | Put 1, idNomina, Empleado_1
+PeCfdi.frm | Línea 336 | Open "Personal.dno" For Random As 2 Len = Len(personal)
+PeCfdi.frm | Línea 339 | Open "Perscfdi.dno" For Random As 1 Len = Len(Empleado_1)
+PeCfdi.frm | Línea 342 | Get 2, i, personal
+PeCfdi.frm | Línea 343 | Get 1, i, Empleado_1
+PeCfdi.frm | Línea 362 | Open "Perscfdi.dno" For Random As 1 Len = Len(Empleado_1)
+PeCfdi.frm | Línea 376 | Put 1, EmpNum, Empleado_1
+percepdeduc.bas | Línea 113 | Get 14, GridOrigen.TextMatrix(I7, 0), nom_com
+percom.bas | Línea 100 | name As String * 60
+percom.bas | Línea 307 | Open "C:\GconTA\perma.dno" For Random As #7 Len = Len(basico)
+percom.bas | Línea 311 | Get 7, 1, basico
+percom.bas | Línea 320 | Open "C:\GconTA\perma.dno" For Random As #7 Len = Len(basico)
+percom.bas | Línea 324 | Get 7, 2, basico
+percom.bas | Línea 338 | Open "AcuNom2.dno" For Random As 10 Len = Len(ArAcum)
+percom.bas | Línea 343 | Get 10, rgtro, ArAcum
+percom.bas | Línea 447 | Open "AcuNom1.dno" For Random As 10 Len = Len(ArAcum)
+percom.bas | Línea 454 | Get 10, reg, ArAcum
+percom.bas | Línea 486 | Open "AcuNom2.dno" For Random As 10 Len = Len(ArAcum)
+percom.bas | Línea 488 | Get 10, reg, ArAcum
+percom.bas | Línea 502 | Open (Trim(Dir_imptos) + "ISR177.03") For Random As #3 Len = Len(articulo)
+percom.bas | Línea 504 | Open (Trim(Dir_imptos) + "SUB178.03") For Random As #4 Len = Len(subsidio)
+percom.bas | Línea 506 | Open (Trim(Dir_imptos) + "CRE116.03") For Random As #5 Len = Len(credito)
+percom.bas | Línea 575 | Put 14, regtro, nom_com
+percom.bas | Línea 584 | Open (Dir_imptos + "TABLA.ISR") For Random As #3 Len = Len(articulo)
+percom.bas | Línea 586 | Open (Dir_imptos + "TABLA.SUB") For Random As #4 Len = Len(subsidio)
+percom.bas | Línea 588 | Open (Dir_imptos + "TABLA.CRE") For Random As #5 Len = Len(credito)
+percom.bas | Línea 634 | Open (Trim(Dir_imptos) + "Tab08Kin.ISR") For Random As #3 Len = Len(articulo)
+percom.bas | Línea 636 | Open (Trim(Dir_imptos) + "Tab08Kin.SUB") For Random As #4 Len = Len(subsidio)
+percom.bas | Línea 640 | Get 3, i, articulo
+percom.bas | Línea 651 | Get 4, i, subsidio
+percom.bas | Línea 669 | Put 14, regtro, nom_com
+percom.bas | Línea 676 | Open CStr(Trim(Form1.Dir1)) + "\" + mesNomina + "1" + A�oNomina + ".NOM" For Random As 35 Len = Len(nomina)
+percom.bas | Línea 677 | Get 35, regtro, nomina
+percom.bas | Línea 681 | Open CStr(Trim(Form1.Dir1)) + "\" + mesNomina + "1" + A�oNomina + ".cmp" For Random As 36 Len = Len(nom_com)
+percom.bas | Línea 682 | Get 36, regtro, nom_com
+percom.bas | Línea 686 | Open (Trim(Dir_imptos) + "Tab08Mes.ISR") For Random As #3 Len = Len(articulo)
+percom.bas | Línea 688 | Open (Trim(Dir_imptos) + "Tab08Mes.SUB") For Random As #4 Len = Len(subsidio)
+percom.bas | Línea 694 | Get 3, i, articulo
+percom.bas | Línea 705 | Get 4, i, subsidio
+percom.bas | Línea 723 | Put 14, regtro, nom_com
+percom.bas | Línea 771 | Put #2, rgtro, personal 'Guarda el registro si se captura una nomina normal
+percom.bas | Línea 826 | Open (Dir_imptos + "TABLA.ISR") For Random As #3 Len = Len(articulo)
+percom.bas | Línea 828 | Open (Dir_imptos + "TABLA.SUB") For Random As #4 Len = Len(subsidio)
+percom.bas | Línea 830 | Open (Dir_imptos + "TABLA.CRE") For Random As #5 Len = Len(credito)
+percom.bas | Línea 877 | Open (Dir_imptos + "Tab08Mes.ISR") For Random As #3 Len = Len(articulo)
+percom.bas | Línea 879 | Open (Dir_imptos + "Tab08Mes.SUB") For Random As #4 Len = Len(subsidio)
+percom.bas | Línea 910 | Put 14, regtro, nom_com
+percom.bas | Línea 978 | Open "c:\Users\david.albino\Desktop\debug_antiguedad.txt" For Append As fNum
+Repre.frm | Línea 34 | Name            =   "MS Sans Serif"
+Repre.frm | Línea 123 | Name            =   "MS Sans Serif"
+Repre.frm | Línea 141 | Name            =   "MS Sans Serif"
+Repre.frm | Línea 159 | Name            =   "Arial Narrow"
+Repre.frm | Línea 177 | Name            =   "Arial Narrow"
+Repre.frm | Línea 194 | Name            =   "Arial Narrow"
+Repre.frm | Línea 212 | Name            =   "Arial Narrow"
+Repre.frm | Línea 230 | Name            =   "Arial Narrow"
+Repre.frm | Línea 295 | Open "Empcomp.dno" For Random As 11 Len = Len(Dat_ide)
+Repre.frm | Línea 309 | Put 11, 1, Dat_ide
+Repre.frm | Línea 310 | Put 10, 1, EmpCFDI
+Repre.frm | Línea 316 | Open "EMP_CFDI.DNO" For Random As 10 Len = Len(EmpCFDI)
+Repre.frm | Línea 317 | Open "Empcomp.dno" For Random As 13 Len = Len(Dat_ide)
+Repre.frm | Línea 318 | Get 13, 1, Dat_ide
+Repre.frm | Línea 319 | Get 10, 1, EmpCFDI
+susidio..frm | Línea 135 | Put #4, i, subsidio
+susidio..frm | Línea 257 | Open SubT_Mes + "TABLA.SUB" For Random As #4 Len = Len(subsidio)
+susidio..frm | Línea 263 | Open SubT_Mes + "Tab08Mes.SUB" For Random As #4 Len = Len(subsidio)
+susidio..frm | Línea 267 | Open SubT_Mes + "Tab08kin.SUB" For Random As #4 Len = Len(subsidio)
+susidio..frm | Línea 271 | Open SubT_Mes + "Tab08Sem.SUB" For Random As #4 Len = Len(subsidio)
+susidio..frm | Línea 311 | Get #4, r, subsidio
+TREXC.frm | Línea 366 | Open Path_Txt For Output As #Free_File

@@ -1,0 +1,50 @@
+﻿
+
+========== LLAMADAS A FORM8.MAIN ==========
+
+========== EVENTOS DE GUARDADO ==========
+capnom.frm:998: Private Sub nomcap_ini_Click(Index As Integer)
+capnom.frm:3830: Private Sub archnom_Click(Index As Integer)
+capnom.frm:3866: Private Sub cap_act_Click(Index As Integer)
+
+========== LECTURAS Y ESCRITURAS ARCHIVOS 6 Y 14 ==========
+capnom.frm:1577: Get 14, rgtro, nom_com
+capnom.frm:2412: Get 14, regtro, nom_com
+capnom.frm:3412: Put 14, regtro, nom_com
+capnom.frm:3420: Put 14, regtro, nom_com
+capnom.frm:3835: Close 6:: Dm = LOF(2) / Len(personal)
+capnom.frm:3845: Put 6, f, nomina
+capnom.frm:3852: Get #6, regtro, nomina
+capnom.frm:3854: Put 6, regtro, nomina
+capnom.frm:4009: Get 14, rgtro, nom_com
+capnom.frm:4028: Get 14, rgtro, nom_com
+capnom.frm:4175: Close 6
+capnom.frm:4177: Close 14
+capnom.frm:4205: Get #6, r, nomina
+capnom.frm:4208: Get #14, r, nom_com
+capnom.frm:4375: Close 6: Open Arch$ For Random As 6 Len = Len(nomina): nm = LOF(6) / Len(nomina)
+capnom.frm:4376: Close 14: Open Arch1 For Random As 14 Len = Len(nom_com)
+capnom.frm:4397: Get #6, r, nomina
+capnom.frm:4400: Get #14, r, nom_com
+capnom.frm:4493: For g = 1 To fi_nm: Get 14, g, nom_com
+capnom.frm:4497: Put 14, g, nom_com
+capnom.frm:4757: Put 14, regtro, nom_com
+FormViewer.frm:614: Get #6, r, nomina
+FormViewer.frm:641: Get #14, r, nom_com
+FormViewer.frm:1601: Close #6
+FormViewer.frm:1604: Close #14
+FormViewer.frm:1624: Close #6
+FormViewer.frm:1627: Close #14
+FormViewer.frm:1674: Close #6
+FormViewer.frm:1677: Close #14
+percepdeduc.bas:113: Get 14, GridOrigen.TextMatrix(I7, 0), nom_com
+percom.bas:575: Put 14, regtro, nom_com
+percom.bas:669: Put 14, regtro, nom_com
+percom.bas:723: Put 14, regtro, nom_com
+percom.bas:910: Put 14, regtro, nom_com
+
+========== LLAMADAS A GENERARNOMINAS ==========
+capnom.frm:1182: ' generarNominas usa nombres relativos.
+capnom.frm:1218: generarNominas
+capnom.frm:4125: generarNominas
+capnom.frm:4128: Private Sub generarNominas()

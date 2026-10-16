@@ -1,0 +1,431 @@
+﻿
+
+========== capnom.frm: 995-1140 ==========
+  995: sale8:
+  996: End Sub
+  997: 
+  998: Private Sub nomcap_ini_Click(Index As Integer)
+  999:     Dim Arch As String
+ 1000:     Dim locked As Boolean
+ 1001:     Dim fullArchPath As String
+ 1002:     Dim fso As Object
+ 1003:     Dim lockDate As Date
+ 1004:     Dim modDate As Date
+ 1005:     
+ 1006:         ' =======================================================
+ 1007:     ' 1. CONSTRUIR EL NOMBRE DEL ARCHIVO
+ 1008:     ' =======================================================
+ 1009:     
+ 1010:     If Option1.Value = True Then
+ 1011:     
+ 1012:         ' ---------------------------------------------------
+ 1013:         ' NÓMINA NORMAL
+ 1014:         ' ---------------------------------------------------
+ 1015:         
+ 1016:         If Option3.Value = True Then
+ 1017:             ' Primera quincena
+ 1018:             Arch = UCase$(Mid$(Combo1.Text, 1, 3)) & "1" & LTrim$(Str$(empresa.ao)) & ".NOM"
+ 1019:         ElseIf Option4.Value = True Then
+ 1020:             ' Segunda quincena
+ 1021:             Arch = UCase$(Mid$(Combo1.Text, 1, 3)) & "2" & LTrim$(Str$(empresa.ao)) & ".NOM"
+ 1022:         Else
+ 1023:             MsgBox "Seleccione Primera o Segunda quincena.", vbExclamation, "Nómina"
+ 1024:             Exit Sub
+ 1025:         End If
+ 1026:     ElseIf Option2.Value = True Then
+ 1027:         ' ---------------------------------------------------
+ 1028:         ' NÓMINA ESPECIAL
+ 1029:         ' ---------------------------------------------------
+ 1030:     
+ 1031:         ActualizarNombreEspecial
+ 1032:         If Len(Trim$(Text1.Text)) = 0 Then
+ 1033:             MsgBox "Seleccione el tipo de nómina especial " & "(Aguinaldo, PTU, Bono, Finiquito o Liquidación).", vbExclamation, "Nómina"
+ 1034:             Exit Sub
+ 1035:         End If
+ 1036:         Arch = Trim$(Text1.Text) & ".NOM"
+ 1037:     Else
+ 1038:         MsgBox "Seleccione el tipo de nómina que desea capturar.", vbExclamation, "Nómina"
+ 1039:         Exit Sub
+ 1040:     End If
+ 1041: 
+ 1042:     ' =======================================================
+ 1043:     ' 2. CLASIFICAR EL TIPO DE NÓMINA E INICIALIZAR COLUMNAS
+ 1044:     ' =======================================================
+ 1045: 
+ 1046:     AplicarTipoNomina Arch
+ 1047:     
+ 1048:     Debug.Print "Archivo: "; Arch
+ 1049:     Debug.Print "Tipo: "; g_TipoNominaActiva
+ 1050:     Debug.Print "C_OTRAS: "; C_OTRAS
+ 1051:     Debug.Print "C_EXENTA: "; C_EXENTA
+ 1052:     Debug.Print "C_TOTING: "; C_TOTING
+ 1053:     Debug.Print "C_ISPT: "; C_ISPT
+ 1054:     Debug.Print "C_NETO: "; C_NETO
+ 1055: 
+ 1056:     ' =======================================================
+ 1057:     ' 3. COMPROBAR SI EL ARCHIVO ESTÁ BLOQUEADO
+ 1058:     ' =======================================================
+ 1059: 
+ 1060:     locked = False
+ 1061: 
+ 1062:     On Error Resume Next
+ 1063: 
+ 1064:     Set fso = CreateObject("Scripting.FileSystemObject")
+ 1065: 
+ 1066:     fullArchPath = CStr(Trim$(Form1.Dir1)) & "\" & Arch
+ 1067: 
+ 1068:     If Not fso Is Nothing Then
+ 1069:         If fso.FileExists(fullArchPath) Then
+ 1070: 
+ 1071:             If Option1.Value = True Then
+ 1072:                 ' Nómina normal: conservar las reglas por quincena.
+ 1073: 
+ 1074:                 If Option3.Value = True Then
+ 1075:                     ' Primera quincena
+ 1076:                     lockDate = DateSerial( _
+ 1077:                         empresa.ao, Combo1.ListIndex + 1, 19)
+ 1078:                 Else
+ 1079:                     ' Segunda quincena
+ 1080:                     lockDate = DateSerial( _
+ 1081:                         empresa.ao, Combo1.ListIndex + 2, 4)
+ 1082:                 End If
+ 1083: 
+ 1084:                 If Date > lockDate Then
+ 1085:                     locked = True
+ 1086:                 End If
+ 1087: 
+ 1088:             Else
+ 1089:                 ' Nómina especial: conservar el plazo de 10 días.
+ 1090: 
+ 1091:                 modDate = FileDateTime(fullArchPath)
+ 1092: 
+ 1093:                 If Date > modDate + 10 Then
+ 1094:                     locked = True
+ 1095:                 End If
+ 1096: 
+ 1097:             End If
+ 1098:         End If
+ 1099:     End If
+ 1100: 
+ 1101:     On Error GoTo 0
+ 1102: 
+ 1103:     Set fso = Nothing
+ 1104: 
+ 1105:     ' =======================================================
+ 1106:     ' 4. ABRIR EL VISUALIZADOR SI EL ARCHIVO ESTÁ BLOQUEADO
+ 1107:     ' =======================================================
+ 1108: 
+ 1109:     If locked Then
+ 1110:         MsgBox "El archivo de esta nómina ya fue creado " & _
+ 1111:                "anteriormente y no puede ser modificado " & _
+ 1112:                "por reglas de negocio." & vbCrLf & _
+ 1113:                "Se abrirá en modo de sólo lectura en el Visualizador.", _
+ 1114:                vbInformation, "Nómina Cerrada"
+ 1115: 
+ 1116:         Form8.Hide
+ 1117: 
+ 1118:         Load FormViewer
+ 1119:         FormViewer.Show
+ 1120:         FormViewer.LoadPayroll fullArchPath
+ 1121: 
+ 1122:         Exit Sub
+ 1123:     End If
+ 1124: 
+ 1125:     ' =======================================================
+ 1126:     ' 5. CONTINUAR CON LA CAPTURA
+ 1127:     ' =======================================================
+ 1128: 
+ 1129:     generarNominas
+ 1130:     FuncionImpuesto
+ 1131: 
+ 1132: End Sub
+ 1133: Private Sub ReleaseObjects(o_Excel As Object, o_Libro As Object, o_Hoja As Object)
+ 1134:     If Not o_Excel Is Nothing Then Set o_Excel = Nothing
+ 1135:     If Not o_Libro Is Nothing Then Set o_Libro = Nothing
+ 1136:     If Not o_Hoja Is Nothing Then Set o_Hoja = Nothing
+ 1137: End Sub
+ 1138: 
+ 1139: Public Function Exportar_Excel(sOutputPath As String, FlexGrid As Object) As Boolean
+ 1140:  On Error GoTo Error_Handler
+
+========== capnom.frm: 3690-3765 ==========
+ 3690:     nomina.sueldo = CelCur(f, C_SUELDO)
+ 3691: 
+ 3692:     If g_TipoNominaActiva = tnLiquidacionFiniquito Then
+ 3693:         nomina.viaticos = CelCur(f, C_LQ_SDOVAC)
+ 3694:         nomina.pvac = CelCur(f, C_LQ_PRIMAVAC)
+ 3695:         nomina.aguin = CelCur(f, C_LQ_AGUI)
+ 3696:         nomina.hs_dbl = CelCur(f, C_LQ_ANTIG)
+ 3697:         nomina.hs_nor = CelCur(f, C_LQ_COMPENS)
+ 3698:         nomina.hs_tri = CelCur(f, C_LQ_INDEMN)
+ 3699:         nomina.hsnor = CelCur(f, C_LQ_BONO)
+ 3700:     Else
+ 3701:         nomina.hs_nor = CelCur(f, C_CONC4)
+ 3702:         If N_ormal = 1 Then
+ 3703:             nomina.aguin = CelCur(f, C_CONC5)
+ 3704:         Else
+ 3705:             nomina.hs_dbl = CelCur(f, C_CONC5)
+ 3706:         End If
+ 3707:         If N_ormal = 1 Then
+ 3708:             nomina.ptu = CelCur(f, C_CONC6)
+ 3709:         Else
+ 3710:             nomina.hs_tri = CelCur(f, C_CONC6)
+ 3711:         End If
+ 3712:         nomina.viaticos = CelCur(f, C_CONC7)
+ 3713:         nomina.pvac = CelCur(f, C_CONC8)
+ 3714:     End If
+ 3715: 
+ 3716:     nomina.otras = CelCur(f, C_OTRAS)
+ 3717:     nomina.exentos = CelCur(f, C_EXENTA)
+ 3718: 
+ 3719:     nomina.ispt = CelCur(f, C_ISPT)
+ 3720:     nomina.crdsal = CelCur(f, C_SUBEMP)
+ 3721:     nomina.imss = CelCur(f, C_IMSS)
+ 3722:     nomina.prestamos = CelCur(f, C_PRESTAMOS)
+ 3723:     nomina.fonacot = CelCur(f, C_FONACOT)
+ 3724:     nomina.telefono = CelCur(f, C_PENSION)
+ 3725:     nomina.otraded = CelCur(f, C_INFONAVIT)
+ 3726: End Sub
+ 3727: 
+ 3728: Private Sub archnom_Click(Index As Integer)
+ 3729:     Dim f As Long
+ 3730:     Dim colanti As Long, renati As Long
+ 3731: 
+ 3732:     Text4.Text = ""
+ 3733:     Close 6:: Dm = LOF(2) / Len(personal)
+ 3734:     Open Arch$ For Random As 6 Len = Len(nomina)
+ 3735:     nm = LOF(6) / Len(nomina)
+ 3736: 
+ 3737:     colanti = ConNom1.Col
+ 3738:     renati = ConNom1.Row
+ 3739: 
+ 3740:     ' 1) Dejar en ceros todos los registros del archivo
+ 3741:     LimpiaNomina
+ 3742:     For f = 1 To Dm
+ 3743:         Put 6, f, nomina
+ 3744:     Next f
+ 3745: 
+ 3746:     ' 2) Guardar cada renglon de la grilla en su registro
+ 3747:     For f = 1 To limite
+ 3748:         regtro = Val(ConNom1.TextMatrix(f, C_NUM))
+ 3749:         If regtro > 0 Then
+ 3750:             Get #6, regtro, nomina
+ 3751:             GridANomina f
+ 3752:             Put 6, regtro, nomina
+ 3753:         End If
+ 3754:     Next f
+ 3755: 
+ 3756:     archiva_o = 0
+ 3757:     ConNom1.Col = colanti
+ 3758:     ConNom1.Row = renati
+ 3759:     ConNom1.SetFocus
+ 3760: 
+ 3761:     MsgBox ("Archivada con exito!")
+ 3762: End Sub
+ 3763: 
+ 3764: Private Sub cap_act_Click(Index As Integer)
+ 3765:     sumavert
+
+========== capnom.frm: 3990-4100 ==========
+ 3990:                 checar
+ 3991:             Case vbKeyF2
+ 3992:                 Text2.Text = ConNom1.Text
+ 3993:                 Text2.SetFocus
+ 3994:        End Select
+ 3995: End Sub
+ 3996: 
+ 3997: Private Sub ConNom1_KeyPress(KeyAscii As Integer)
+ 3998:          If IsNumeric(ConNom1.Text) Then
+ 3999:             Nu_mero = ConNom1.Text
+ 4000:             valcelant = Nu_mero
+ 4001:             Else
+ 4002:             valcelant = ConNom1.Text
+ 4003:          End If
+ 4004:          If KeyAscii <> 13 Then
+ 4005:             Text2.Text = Chr$(KeyAscii)
+ 4006:             Text2.SetFocus
+ 4007:          End If
+ 4008: End Sub
+ 4009: 
+ 4010: Private Sub ConNom1_LeaveCell()
+ 4011:    If ConNom1.Col > 1 And ConNom1.Row > 0 Then
+ 4012:          ConNom1.CellBackColor = vbWhite
+ 4013:    End If
+ 4014: End Sub
+ 4015: 
+ 4016: Private Sub ConNom1_RowColChange()
+ 4017:         Text2.Text = ConNom1.Text
+ 4018: End Sub
+ 4019: 
+ 4020: 
+ 4021: Public Sub main()
+ 4022:     ' Funcion que viene desde el form1
+ 4023:     generarNominas
+ 4024: End Sub
+ 4025: 
+ 4026: Private Sub generarNominas()
+ 4027:     ProgressBar1.Visible = True
+ 4028:     QUIN = 0
+ 4029:   
+ 4030:   ' Si es una Nomina normal
+ 4031:     If Option1 = True Then
+ 4032:         ' Si es Primera quincena
+ 4033:         If Option3 = True Then
+ 4034:             QUIN = 1
+ 4035:             Arch$ = UCase(Mid$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".NOM"
+ 4036:             Arch1 = UCase(Mid$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".cmp"
+ 4037:             ReferOper.Mes = (Combo1.ListIndex + 1)
+ 4038:             ReferOper.dia = 15
+ 4039:         Else
+ 4040:         ' si es Segunda Quincena
+ 4041:             QUIN = 2
+ 4042:             Arch$ = UCase(Mid$(Combo1.Text, 1, 3)) + "2" + LTrim$(Str$(empresa.ao)) + ".NOM"
+ 4043:             Arch1 = UCase(Mid$(Combo1.Text, 1, 3)) + "2" + LTrim$(Str$(empresa.ao)) + ".cmp"
+ 4044:             ArchAnterior = UCase(Mid$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".NOM"
+ 4045:             Arch1Anterior = UCase(Mid$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".cmp"
+ 4046:             ReferOper.Mes = (Combo1.ListIndex + 1)
+ 4047:             ReferOper.dia = dd(ReferOper.Mes)
+ 4048:             
+ 4049:             Close 95
+ 4050:     
+ 4051:             Open ArchAnterior For Random As 95 Len = Len(nominaAnterior)
+ 4052:             largoNomina = LOF(95) / Len(nominaAnterior)
+ 4053:     
+ 4054:        End If
+ 4055:     Else ' Si es una nomina especial
+ 4056:         Arch$ = Trim(Text1.Text) + ".NOM"
+ 4057:         Arch1 = Trim(Text1.Text) + ".cmp"
+ 4058:         diat = 0
+ 4059:     End If
+ 4060: 
+ 4061:     Rem *******     NOMBRE DEL ARCHIVO   ********
+ 4062:     ' Modifica el mes para que nunca sea cero
+ 4063:     If meselegido < 0 Then meselegido = 1
+ 4064:     ' Agrega cero a los numeros inferiores a 10
+ 4065:     If meselegido < 10 Then mif$ = LTrim$(Str$(dia_pago)) + "/0" + LTrim$(Str$(meselegido)) + "/" + LTrim$(Str$(empresa.ao))
+ 4066:     ' Emite el nombre de las nomnas antes del mes de octubre
+ 4067:     If meselegido > 9 Then mif$ = LTrim$(Str$(dia_pago)) + "/" + LTrim$(Str$(meselegido)) + "/" + LTrim$(Str$(empresa.ao))
+ 4068:     
+ 4069:     MiFecha = mif$
+ 4070:     checa_fecha MiFecha, 0, 0
+ 4071:     
+ 4072:     ' Abre archivos necesarios para Nomina
+ 4073:     Close 6
+ 4074:     Close 12
+ 4075:     Close 14
+ 4076: 
+ 4077:     Open Arch$ For Random As 6 Len = Len(nomina)
+ 4078:     nm = LOF(6) / Len(nomina)
+ 4079:     
+ 4080:     Open Arch1 For Random As 14 Len = Len(nom_com)
+ 4081:     Open "bnxcla.dno" For Random As 12 Len = Len(Clbnx)
+ 4082:     
+ 4083:     ProgressBar1.Min = 0
+ 4084:     ProgressBar1.Max = Dm
+ 4085:     ProgressBar1.Value = 0
+ 4086:             
+ 4087:     If nm > 0 Then
+ 4088:         If nm < Dm Then
+ 4089:             fi_nm = (Dm)
+ 4090:         Else
+ 4091:             fi_nm = (nm)
+ 4092:         End If
+ 4093:         
+ 4094:         ConNom1.Clear
+ 4095:         
+ 4096:         define
+ 4097: 
+ 4098:         ConNom1.Rows = fi_nm + 2
+ 4099:         limite = 0
+ 4100:         renglon = 0
+
+========== FormViewer.frm: 1580-1640 ==========
+ 1580:     On Error GoTo ErrorAbrir
+ 1581: 
+ 1582:     'La ruta de la nómina se obtiene a partir de Arch
+ 1583:     rutaCFDI = Left$(Arch, InStrRev(Arch, "\"))
+ 1584: 
+ 1585:     'Por seguridad, cerrar primero estos números de archivo
+ 1586:     On Error Resume Next
+ 1587:     Close #2
+ 1588:     Close #6
+ 1589:     Close #8
+ 1590:     Close #12
+ 1591:     Close #14
+ 1592:     On Error GoTo ErrorAbrir
+ 1593: 
+ 1594:     '========================================================
+ 1595:     ' ARCHIVOS QUE NECESITA EL PROCESO CFDI
+ 1596:     '========================================================
+ 1597: 
+ 1598:     'Personal
+ 1599:     Open rutaCFDI & "personal.dno" _
+ 1600:         For Random As #2 _
+ 1601:         Len = Len(personal)
+ 1602: 
+ 1603:     'Nómina que está visualizando FormViewer
+ 1604:     Open Arch _
+ 1605:         For Random As #6 _
+ 1606:         Len = Len(nomina)
+ 1607: 
+ 1608:     'Maestro
+ 1609:     Open rutaCFDI & "maestro.dno" _
+ 1610:         For Random As #8 _
+ 1611:         Len = Len(maestro)
+ 1612: 
+ 1613:     'Bnxcla
+ 1614:     Open rutaCFDI & "bnxcla.dno" _
+ 1615:         For Random As #12 _
+ 1616:         Len = Len(Clbnx)
+ 1617: 
+ 1618:     'Complemento .cmp de la nómina
+ 1619:     Open Arch1 _
+ 1620:         For Random As #14 _
+ 1621:         Len = Len(nom_com)
+ 1622: 
+ 1623:     Exit Sub
+ 1624: 
+ 1625: ErrorAbrir:
+ 1626: 
+ 1627:     MsgBox "No se pudieron abrir los archivos necesarios para generar el CFDI." & vbCrLf & _
+ 1628:            "Error: " & Err.Number & vbCrLf & _
+ 1629:            Err.Description, _
+ 1630:            vbCritical, "CFDI"
+ 1631: 
+ 1632: End Sub
+ 1633: Private Sub CerrarArchivosCFDI()
+ 1634: 
+ 1635:     On Error Resume Next
+ 1636: 
+ 1637:     Close #2
+ 1638:     Close #6
+ 1639:     Close #8
+ 1640:     Close #12
+
+========== percom.bas: 665-690 ==========
+  665:         Else
+  666:             impto = impto
+  667:         End If
+  668:         nom_com.CredNe = 0
+  669:         Put 14, regtro, nom_com
+  670:     End If
+  671:      
+  672:     If Form8.Option4.Value = True Then 'Retencion mensual
+  673:         mesNomina = Trim(Left(Form8.Combo1.Text, 3))
+  674:         Aï¿½oNomina = Right(Trim(Form8.Label7.Caption), 4)
+  675:         Close 35
+  676:         Open CStr(Trim(Form1.Dir1)) + "\" + mesNomina + "1" + Aï¿½oNomina + ".NOM" For Random As 35 Len = Len(nomina)
+  677:         Get 35, regtro, nomina
+  678:         IngresosAnteriores = nomina.sueldo + nomina.hs_nor + nomina.hs_dbl + nomina.hs_tri + nomina.aguin + nomina.ptu + nomina.viaticos + nomina.pvac + nomina.otras '+ nomina.exentos
+  679:         ImpuestoAnteriorRetenido = nomina.ispt
+  680:         Close 35: Close 36
+  681:         Open CStr(Trim(Form1.Dir1)) + "\" + mesNomina + "1" + Aï¿½oNomina + ".cmp" For Random As 36 Len = Len(nom_com)
+  682:         Get 36, regtro, nom_com
+  683:         ImpuestoAnteriorTotal = nom_com.ImpTot
+  684:         subsidioCausado = nom_com.subapl
+  685:         Close 36: Close 3: Close 4: Close 5
+  686:         Open (Trim(Dir_imptos) + "Tab08Mes.ISR") For Random As #3 Len = Len(articulo)
+  687:             Dem = LOF(3) / Len(articulo)
+  688:         Open (Trim(Dir_imptos) + "Tab08Mes.SUB") For Random As #4 Len = Len(subsidio)
+  689:             EM = LOF(4) / Len(subsidio)
+  690:         

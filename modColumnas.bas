@@ -83,4 +83,3 @@ Public Sub AplicarTipoNomina(ByVal nombreArch As String)
     G_TipoNominaProcess = TipoNominaATexto(g_TipoNominaActiva)
     InicializarColumnas g_TipoNominaActiva
 End Sub
-

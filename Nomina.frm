@@ -664,9 +664,7 @@ Private Sub File1_KeyPress(KeyAscii As Integer)
     End If
 
     Me.Hide
-
     FormViewer.Show vbModal
-
     Me.Show
 
     File1.Refresh
@@ -688,9 +686,7 @@ ErrorAbrir:
 
     On Error GoTo 0
 
-    MsgBox "No fue posible abrir la nómina." & vbCrLf & _
-           "Error " & numeroError & ": " & descripcionError, _
-           vbCritical, "Visor de nómina"
+    MsgBox "No fue posible abrir la nómina." & vbCrLf & "Error " & numeroError & ": " & descripcionError, vbCritical, "Visor de nómina"
 End Sub
 
 ' ============================================================

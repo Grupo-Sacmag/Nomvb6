@@ -407,11 +407,11 @@ If N_ormal = 1 Then
                 Else
                 nomina.otras = 0
    End If
-   If Form8.ConNom1.TextMatrix(li, 10) <> "" Then
-                nomina.exentos = Form8.ConNom1.TextMatrix(li, 10)
-                Else
-                nomina.exentos = 0
-   End If
+   If Form8.ConNom1.TextMatrix(li, C_EXENTA) <> "" Then
+        nomina.exentos = Form8.ConNom1.TextMatrix(li, C_EXENTA)
+    Else
+        nomina.exentos = 0
+    End If
 'Stop
 ArAcum.Pdias = ArAcum.Pdias + nomina.dias
 ArAcum.Pnormal = ArAcum.Pnormal + nomina.sueldo

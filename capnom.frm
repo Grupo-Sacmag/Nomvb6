@@ -996,130 +996,240 @@ sale8:
 End Sub
 
 Private Sub nomcap_ini_Click(Index As Integer)
+
+    On Error GoTo ErrorManejador
+
     Dim Arch As String
-    Dim locked As Boolean
     Dim fullArchPath As String
-    Dim fso As Object
-    Dim lockDate As Date
-    Dim modDate As Date
-    
-        ' =======================================================
-    ' 1. CONSTRUIR EL NOMBRE DEL ARCHIVO
-    ' =======================================================
-    
+    Dim rutaNominas As String
+    Dim tamArchivo As Long
+    Dim registrosArchivo As Long
+
+    '=======================================================
+    ' 1. CONSTRUIR EL NOMBRE DE LA NOMINA
+    '=======================================================
+
     If Option1.Value = True Then
-    
-        ' ---------------------------------------------------
-        ' NÓMINA NORMAL
-        ' ---------------------------------------------------
-        
+
+        ' NOMINA NORMAL
+
         If Option3.Value = True Then
-            ' Primera quincena
-            Arch = UCase$(Mid$(Combo1.Text, 1, 3)) & "1" & LTrim$(Str$(empresa.ao)) & ".NOM"
+
+            Arch = UCase$(Mid$(Combo1.Text, 1, 3)) & _
+                   "1" & LTrim$(Str$(empresa.ao)) & ".NOM"
+
         ElseIf Option4.Value = True Then
-            ' Segunda quincena
-            Arch = UCase$(Mid$(Combo1.Text, 1, 3)) & "2" & LTrim$(Str$(empresa.ao)) & ".NOM"
+
+            Arch = UCase$(Mid$(Combo1.Text, 1, 3)) & _
+                   "2" & LTrim$(Str$(empresa.ao)) & ".NOM"
+
         Else
-            MsgBox "Seleccione Primera o Segunda quincena.", vbExclamation, "Nómina"
+
+            MsgBox "Seleccione Primera o Segunda quincena.", _
+                   vbExclamation, "Nomina"
+
             Exit Sub
+
         End If
+
     ElseIf Option2.Value = True Then
-        ' ---------------------------------------------------
-        ' NÓMINA ESPECIAL
-        ' ---------------------------------------------------
-    
-        ActualizarNombreEspecial
-        If Len(Trim$(Text1.Text)) = 0 Then
-            MsgBox "Seleccione el tipo de nómina especial " & "(Aguinaldo, PTU, Bono, Finiquito o Liquidación).", vbExclamation, "Nómina"
+
+        ' NOMINA ESPECIAL
+
+        If cboEspecial.ListIndex < 0 Then
+
+            MsgBox "Seleccione el tipo de nomina especial.", _
+                   vbExclamation, "Nomina"
+
             Exit Sub
+
         End If
+
+        ActualizarNombreEspecial
+
+        If Len(Trim$(Text1.Text)) = 0 Then
+
+            MsgBox "Indique el nombre de la nomina especial.", _
+                   vbExclamation, "Nomina"
+
+            Exit Sub
+
+        End If
+
         Arch = Trim$(Text1.Text) & ".NOM"
+
     Else
-        MsgBox "Seleccione el tipo de nómina que desea capturar.", vbExclamation, "Nómina"
+
+        MsgBox "Seleccione el tipo de nomina.", _
+               vbExclamation, "Nomina"
+
         Exit Sub
+
     End If
 
-    ' =======================================================
-    ' 2. CLASIFICAR EL TIPO DE NÓMINA E INICIALIZAR COLUMNAS
-    ' =======================================================
+    '=======================================================
+    ' 2. OBTENER RUTA COMPLETA
+    '=======================================================
+
+    rutaNominas = Trim$(CStr(Form1.Dir1))
+
+    If Len(rutaNominas) = 0 Then
+
+        MsgBox "No se ha seleccionado un directorio de nominas.", _
+               vbExclamation, "Nomina"
+
+        Exit Sub
+
+    End If
+
+    If Right$(rutaNominas, 1) <> "\" Then
+        rutaNominas = rutaNominas & "\"
+    End If
+
+    fullArchPath = rutaNominas & Arch
+
+    Debug.Print "===================================="
+    Debug.Print "VALIDACION PREVIA DE NOMINA"
+    Debug.Print "Archivo: "; Arch
+    Debug.Print "Ruta: "; fullArchPath
+
+    '=======================================================
+    ' 3. SI YA EXISTE, NO VOLVER A GENERARLA
+    '=======================================================
+
+    If Len(Dir$(fullArchPath)) > 0 Then
+
+        tamArchivo = FileLen(fullArchPath)
+
+        Debug.Print "Archivo existente"
+        Debug.Print "Bytes: "; tamArchivo
+
+        ' Archivo vacio
+        If tamArchivo = 0 Then
+
+            MsgBox "Ya existe un archivo con ese nombre, " & _
+                   "pero esta vacio." & vbCrLf & vbCrLf & _
+                   Arch & vbCrLf & vbCrLf & _
+                   "No se iniciara otra captura para evitar " & _
+                   "sobrescribirlo." & vbCrLf & _
+                   "Revise el archivo antes de continuar.", _
+                   vbExclamation, "Archivo vacio"
+
+            Exit Sub
+
+        End If
+
+        ' Archivo con longitud incompatible
+        If tamArchivo Mod Len(nomina) <> 0 Then
+
+            MsgBox "El archivo de nomina existe, pero su " & _
+                   "tamano no corresponde a registros completos." & _
+                   vbCrLf & vbCrLf & _
+                   Arch & vbCrLf & _
+                   "No se modificara el archivo.", _
+                   vbCritical, "Nomina"
+
+            Exit Sub
+
+        End If
+
+        registrosArchivo = tamArchivo \ Len(nomina)
+
+        Debug.Print "Registros existentes: "; registrosArchivo
+
+        '===================================================
+        ' 4. ABRIR LA NOMINA EXISTENTE EN FORMVIEWER
+        '===================================================
+
+        MsgBox "Esta nomina ya existe:" & vbCrLf & _
+               Arch & vbCrLf & vbCrLf & _
+               "Se abrira en el visualizador." & vbCrLf & _
+               "No se iniciara una nueva captura.", _
+               vbInformation, "Nomina existente"
+
+        Load FormViewer
+
+        FormViewer.LoadPayroll fullArchPath
+
+        If Not FormViewer.CargaCorrecta Then
+
+            Unload FormViewer
+
+            MsgBox "No fue posible cargar la nomina existente." & _
+                   vbCrLf & "No se modifico el archivo.", _
+                   vbExclamation, "Nomina"
+
+            Exit Sub
+
+        End If
+
+        Me.Hide
+
+        FormViewer.Show vbModal
+
+        Me.Show
+
+        Exit Sub
+
+    End If
+
+    '=======================================================
+    ' 5. NOMINA NUEVA
+    '=======================================================
+
+    Debug.Print "La nomina aun no existe."
+
+    ' generarNominas usa nombres relativos.
+    ' No iniciar si la ruta activa es diferente.
+
+    If StrComp(CurDir$, _
+               Left$(rutaNominas, Len(rutaNominas) - 1), _
+               vbTextCompare) <> 0 Then
+
+        MsgBox "El directorio de trabajo no coincide " & _
+               "con el directorio seleccionado." & vbCrLf & _
+               vbCrLf & _
+               "Directorio activo: " & CurDir$ & vbCrLf & _
+               "Directorio seleccionado: " & rutaNominas & _
+               vbCrLf & vbCrLf & _
+               "No se iniciara la captura para evitar " & _
+               "crear archivos en una ubicacion incorrecta.", _
+               vbExclamation, "Verificar directorio"
+
+        Exit Sub
+
+    End If
+
+    '=======================================================
+    ' 6. CLASIFICAR E INICIALIZAR COLUMNAS
+    '=======================================================
 
     AplicarTipoNomina Arch
 
-    ' =======================================================
-    ' 3. COMPROBAR SI EL ARCHIVO ESTÁ BLOQUEADO
-    ' =======================================================
+    Debug.Print "Tipo: "; g_TipoNominaActiva
+    Debug.Print "C_EXENTA: "; C_EXENTA
+    Debug.Print "C_TOTING: "; C_TOTING
+    Debug.Print "C_NETO: "; C_NETO
 
-    locked = False
-
-    On Error Resume Next
-
-    Set fso = CreateObject("Scripting.FileSystemObject")
-
-    fullArchPath = CStr(Trim$(Form1.Dir1)) & "\" & Arch
-
-    If Not fso Is Nothing Then
-        If fso.FileExists(fullArchPath) Then
-
-            If Option1.Value = True Then
-                ' Nómina normal: conservar las reglas por quincena.
-
-                If Option3.Value = True Then
-                    ' Primera quincena
-                    lockDate = DateSerial( _
-                        empresa.ao, Combo1.ListIndex + 1, 19)
-                Else
-                    ' Segunda quincena
-                    lockDate = DateSerial( _
-                        empresa.ao, Combo1.ListIndex + 2, 4)
-                End If
-
-                If Date > lockDate Then
-                    locked = True
-                End If
-
-            Else
-                ' Nómina especial: conservar el plazo de 10 días.
-
-                modDate = FileDateTime(fullArchPath)
-
-                If Date > modDate + 10 Then
-                    locked = True
-                End If
-
-            End If
-        End If
-    End If
-
-    On Error GoTo 0
-
-    Set fso = Nothing
-
-    ' =======================================================
-    ' 4. ABRIR EL VISUALIZADOR SI EL ARCHIVO ESTÁ BLOQUEADO
-    ' =======================================================
-
-    If locked Then
-        MsgBox "El archivo de esta nómina ya fue creado " & _
-               "anteriormente y no puede ser modificado " & _
-               "por reglas de negocio." & vbCrLf & _
-               "Se abrirá en modo de sólo lectura en el Visualizador.", _
-               vbInformation, "Nómina Cerrada"
-
-        Form8.Hide
-
-        Load FormViewer
-        FormViewer.Show
-        FormViewer.LoadPayroll fullArchPath
-
-        Exit Sub
-    End If
-
-    ' =======================================================
-    ' 5. CONTINUAR CON LA CAPTURA
-    ' =======================================================
+    '=======================================================
+    ' 7. CONTINUAR CON LA CAPTURA ORIGINAL
+    '=======================================================
 
     generarNominas
     FuncionImpuesto
+
+    Exit Sub
+
+    '=======================================================
+    ' ERROR
+    '=======================================================
+
+ErrorManejador:
+
+    MsgBox "No fue posible iniciar o consultar la nomina." & _
+           vbCrLf & _
+           "Error " & Err.Number & ": " & Err.Description, _
+           vbCritical, "Nomina"
 
 End Sub
 Private Sub ReleaseObjects(o_Excel As Object, o_Libro As Object, o_Hoja As Object)
@@ -2027,7 +2137,6 @@ Sub locobra()
     End If
     
 End Sub
-
 Sub checa_fecha(MiFecha, MiDía, Resta)
    MiDía = Weekday(MiFecha)
    If MiDía = 7 Then dia_pago = dia_pago - 1
@@ -3363,8 +3472,8 @@ Sub inte_grar()
      
       exe_nto = 0
      If IsNumeric(ConNom1.TextMatrix(li, C_EXENTA)) Then
-            exe_nto = ConNom1.TextMatrix(li, 10) - (empresa.sm * diaseg * 0.4)
-            If exe_nto < 0 Then exe_nto = 0
+            exe_nto = ConNom1.TextMatrix(li, C_EXENTA) - (empresa.sm * diaseg * 0.4)
+        If exe_nto < 0 Then exe_nto = 0
                     
      End If
      If diaseg > 0 Then
@@ -4437,7 +4546,7 @@ End Sub
 
 Private Sub Option2_Click()
 
-On Error GoTo errorManejador
+On Error GoTo ErrorManejador
 
     If Option2 = True Then
 
@@ -4465,7 +4574,7 @@ On Error GoTo errorManejador
 
 Exit Sub
 
-errorManejador:
+ErrorManejador:
     MsgBox Err.Number & " " & Err.Description
 
 End Sub
@@ -4819,10 +4928,25 @@ End Sub
 
 Private Sub txtPre_KeyPress(KeyAscii As Integer)
 
-    ' Backspace
+    If KeyAscii = 13 Then
+        KeyAscii = 0
+
+        ActualizarNombreEspecial
+
+        If cboEspecial.ListIndex < 0 Then
+            MsgBox "Seleccione un tipo de nómina especial.", vbExclamation, "Nómina"
+            cboEspecial.SetFocus
+            Exit Sub
+        End If
+
+        Text3.SetFocus
+        Exit Sub
+    End If
+
+    ' Permitir Backspace
     If KeyAscii = 8 Then Exit Sub
 
-    ' Solo números
+    ' Permitir únicamente números
     If KeyAscii < 48 Or KeyAscii > 57 Then
         KeyAscii = 0
     End If

@@ -299,122 +299,234 @@ Public Sub LoadPayroll(ByVal fName As String)
     Dim numeroError As Long
     Dim descripcionError As String
 
+    ' Variables para diagnostico
+    Dim etapaCarga As String
+    Dim registroActual As Long
+
+    etapaCarga = "Inicio"
+    registroActual = 0
+
     '========================================================
-    ' INICIO DE CARGA
+    ' 1. INICIO DE CARGA
     '========================================================
+
+    etapaCarga = "Cerrar archivos anteriores"
 
     cargandoNomina = True
     CargaCorrecta = False
+
     CerrarArchivosVisor
 
     '========================================================
-    ' REINICIAR ESTADO DE LA NOMINA ANTERIOR
+    ' 2. REINICIAR ESTADO
     '========================================================
+
+    etapaCarga = "Reiniciar variables"
 
     limite = 0
     renglon = 0
     nm = 0
     fi_nm = 0
     Dm = 0
+
     textoFiltro = ""
     TxtBuscar.Text = ""
 
     '========================================================
-    ' OBTENER NOMBRE Y RUTA
+    ' 3. OBTENER NOMBRE Y RUTA
     '========================================================
+
+    etapaCarga = "Obtener nombre y ruta"
 
     nameOnly = fName
     pos = InStrRev(fName, "\")
-    
+
     If pos > 0 Then
+
         nameOnly = Mid$(fName, pos + 1)
         rutaBase = Left$(fName, pos)
+
     Else
+
         rutaBase = CurDir$
+
         If Right$(rutaBase, 1) <> "\" Then
             rutaBase = rutaBase & "\"
         End If
+
     End If
 
     LblFile.Caption = "Archivo: " & nameOnly
 
+    Debug.Print "========================================"
+    Debug.Print "INICIANDO CARGA DE NOMINA"
+    Debug.Print "Archivo: "; nameOnly
+    Debug.Print "Ruta: "; rutaBase
+    Debug.Print "========================================"
+
     '========================================================
-    ' VALIDAR NOMBRE
+    ' 4. VALIDAR NOMBRE
     '========================================================
+
+    etapaCarga = "Validar nombre del archivo"
 
     If Len(nameOnly) < 5 Then
-        MsgBox "El nombre del archivo de nómina no es válido.", vbExclamation, "Visor de nómina"
+
+        MsgBox "El nombre del archivo de nómina no es válido.", _
+               vbExclamation, "Visor de nómina"
+
+        GoTo Salida
+
+    End If
+
+    
+    '========================================================
+    ' VALIDAR ARCHIVOS ANTES DE ABRIRLOS
+    '========================================================
+    
+    Arch = rutaBase & nameOnly
+    
+    Arch1 = rutaBase & _
+            Left$(nameOnly, Len(nameOnly) - 4) & ".cmp"
+    
+    If Len(Dir$(Arch)) = 0 Then
+        MsgBox "No existe el archivo de nomina:" & vbCrLf & Arch, vbExclamation, "Visor"
+        GoTo Salida
+    End If
+    
+    If Len(Dir$(rutaBase & "personal.dno")) = 0 Then
+        MsgBox "No existe personal.dno.", vbExclamation, "Visor"
+        GoTo Salida
+    End If
+    
+    If Len(Dir$(rutaBase & "maestro.dno")) = 0 Then
+        MsgBox "No existe maestro.dno.", vbExclamation, "Visor"
+        GoTo Salida
+    End If
+    
+    If Len(Dir$(rutaBase & "bnxcla.dno")) = 0 Then
+        MsgBox "No existe bnxcla.dno.", vbExclamation, "Visor"
+        GoTo Salida
+    End If
+    
+    If Len(Dir$(Arch1)) = 0 Then
+        MsgBox "No existe el complemento:" & vbCrLf & Arch1, vbExclamation, "Visor"
         GoTo Salida
     End If
 
+
     '========================================================
-    ' ABRIR PERSONAL.DNO
+    ' 5. ABRIR PERSONAL.DNO
     '========================================================
 
-    Open rutaBase & "personal.dno" For Random As #2 Len = Len(personal)
+    etapaCarga = "Abrir personal.dno"
+
+    Open rutaBase & "personal.dno" For Random As #2 _
+        Len = Len(personal)
+
     Dm = LOF(2) / Len(personal)
 
+    Debug.Print "Registros personal.dno: "; Dm
+
     If Dm <= 0 Then
-        MsgBox "No existe información válida en personal.dno." & vbCrLf & "No se puede abrir la nómina.", vbCritical, "Error"
+
+        MsgBox "No existe información válida en personal.dno." & _
+               vbCrLf & "No se puede abrir la nómina.", _
+               vbCritical, "Error"
+
         GoTo Salida
+
     End If
 
     '========================================================
-    ' DETERMINAR TIPO DE NOMINA (unificado con Form8 ya no depende de un global externo ni de IsNormalPayrollName)
+    ' 6. IDENTIFICAR TIPO DE NOMINA
     '========================================================
+
+    etapaCarga = "AplicarTipoNomina"
 
     AplicarTipoNomina nameOnly
 
     If EsNominaNormal(nameOnly) Then
+
         N_ormal = 0
         diat = 15
+
     Else
+
         N_ormal = 1
         diat = 0
+
     End If
 
+    Debug.Print "Tipo de nomina: "; g_TipoNominaActiva
+    Debug.Print "N_ormal: "; N_ormal
+    Debug.Print "C_EXENTA: "; C_EXENTA
+    Debug.Print "C_NETO: "; C_NETO
+    Debug.Print "C_TOTCOLS: "; C_TOTCOLS
 
     '========================================================
-    ' ARCHIVOS
+    ' 7. CONSTRUIR RUTAS
     '========================================================
-    
+
+    etapaCarga = "Construir rutas de archivos"
+
     Arch = fName
-    Arch1 = rutaBase & Left$(nameOnly, Len(nameOnly) - 4) & ".cmp"
+
+    Arch1 = rutaBase & _
+            Left$(nameOnly, Len(nameOnly) - 4) & ".cmp"
+
+    Debug.Print "NOM: "; Arch
+    Debug.Print "CMP: "; Arch1
 
     '========================================================
-    ' ABRIR NOMINA
+    ' 8. ABRIR NOMINA
     '========================================================
+
+    etapaCarga = "Abrir archivo NOM"
 
     Open Arch For Random As #6 Len = Len(nomina)
+
     nm = LOF(6) / Len(nomina)
 
+    Debug.Print "Registros NOM: "; nm
+
     If nm <= 0 Then
-        MsgBox "El archivo de nómina está vacío o no contiene registros.", vbInformation, "Visor de Nómina"
+
+        MsgBox "El archivo de nómina está vacío o " & _
+               "no contiene registros.", _
+               vbInformation, "Visor de Nómina"
+
         GoTo Salida
+
     End If
 
     '========================================================
-    ' ABRIR ARCHIVOS AUXILIARES
+    ' 9. ABRIR ARCHIVOS AUXILIARES
     '========================================================
 
+    etapaCarga = "Abrir archivos auxiliares"
+
     Open Arch1 For Random As #14 Len = Len(nom_com)
-    Open rutaBase & "bnxcla.dno" For Random As #12 Len = Len(Clbnx)
-    Open rutaBase & "maestro.dno" For Random As #8 Len = Len(maestro)
+
+    Open rutaBase & "bnxcla.dno" For Random As #12 _
+        Len = Len(Clbnx)
+
+    Open rutaBase & "maestro.dno" For Random As #8 _
+        Len = Len(maestro)
 
     totalCmp = LOF(14) / Len(nom_com)
     totalBnx = LOF(12) / Len(Clbnx)
     totalMaestro = LOF(8) / Len(maestro)
 
+    Debug.Print "Registros CMP: "; totalCmp
+    Debug.Print "Registros BNX: "; totalBnx
+    Debug.Print "Registros Maestro: "; totalMaestro
+
     '========================================================
-    ' DETERMINAR NUMERO SEGURO DE REGISTROS
+    ' 10. DETERMINAR NUMERO DE REGISTROS
     '========================================================
-    '
-    ' Solamente NOM y personal.dno son indispensables
-    ' para determinar hasta dónde se puede recorrer.
-    '
-    ' maestro y cmp se protegen individualmente.
-    '
-    '========================================================
+
+    etapaCarga = "Determinar numero de registros"
 
     If nm < Dm Then
         fi_nm = nm
@@ -422,40 +534,60 @@ Public Sub LoadPayroll(ByVal fName As String)
         fi_nm = Dm
     End If
 
+    Debug.Print "Registros a procesar: "; fi_nm
+
     If fi_nm <= 0 Then
-        MsgBox "No existen registros compatibles entre la nómina " & "y personal.dno.", vbInformation, "Visor de Nómina"
+
+        MsgBox "No existen registros compatibles entre " & _
+               "la nómina y personal.dno.", _
+               vbInformation, "Visor de Nómina"
+
         GoTo Salida
+
     End If
 
     '========================================================
-    ' PREPARAR GRID COMPLETAMENTE DESDE CERO
+    ' 11. PREPARAR GRID
     '========================================================
+
+    etapaCarga = "Preparar grid"
 
     ConNom1.Redraw = False
     ConNom1.Clear
 
-    'Primero las columnas
     ConNom1.Cols = C_TOTCOLS
-
-    'Después las filas
     ConNom1.Rows = fi_nm + 2
 
-    'Restablecer selección ANTES de trabajar
     ConNom1.Row = 0
     ConNom1.RowSel = 0
-
     ConNom1.Col = 0
     ConNom1.ColSel = 0
 
+    Debug.Print "ANTES DE DEFINE"
+    Debug.Print "Rows: "; ConNom1.Rows
+    Debug.Print "Cols: "; ConNom1.Cols
+
+    '========================================================
+    ' 12. DEFINIR ENCABEZADOS
+    '========================================================
+
+    etapaCarga = "Ejecutar define"
+
     define
+
+    Debug.Print "DESPUES DE DEFINE"
+    Debug.Print "Rows: "; ConNom1.Rows
+    Debug.Print "Cols: "; ConNom1.Cols
+    Debug.Print "Cols esperadas: "; C_TOTCOLS
 
     limite = 0
     renglon = 0
 
+    '========================================================
+    ' 13. PROGRESSBAR
+    '========================================================
 
-    '========================================================
-    ' PROGRESSBAR
-    '========================================================
+    etapaCarga = "Inicializar ProgressBar"
 
     ProgressBar1.Visible = True
     ProgressBar1.Min = 0
@@ -463,27 +595,37 @@ Public Sub LoadPayroll(ByVal fName As String)
     ProgressBar1.Value = 0
 
     '========================================================
-    ' LEER REGISTROS
+    ' 14. LEER REGISTROS
     '========================================================
 
     For r = 1 To fi_nm
+
+        registroActual = r
+        etapaCarga = "Actualizar ProgressBar"
+
         ProgressBar1.Value = r
 
         '--------------------------------------------
         ' NOMINA
         '--------------------------------------------
-        
+
+        etapaCarga = "Leer registro NOM"
+
         Get #6, r, nomina
 
         '--------------------------------------------
         ' PERSONAL
         '--------------------------------------------
 
+        etapaCarga = "Leer registro PERSONAL"
+
         Get #2, r, personal
 
         '--------------------------------------------
         ' MAESTRO
         '--------------------------------------------
+
+        etapaCarga = "Leer registro MAESTRO"
 
         If r <= totalMaestro Then
             Get #8, r, maestro
@@ -493,49 +635,94 @@ Public Sub LoadPayroll(ByVal fName As String)
         ' CMP
         '--------------------------------------------
 
+        etapaCarga = "Leer registro CMP"
+
         If r <= totalCmp Then
             Get #14, r, nom_com
         End If
 
         '--------------------------------------------
-        ' VERIFICAR SI TIENE INFORMACION
+        ' VERIFICAR INFORMACION
         '--------------------------------------------
 
-        yavas = 0
+        etapaCarga = "Ejecutar verifica"
 
+        yavas = 0
         verifica yavas
 
         If yavas > 0 Then
+
+            '----------------------------------------
+            ' AUMENTAR RENGLON
+            '----------------------------------------
+
+            etapaCarga = "Preparar renglon"
+
             renglon = renglon + 1
-            
-            'Garantizar que la fila exista
+
             If renglon >= ConNom1.Rows Then
                 ConNom1.Rows = renglon + 2
             End If
 
+            '----------------------------------------
+            ' SELECCIONAR FILA
+            '----------------------------------------
+
+            etapaCarga = "Seleccionar fila del grid"
+
             ConNom1.Row = renglon
             ConNom1.Col = C_NUM
+
+            '----------------------------------------
+            ' NUMERO DE EMPLEADO
+            '----------------------------------------
+
+            etapaCarga = "Escribir numero de empleado"
+
             ConNom1.Text = Format$(r, "#####")
+
             limite = limite + 1
             regtro = r
+
+            '----------------------------------------
+            ' CARGAR DATOS DEL EMPLEADO
+            '----------------------------------------
+
+            etapaCarga = "Ejecutar carganom"
+
+            Debug.Print "CARGANOM - Registro: "; r; _
+                        " Fila: "; renglon; _
+                        " Cols: "; ConNom1.Cols
+
             carganom
+
         End If
+
     Next r
 
     '========================================================
-    ' ELIMINAR REGISTROS SIN INFORMACION
+    ' 15. ELIMINAR REGISTROS SIN INFORMACION
     '========================================================
     
+    etapaCarga = "Ejecutar eliminacion"
+    
+    Debug.Print "ANTES DE ELIMINACION"
+    Debug.Print "Limite: "; limite
+    Debug.Print "Rows: "; ConNom1.Rows
+    Debug.Print "Cols: "; ConNom1.Cols
+    
     eliminacion
+    
+    Debug.Print "DESPUES DE ELIMINACION"
+    Debug.Print "Limite: "; limite
+    Debug.Print "Rows: "; ConNom1.Rows
+    Debug.Print "Cols: "; ConNom1.Cols
 
     '========================================================
-    ' MUY IMPORTANTE:
-    '
-    ' Antes de REDUCIR el número de filas,
-    ' regresar Row / RowSel a cero.
-    '
-    ' Esto evita uno de los escenarios del ERROR 381.
+    ' 16. RESTABLECER SELECCION
     '========================================================
+
+    etapaCarga = "Restablecer seleccion"
 
     ConNom1.Row = 0
     ConNom1.RowSel = 0
@@ -544,69 +731,145 @@ Public Sub LoadPayroll(ByVal fName As String)
     ConNom1.ColSel = 0
 
     '========================================================
-    ' AJUSTAR AL NUMERO REAL DE REGISTROS
+    ' 17. AJUSTAR FILAS
     '========================================================
+
+    etapaCarga = "Ajustar filas finales"
 
     If limite < 0 Then limite = 0
+
+    Debug.Print "ANTES DE AJUSTAR FILAS"
+    Debug.Print "Limite: "; limite
+    Debug.Print "Rows actuales: "; ConNom1.Rows
+    Debug.Print "Rows nuevas: "; limite + 2
+
     ConNom1.Rows = limite + 2
 
+    Debug.Print "DESPUES DE AJUSTAR FILAS"
+    Debug.Print "Rows: "; ConNom1.Rows
+
     '========================================================
-    ' SUMAS
+    ' 18. CALCULAR SUMAS
     '========================================================
+
+    etapaCarga = "Ejecutar sumavert"
+
+    Debug.Print "ANTES DE SUMAVERT"
+    Debug.Print "Limite: "; limite
+    Debug.Print "Rows: "; ConNom1.Rows
+    Debug.Print "Cols: "; ConNom1.Cols
+    Debug.Print "C_NETO: "; C_NETO
 
     sumavert
 
+    Debug.Print "DESPUES DE SUMAVERT"
+
     '========================================================
-    ' DEJAR SELECCION EN UNA FILA VALIDA
+    ' 19. DEJAR SELECCION EN FILA VALIDA
     '========================================================
 
+    etapaCarga = "Seleccionar fila final"
+
     If limite > 0 Then
+
         ConNom1.Row = 1
         ConNom1.RowSel = 1
+
     Else
+
         ConNom1.Row = 0
         ConNom1.RowSel = 0
+
     End If
-    
+
     ConNom1.Col = 0
     ConNom1.ColSel = 0
 
     '========================================================
-    ' FINALIZAR CORRECTAMENTE
+    ' 20. FINALIZAR
     '========================================================
+
+    etapaCarga = "Finalizar carga"
 
     ConNom1.Redraw = True
     ProgressBar1.Visible = False
+
     CargaCorrecta = True
+
+    Debug.Print "========================================"
+    Debug.Print "NOMINA CARGADA CORRECTAMENTE"
+    Debug.Print "Archivo: "; nameOnly
+    Debug.Print "Empleados: "; limite
+    Debug.Print "========================================"
+
     GoTo Salida
 
-    '============================================================
-    ' ERROR
-    '============================================================
+    '========================================================
+    ' MANEJO DE ERRORES
+    '========================================================
 
 ErrorHandler:
-        
-        numeroError = Err.Number
-        descripcionError = Err.Description
-        
-        CargaCorrecta = False
-        
-        On Error Resume Next
-        
-        ConNom1.Redraw = True
-        ProgressBar1.Visible = False
-        
-        On Error GoTo 0
-        
-        MsgBox "Error al cargar la nómina." & vbCrLf & "Número: " & numeroError & vbCrLf & "Descripción: " & descripcionError, vbCritical, "Error"
 
-    '============================================================
+    numeroError = Err.Number
+    descripcionError = Err.Description
+
+    CargaCorrecta = False
+
+    ' Capturar informacion antes de limpiar el visor
+
+    Debug.Print ""
+    Debug.Print "========================================"
+    Debug.Print "ERROR EN FORMVIEWER"
+    Debug.Print "========================================"
+
+    Debug.Print "Etapa: "; etapaCarga
+    Debug.Print "Error: "; numeroError
+    Debug.Print "Descripcion: "; descripcionError
+
+    Debug.Print "Archivo: "; nameOnly
+    Debug.Print "Tipo: "; g_TipoNominaActiva
+
+    Debug.Print "Registro actual: "; registroActual
+
+    Debug.Print "Filas del Grid: "; ConNom1.Rows
+    Debug.Print "Columnas del Grid: "; ConNom1.Cols
+
+    Debug.Print "Fila seleccionada: "; ConNom1.Row
+    Debug.Print "Columna seleccionada: "; ConNom1.Col
+
+    Debug.Print "Limite: "; limite
+    Debug.Print "Renglon: "; renglon
+
+    Debug.Print "C_EXENTA: "; C_EXENTA
+    Debug.Print "C_NETO: "; C_NETO
+    Debug.Print "C_TOTCOLS: "; C_TOTCOLS
+
+    Debug.Print "========================================"
+
+    On Error Resume Next
+
+    ConNom1.Redraw = True
+    ProgressBar1.Visible = False
+
+    On Error GoTo 0
+
+    MsgBox "Error al cargar la nómina." & vbCrLf & _
+           vbCrLf & _
+           "Etapa: " & etapaCarga & vbCrLf & _
+           "Registro: " & CStr(registroActual) & vbCrLf & _
+           "Número: " & CStr(numeroError) & vbCrLf & _
+           "Descripción: " & descripcionError, _
+           vbCritical, "Error FormViewer"
+
+    '========================================================
     ' SALIDA COMUN
-    '============================================================
-    
+    '========================================================
+
 Salida:
-        CerrarArchivosVisor
-        cargandoNomina = False
+
+    CerrarArchivosVisor
+    cargandoNomina = False
+
 End Sub
 
 Private Function IsNormalPayrollName(ByVal fName As String) As Boolean
@@ -693,8 +956,7 @@ Sub carganom()
     PonCel li, C_PENSION, nomina.telefono
     PonCel li, C_INFONAVIT, nomina.otraded
 
-    deducciones = nomina.crdsal + nomina.ispt + nomina.imss + nomina.prestamos + _
-                  nomina.fonacot + nomina.telefono + nomina.otraded
+    deducciones = nomina.crdsal + nomina.ispt + nomina.imss + nomina.prestamos + nomina.fonacot + nomina.telefono + nomina.otraded
     PonCel li, C_TOTDED, deducciones
 
     neto = ingresos - deducciones
@@ -706,11 +968,13 @@ Sub carganom()
     ConNom1.TextMatrix(li, C_FLAG_ESP) = 0
     If N_ormal = 1 Then ConNom1.TextMatrix(li, C_FLAG_ESP) = "1"
 
-    locobra
-
-    Get 12, regtro, Clbnx
-
-    ConNom1.TextMatrix(li, C_BANAMEX) = (" " + Clbnx.Q1)
+    ' Consultar información bancaria sin modificar menús de obras
+    If regtro > 0 And regtro <= LOF(12) / Len(Clbnx) Then
+        Get #12, regtro, Clbnx
+        ConNom1.TextMatrix(li, C_BANAMEX) = " " & Clbnx.Q1
+    Else
+        ConNom1.TextMatrix(li, C_BANAMEX) = ""
+    End If
 End Sub
 
 
@@ -809,18 +1073,37 @@ Sub verifica(yavas)
     If nomina.hstri <> 0 Then yavas = 1
 End Sub
 Sub eliminacion()
+
     Dim re As Long
+
     re = 1
+
     Do While re <= limite
-        ' Si no tiene total de ingresos, se considera
-        ' un registro sin información de nómina.
-        If Trim$(ConNom1.TextMatrix(re, C_TOTCOLS)) = "" Then
+
+        ' Verificar que la fila exista
+        If re >= ConNom1.Rows Then Exit Do
+
+        ' Revisar el TOTAL DE INGRESOS
+        If Trim$(ConNom1.TextMatrix(re, C_TOTING)) = "" Then
+
+            ' Evitar una seleccion invalida al quitar la fila
+            ConNom1.Row = 0
+            ConNom1.RowSel = 0
+            ConNom1.Col = 0
+            ConNom1.ColSel = 0
+
             ConNom1.RemoveItem re
+
             limite = limite - 1
+
         Else
+
             re = re + 1
+
         End If
+
     Loop
+
 End Sub
 
 Sub sumavert()
@@ -829,7 +1112,8 @@ Sub sumavert()
     Dim late As Integer
     Dim li As Long
     Dim ii As Integer
-    Dim sumv(0 To 26) As Currency
+    Dim sumv() As Currency
+    ReDim sumv(0 To C_NETO)
 
     ProgressBar1.Min = 0
     ProgressBar1.Max = limite
@@ -838,7 +1122,7 @@ Sub sumavert()
 
     Vw = 0
 
-    For late = 3 To 20
+    For late = C_SUELDO To C_NETO
         sumv(late) = 0
     Next late
 
@@ -850,7 +1134,7 @@ Sub sumavert()
         Vw = Vw + 1
         ProgressBar1.Value = li
 
-        For late = 3 To 20
+        For late = C_SUELDO To C_NETO
 
             ii = late
 
@@ -881,7 +1165,7 @@ Sub sumavert()
     ConNom1.TextMatrix(li, 1) = _
         "Empleados... " & Str$(Vw) & " S u m a s ....."
 
-    For late = 3 To 20
+    For late = C_SUELDO To C_NETO
 
         ii = late
 
@@ -1346,7 +1630,7 @@ Private Sub AbrirArchivosParaCFDI()
     '========================================================
     ' ARCHIVOS QUE NECESITA EL PROCESO CFDI
     '========================================================
-
+    
     'Personal
     Open rutaCFDI & "personal.dno" _
         For Random As #2 _
