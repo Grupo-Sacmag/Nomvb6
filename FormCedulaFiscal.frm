@@ -685,23 +685,8 @@ Dim abrEmpresa As String
 
     id = Text1.Text
     
-    abrEmpresa = Left(Trim(emp), 4)
-  
-    Select Case UCase(abrEmpresa)
-        Case "SACM"
-            abrEmpresa = "SACMAG"
-        Case "COOR"
-            abrEmpresa = "CORDINA"
-        Case "EPES"
-            abrEmpresa = "EPESA"
-        Case "SUPE"
-            abrEmpresa = "SUPERVISA"
-        Case "CONS"
-            abrEmpresa = "CONSULTE"
-        Case "SUPT"
-            abrEmpresa = "SUPTER"
-        ' Agregar más casos según sea necesario
-    End Select
+    abrEmpresa = ObtenerEmpresaSQL(emp)
+    If abrEmpresa = "" Then Exit Sub
     
     Text29.Text = abrEmpresa
 

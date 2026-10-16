@@ -952,7 +952,7 @@ Private Sub Form_Load()
         
         ComboEspecial.Clear
         ComboEspecial.AddItem "1. Aguinaldo / PTU"
-        ComboEspecial.AddItem "2. LiquidaciÃ³n (LIQ)"
+        ComboEspecial.AddItem "2. Liquidación (LIQ)"
         ComboEspecial.AddItem "3. Finiquito (FIN)"
         ComboEspecial.AddItem "4. Otro"
         ComboEspecial.ListIndex = 0
@@ -1569,9 +1569,9 @@ Private Sub exportar_Click(Index As Integer)
 End Sub
 
 Public Sub FlexGrid_To_Excel(TheFlexgrid As MSFlexGrid, Optional GridStyle As Integer = 1, Optional WorkSheetName As String)
-Dim objXL As New excel.Application
-Dim wbXL As New excel.Workbook
-Dim wsXL As New excel.Worksheet
+Dim objXL As New Excel.Application
+Dim wbXL As New Excel.Workbook
+Dim wsXL As New Excel.Worksheet
     
     If Not IsObject(objXL) Then
         MsgBox "Necesitas tener instalado Microsft Excel en tu equipo", vbExclamation, "Haresoftware - Export to Excel Function"
@@ -1690,12 +1690,12 @@ Private Sub Importar_Click()
 Dim oRS As New ADODB.Recordset
 Dim oConn As New ADODB.Connection
 
-    excel.CancelError = True
+    Excel.CancelError = True
     On Error GoTo ErrHandler
-    excel.ShowOpen
+    Excel.ShowOpen
     
-    If (excel.FileName <> "") Then
-        oConn.Open "Provider=Microsoft.ACE.OLEDB.12.0;" & "data source=  '" + excel.FileName + "' ; " & "Extended Properties= ""Excel 8.0;HDR=Yes"""
+    If (Excel.FileName <> "") Then
+        oConn.Open "Provider=Microsoft.ACE.OLEDB.12.0;" & "data source=  '" + Excel.FileName + "' ; " & "Extended Properties= ""Excel 8.0;HDR=Yes"""
         Set oRS = New ADODB.Recordset
             oRS.CursorLocation = adUseClient
             oRS.CursorType = adOpenStatic
@@ -4432,7 +4432,7 @@ On Error GoTo ErrHandler
         End If
      End If
   Exit Sub
-  ErrHandler:
+ErrHandler:
       MsgBox "Error en Text1_KeyPress: " & Err.Description
   End Sub
 

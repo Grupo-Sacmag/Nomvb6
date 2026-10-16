@@ -952,3 +952,36 @@ error_handler:
         CalcularAntiguedad = 1
     End If
 End Function
+
+
+Public Function ObtenerEmpresaSQL(ByVal nombreEmpresa As String) As String
+    On Error Resume Next
+    Dim uNom As String
+    uNom = UCase$(Trim$(nombreEmpresa))
+    
+    If uNom = "" Then
+        ObtenerEmpresaSQL = ""
+        Exit Function
+    End If
+    
+    ' Descartar explicitamente sucursales y empresas no autorizadas
+    If InStr(uNom, "JRI") > 0 Or InStr(uNom, "EDOMEX") > 0 Or InStr(uNom, "PACHUCA") > 0 Then
+        ObtenerEmpresaSQL = ""
+        Exit Function
+    End If
+    If InStr(uNom, "EPESA") > 0 Or InStr(uNom, "SUPTER") > 0 Or InStr(uNom, "CONSULTE") > 0 Or InStr(uNom, "GEOA") > 0 Then
+        ObtenerEmpresaSQL = ""
+        Exit Function
+    End If
+
+    ' Unicamente permitir SACMAG, CORDINA y SUPERVISA
+    If InStr(uNom, "SACMAG") > 0 Then
+        ObtenerEmpresaSQL = "SACMAG"
+    ElseIf InStr(uNom, "CORDINA") > 0 Or InStr(uNom, "COORDINA") > 0 Then
+        ObtenerEmpresaSQL = "CORDINA"
+    ElseIf InStr(uNom, "SUPERVISA") > 0 Then
+        ObtenerEmpresaSQL = "SUPERVISA"
+    Else
+        ObtenerEmpresaSQL = ""
+    End If
+End Function

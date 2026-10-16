@@ -321,23 +321,8 @@ Private Sub Form_Load()
     ''Conectar a base datos
     On Error GoTo Error
     
-    abrEmpresa = Left(Trim(emp), 4)
-  
-    If (UCase(abrEmpresa) = "SACMAG DE") Then
-        abrEmpresa = "SACMAG"
-    End If
-    If (UCase(abrEmpresa) = "SUPT") Then
-        abrEmpresa = "SUPTER"
-    End If
-    If (UCase(abrEmpresa) = "COOR") Then
-        abrEmpresa = "CORDINA"
-    End If
-    If (UCase(abrEmpresa) = "EPES") Then
-        abrEmpresa = "EPESA"
-    End If
-    If (UCase(abrEmpresa) = "SUPE") Then
-        abrEmpresa = "SUPERVISA"
-    End If
+    abrEmpresa = ObtenerEmpresaSQL(emp)
+    If abrEmpresa = "" Then Exit Sub
     
     sSQL = "SELECT idNomina, nombre, apellidoP, apellidoM, nombreDeVialidad, nombreColonia, nombreLocalidad, entidadFederativa, nombreMunicipio, cp , correoElectronico " & _
              "FROM datosSat where empresa = '" & abrEmpresa & "'"

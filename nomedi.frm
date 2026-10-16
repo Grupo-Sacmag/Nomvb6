@@ -642,23 +642,8 @@ On Error Resume Next
         Close #fNum
     End If
     
-    abrEmpresa = Left(Trim(emp), 4)
-  
-    Select Case UCase(abrEmpresa)
-        Case "SACMAG DE"
-            abrEmpresa = "SACMAG"
-        Case "COOR"
-            abrEmpresa = "CORDINA"
-        'Case "EPES"
-        '    abrEmpresa = "EPESA"
-        Case "SUPE"
-            abrEmpresa = "SUPERVISA"
-        ' Case "SUPT"
-        '    abrEmpresa = "SUPTER"
-        'Case "CONS"
-        '    abrEmpresa = "CONSULTE"
-        ' Agregar más casos según sea necesario
-    End Select
+    abrEmpresa = ObtenerEmpresaSQL(emp)
+    If abrEmpresa = "" Then Exit Sub
 
     sSQL = "SELECT idNomina, rfc, curp, nombre, apellidoP, apellidoM " & "FROM datosSat where empresa = '" & abrEmpresa & "'"
   ' Create and Open the Recordset object.
@@ -967,17 +952,8 @@ Public Sub actualizarSaldos()
     Dim abrEmpresa As String
     
     ' Abreviatura de la empresa
-    abrEmpresa = Left(Trim(emp), 4)
-  
-    ' Mapeo de abreviaturas a nombres de tabla
-    Select Case UCase(abrEmpresa)
-        Case "SACM"
-            abrEmpresa = "SACMAG"
-        Case "CORD"
-            abrEmpresa = "CORDINA"
-             Case "SUPT"
-            abrEmpresa = "SUPTER"
-    End Select
+    abrEmpresa = ObtenerEmpresaSQL(emp)
+    If abrEmpresa = "" Then Exit Sub
 
     ' Recorrer las filas de ListPer
     For i = 1 To ListPer.Rows - 1
@@ -1033,23 +1009,8 @@ Private Sub cargarEmpleadosSinFiltro()
         Close #fNum
     End If
         
-        abrEmpresa = Left(Trim(emp), 4)
-      
-        Select Case UCase(abrEmpresa)
-            Case "SACM"
-                abrEmpresa = "SACMAG"
-            Case "GEOA"
-                abrEmpresa = "GEOAMBIENTE"
-            Case "COOR"
-                abrEmpresa = "CORDINA"
-            Case "EPES"
-                abrEmpresa = "EPESA"
-            Case "SUPT"
-                abrEmpresa = "SUPTER"
-            Case "CONS"
-                abrEmpresa = "CONSULTE"
-            ' Agregar más casos según sea necesario
-        End Select
+        abrEmpresa = ObtenerEmpresaSQL(emp)
+    If abrEmpresa = "" Then Exit Sub
     
         sSQL = "SELECT idNomina, rfc, curp, nombre, apellidoP, apellidoM " & "FROM datosSat where empresa = '" & abrEmpresa & "'"
       ' Create and Open the Recordset object.

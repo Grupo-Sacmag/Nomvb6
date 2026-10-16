@@ -494,7 +494,7 @@ Public Function ObtenerCorreo(ByVal RFC As String) As String
     On Error GoTo ErrorHandler
 
     ' Si el RFC está vacío, se devuelve cadena vacía
-    If Trim(RFC) = "" Then
+    If Trim(RFC) = "" Or ObtenerEmpresaSQL(emp) = "" Then
         ObtenerCorreo = ""
         Exit Function
     End If
