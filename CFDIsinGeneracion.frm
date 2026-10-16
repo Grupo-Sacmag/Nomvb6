@@ -137,7 +137,7 @@ Private g_ExentoIndem As Currency
 Private g_GravadoIndem As Currency
 
 Private Function EsLiquidacionActiva() As Boolean
-    EsLiquidacionActiva = (FormViewer.ViewerTipoEspecial = 1)
+    EsLiquidacionActiva = (FormViewer.ViewerTipoEspecial = 1 Or FormViewer.ViewerTipoEspecial = 3)
 End Function
 
 Private Function EsAguinaldoPTUActiva() As Boolean
@@ -145,7 +145,7 @@ Private Function EsAguinaldoPTUActiva() As Boolean
 End Function
 
 Private Function EsEspecialActiva() As Boolean
-    EsEspecialActiva = (FormViewer.ViewerTipoEspecial = 0 Or FormViewer.ViewerTipoEspecial = 1)
+    EsEspecialActiva = (FormViewer.ViewerTipoEspecial = 0 Or FormViewer.ViewerTipoEspecial = 1 Or FormViewer.ViewerTipoEspecial = 3)
 End Function
 
 Private Function LimpiarValor(ByVal sVal As String) As Double
@@ -1477,7 +1477,7 @@ End Sub
 Private Sub PoblarVariablesDesdeGrid(ByVal I7 As Long)
     On Error Resume Next
 
-    sdo_vac8 = 0: comp4 = 0: antig5 = 0: indem6 = 0
+    sdo_vac8 = 0: comp4 = 0: antig5 = 0: indem6 = 0: agui5 = 0
     g_ExentoAntig = 0: g_GravadoAntig = 0: g_ExentoIndem = 0: g_GravadoIndem = 0
     sue3 = 0: via7 = 0: pva8 = 0: otr9 = 0: pee10 = 0: sub13 = 0
     ptu_1 = 0: ptu_2 = 0: ptu_3 = 0: isr12 = 0: ims14 = 0: pre15 = 0
@@ -1505,11 +1505,11 @@ Private Sub PoblarVariablesDesdeGrid(ByVal I7 As Long)
     t_oded = t_ded - isr12
 
     If FormViewer.ViewerTipoEspecial = 1 Then
-        ' Liquidaciones (alineado con la rama mhdzsac de Marco)
+        ' Liquidación (LIQ): Col 4=Compens, Col 5=Aguinaldo, Col 6=P.Antig, Col 7=Indemn, Col 8=P.Vacac
         comp4 = LimpiarValor(FormViewer.ConNom1.TextMatrix(I7, 4))
-        antig5 = LimpiarValor(FormViewer.ConNom1.TextMatrix(I7, 5))
-        indem6 = LimpiarValor(FormViewer.ConNom1.TextMatrix(I7, 6))
-        sdo_vac8 = LimpiarValor(FormViewer.ConNom1.TextMatrix(I7, 8))
+        agui5 = LimpiarValor(FormViewer.ConNom1.TextMatrix(I7, 5))
+        antig5 = LimpiarValor(FormViewer.ConNom1.TextMatrix(I7, 6))
+        indem6 = LimpiarValor(FormViewer.ConNom1.TextMatrix(I7, 7))
 
         Dim totAI As Currency
         totAI = antig5 + indem6
@@ -1525,12 +1525,25 @@ Private Sub PoblarVariablesDesdeGrid(ByVal I7 As Long)
         End If
         g_GravadoAntig = antig5 - g_ExentoAntig
         g_GravadoIndem = indem6 - g_ExentoIndem
-    ElseIf FormViewer.ViewerTipoEspecial = 0 Then
-        ' Aguinaldo / PTU
+    ElseIf FormViewer.ViewerTipoEspecial = 3 Then
+        ' Finiquito (FIN): Col 4=Sdo.Vac, Col 5=Aguinaldo, Col 6=P.Antig, Col 7=O.F., Col 8=P.Vacac
+        sdo_vac8 = LimpiarValor(FormViewer.ConNom1.TextMatrix(I7, 4))
         agui5 = LimpiarValor(FormViewer.ConNom1.TextMatrix(I7, 5))
-        ptu_2 = pee10
+        antig5 = LimpiarValor(FormViewer.ConNom1.TextMatrix(I7, 6))
+        via7 = LimpiarValor(FormViewer.ConNom1.TextMatrix(I7, 7))
+
+        If pee10 >= antig5 Then
+            g_ExentoAntig = antig5
+        Else
+            g_ExentoAntig = pee10
+        End If
+        g_GravadoAntig = antig5 - g_ExentoAntig
+    ElseIf FormViewer.ViewerTipoEspecial = 0 Then
+        ' Aguinaldo / PTU: Col 5=Aguinaldo, Col 6=PTU
+        agui5 = LimpiarValor(FormViewer.ConNom1.TextMatrix(I7, 5))
         Dim valCol6 As Currency
         valCol6 = LimpiarValor(FormViewer.ConNom1.TextMatrix(I7, 6))
+        ptu_2 = pee10
         If valCol6 > pee10 Then
             ptu_1 = valCol6 - pee10
         Else

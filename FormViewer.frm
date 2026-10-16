@@ -266,25 +266,33 @@ Public Sub LoadPayroll(ByVal fName As String)
 
     
 
-        If IsNormalPayrollName(nameOnly) Then
+            ViewerEsPosteriorOct2026 = EsPosteriorAOctubre2026(RutaCompletaArchivo, nameOnly)
+
+    If IsNormalPayrollName(nameOnly) Then
         N_ormal = 0
         diat = 15 ' Valor por defecto para carga
         ViewerTipoEspecial = -1
     Else
         N_ormal = 1
         diat = 0
-        Dim uNomArchivo As String
-        uNomArchivo = UCase$(Trim$(nameOnly))
-        If InStr(uNomArchivo, "LIQ") > 0 Or InStr(uNomArchivo, "FIN") > 0 Or InStr(uNomArchivo, "INDEM") > 0 Then
-            ViewerTipoEspecial = 1 ' Liquidaciones
-        ElseIf InStr(uNomArchivo, "AGUI") > 0 Or InStr(uNomArchivo, "PTU") > 0 Or InStr(uNomArchivo, "ESP") > 0 Then
-            ViewerTipoEspecial = 0 ' Aguinaldo / PTU
+        If ViewerEsPosteriorOct2026 Then
+            ' Nuevas reglas de negocio a partir del 10 de Octubre 2026
+            Dim uNomArchivo As String
+            uNomArchivo = UCase$(Trim$(nameOnly))
+            If Left$(uNomArchivo, 3) = "LIQ" Then
+                ViewerTipoEspecial = 1 ' Liquidación (Compens., Aguinaldo, P.Antig, Indemn.)
+            ElseIf Left$(uNomArchivo, 3) = "FIN" Then
+                ViewerTipoEspecial = 3 ' Finiquito (Sdo.Vac., Aguinaldo, P.Antig, O.F.)
+            ElseIf Left$(uNomArchivo, 3) = "ESP" Or Left$(uNomArchivo, 4) = "AGUI" Or Left$(uNomArchivo, 3) = "PTU" Or InStr(uNomArchivo, "AGUI") > 0 Or InStr(uNomArchivo, "PTU") > 0 Then
+                ViewerTipoEspecial = 0 ' Aguinaldo / PTU
+            Else
+                ViewerTipoEspecial = 2 ' Especial "Otro"
+            End If
         Else
-            ViewerTipoEspecial = -1
+            ' Antes del 10 de Octubre 2026: especiales con encabezados clasicos
+            ViewerTipoEspecial = 2
         End If
     End If
-
-    
 
     Arch = nameOnly
 
@@ -454,39 +462,25 @@ End Sub
 
 
 Private Function IsNormalPayrollName(ByVal fName As String) As Boolean
-
+    On Error Resume Next
+    Dim cleanName As String
     Dim namePart As String
-
-    If Len(fName) = 12 Then
-
-        namePart = UCase(Left$(fName, 3))
-
-        If namePart = "ENE" Or namePart = "FEB" Or namePart = "MAR" Or namePart = "ABR" Or namePart = "MAY" Or namePart = "JUN" Or namePart = "JUL" Or namePart = "AGO" Or namePart = "SEP" Or namePart = "OCT" Or namePart = "NOV" Or namePart = "DIC" Then
-
-            
-
-            Dim q As String
-
-            q = Mid$(fName, 4, 1)
-
-            If q = "1" Or q = "2" Then
-
-                If IsNumeric(Mid$(fName, 5, 4)) Then
-
-                    IsNormalPayrollName = True
-
-                    Exit Function
-
-                End If
-
-            End If
-
-        End If
-
+    
+    cleanName = Trim$(fName)
+    If InStrRev(cleanName, "\") > 0 Then
+        cleanName = Mid$(cleanName, InStrRev(cleanName, "\") + 1)
     End If
-
+    
+    If Len(cleanName) >= 3 Then
+        namePart = UCase$(Left$(cleanName, 3))
+        Select Case namePart
+            Case "ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"
+                IsNormalPayrollName = True
+                Exit Function
+        End Select
+    End If
+    
     IsNormalPayrollName = False
-
 End Function
 
 
@@ -666,78 +660,67 @@ End Sub
 
 
 Sub define()
+       ConNom1.Cols = 25
+       ConNom1.Font = "Arial": ConNom1.Font.Size = 8: ConNom1.Font.Bold = True
+       ConNom1.Row = 0
+       ConNom1.Col = 0: ConNom1.CellAlignment = 4: ConNom1.ColWidth(0) = 600: ConNom1.Text = "No."
+       ConNom1.Col = 1: ConNom1.CellAlignment = 4: ConNom1.ColWidth(1) = 3500: ConNom1.Text = "Nombre"
+       ConNom1.Col = 2: ConNom1.CellAlignment = 4: ConNom1.ColWidth(2) = 1200: ConNom1.Text = "dias T."
+       ConNom1.Col = 3: ConNom1.CellAlignment = 4: ConNom1.ColWidth(3) = 1200: ConNom1.Text = "Sueldo"
 
-     ConNom1.Cols = 25
+       If ViewerTipoEspecial = 1 Then
+           ' Liquidación (LIQ)
+           ConNom1.Col = 4: ConNom1.CellAlignment = 4: ConNom1.ColWidth(4) = 1200: ConNom1.Text = "Compens."
+           ConNom1.Col = 5: ConNom1.CellAlignment = 4: ConNom1.ColWidth(5) = 1200: ConNom1.Text = "Aguinaldo"
+           ConNom1.Col = 6: ConNom1.CellAlignment = 4: ConNom1.ColWidth(6) = 1200: ConNom1.Text = "P.Antig."
+           ConNom1.Col = 7: ConNom1.CellAlignment = 4: ConNom1.ColWidth(7) = 1200: ConNom1.Text = "Indemn."
+           ConNom1.Col = 8: ConNom1.CellAlignment = 4: ConNom1.ColWidth(8) = 1200: ConNom1.Text = "P.Vacac."
+       ElseIf ViewerTipoEspecial = 3 Then
+           ' Finiquito (FIN)
+           ConNom1.Col = 4: ConNom1.CellAlignment = 4: ConNom1.ColWidth(4) = 1200: ConNom1.Text = "Sdo.Vac."
+           ConNom1.Col = 5: ConNom1.CellAlignment = 4: ConNom1.ColWidth(5) = 1200: ConNom1.Text = "Aguinaldo"
+           ConNom1.Col = 6: ConNom1.CellAlignment = 4: ConNom1.ColWidth(6) = 1200: ConNom1.Text = "P.Antig."
+           ConNom1.Col = 7: ConNom1.CellAlignment = 4: ConNom1.ColWidth(7) = 1200: ConNom1.Text = "O.F."
+           ConNom1.Col = 8: ConNom1.CellAlignment = 4: ConNom1.ColWidth(8) = 1200: ConNom1.Text = "P.Vacac."
+       ElseIf ViewerTipoEspecial = 0 Then
+           ' Aguinaldo / PTU
+           ConNom1.Col = 4: ConNom1.CellAlignment = 4: ConNom1.ColWidth(4) = 1200: ConNom1.Text = "hs.Norm."
+           ConNom1.Col = 5: ConNom1.CellAlignment = 4: ConNom1.ColWidth(5) = 1200: ConNom1.Text = "Aguinaldo"
+           ConNom1.Col = 6: ConNom1.CellAlignment = 4: ConNom1.ColWidth(6) = 1200: ConNom1.Text = "PTU"
+           ConNom1.Col = 7: ConNom1.CellAlignment = 4: ConNom1.ColWidth(7) = 1200: ConNom1.Text = "Bono"
+           ConNom1.Col = 8: ConNom1.CellAlignment = 4: ConNom1.ColWidth(8) = 1200: ConNom1.Text = "P.Vacac."
+       ElseIf ViewerTipoEspecial = 2 Then
+           ' Especiales Otros / Históricas
+           ConNom1.Col = 4: ConNom1.CellAlignment = 4: ConNom1.ColWidth(4) = 1200: ConNom1.Text = "hs.Norm."
+           ConNom1.Col = 5: ConNom1.CellAlignment = 4: ConNom1.ColWidth(5) = 1200: ConNom1.Text = "Aguinaldo"
+           ConNom1.Col = 6: ConNom1.CellAlignment = 4: ConNom1.ColWidth(6) = 1200: ConNom1.Text = "Ptu"
+           ConNom1.Col = 7: ConNom1.CellAlignment = 4: ConNom1.ColWidth(7) = 1200: ConNom1.Text = "Bono"
+           ConNom1.Col = 8: ConNom1.CellAlignment = 4: ConNom1.ColWidth(8) = 1200: ConNom1.Text = "P.Vacac."
+       Else
+           ' Normal (ViewerTipoEspecial = -1)
+           ConNom1.Col = 4: ConNom1.CellAlignment = 4: ConNom1.ColWidth(4) = 1200: ConNom1.Text = "hs.Norm."
+           ConNom1.Col = 5: ConNom1.CellAlignment = 4: ConNom1.ColWidth(5) = 1200: ConNom1.Text = "hs.Dobles"
+           ConNom1.Col = 6: ConNom1.CellAlignment = 4: ConNom1.ColWidth(6) = 1200: ConNom1.Text = "hs.Triples"
+           ConNom1.Col = 7: ConNom1.CellAlignment = 4: ConNom1.ColWidth(7) = 1200: ConNom1.Text = "O.F."
+           ConNom1.Col = 8: ConNom1.CellAlignment = 4: ConNom1.ColWidth(8) = 1200: ConNom1.Text = "P.Vacac."
+       End If
 
-     ConNom1.Font = "Arial": ConNom1.Font.Size = 8: ConNom1.Font.Bold = True
-
-     
-
-     ConNom1.Row = 0
-
-     ConNom1.Col = 0: ConNom1.CellAlignment = 4: ConNom1.ColWidth(0) = 600: ConNom1.Text = "No."
-
-     ConNom1.Col = 1: ConNom1.CellAlignment = 4: ConNom1.ColWidth(1) = 3500: ConNom1.Text = "Nombre"
-
-     ConNom1.Col = 2: ConNom1.CellAlignment = 4: ConNom1.ColWidth(2) = 1200: ConNom1.Text = "dias T."
-
-     ConNom1.Col = 3: ConNom1.CellAlignment = 4: ConNom1.ColWidth(3) = 1200: ConNom1.Text = "Sueldo"
-
-          If ViewerTipoEspecial = 1 Then
-         ' Liquidaciones (alineado con la rama de Marco mhdzsac)
-         ConNom1.Col = 4: ConNom1.CellAlignment = 4: ConNom1.ColWidth(4) = 1200: ConNom1.Text = "Compens."
-         ConNom1.Col = 5: ConNom1.CellAlignment = 4: ConNom1.ColWidth(5) = 1200: ConNom1.Text = "P.Antig."
-         ConNom1.Col = 6: ConNom1.CellAlignment = 4: ConNom1.ColWidth(6) = 1200: ConNom1.Text = "Indemn."
-         ConNom1.Col = 7: ConNom1.CellAlignment = 4: ConNom1.ColWidth(7) = 1200: ConNom1.Text = "O.F."
-         ConNom1.Col = 8: ConNom1.CellAlignment = 4: ConNom1.ColWidth(8) = 1200: ConNom1.Text = "Sdo.Vac."
-     ElseIf ViewerTipoEspecial = 0 Then
-         ' Aguinaldo / PTU
-         ConNom1.Col = 4: ConNom1.CellAlignment = 4: ConNom1.ColWidth(4) = 1200: ConNom1.Text = "hs.Norm."
-         ConNom1.Col = 5: ConNom1.CellAlignment = 4: ConNom1.ColWidth(5) = 1200: ConNom1.Text = "Aguinaldo"
-         ConNom1.Col = 6: ConNom1.CellAlignment = 4: ConNom1.ColWidth(6) = 1200: ConNom1.Text = "Ptu"
-         ConNom1.Col = 7: ConNom1.CellAlignment = 4: ConNom1.ColWidth(7) = 1200: ConNom1.Text = "Premio punt."
-         ConNom1.Col = 8: ConNom1.CellAlignment = 4: ConNom1.ColWidth(8) = 1200: ConNom1.Text = "P.Vacac."
-     Else
-         ' Normal
-         ConNom1.Col = 4: ConNom1.CellAlignment = 4: ConNom1.ColWidth(4) = 1200: ConNom1.Text = "hs.Norm."
-         ConNom1.Col = 5: ConNom1.CellAlignment = 4: ConNom1.ColWidth(5) = 1200: ConNom1.Text = "hs.Dobles"
-         ConNom1.Col = 6: ConNom1.CellAlignment = 4: ConNom1.ColWidth(6) = 1200: ConNom1.Text = "hs.Triples"
-         ConNom1.Col = 7: ConNom1.CellAlignment = 4: ConNom1.ColWidth(7) = 1200: ConNom1.Text = "O.F."
-         ConNom1.Col = 8: ConNom1.CellAlignment = 4: ConNom1.ColWidth(8) = 1200: ConNom1.Text = "P.Vacac."
-     End If
-
-      ConNom1.Col = 9: ConNom1.CellAlignment = 4: ConNom1.ColWidth(9) = 1200: ConNom1.Text = "Otras"
-
-      ConNom1.Col = 10: ConNom1.CellAlignment = 4: ConNom1.ColWidth(10) = 1200: ConNom1.Text = "Perc.exenta."
-
-      ConNom1.Col = 11: ConNom1.CellAlignment = 4: ConNom1.ColWidth(11) = 1200: ConNom1.Text = "Tot.Ingr."
-
-      ConNom1.Col = 12: ConNom1.CellAlignment = 4: ConNom1.ColWidth(12) = 1200: ConNom1.Text = "Ispt"
-
-      ConNom1.Col = 13: ConNom1.CellAlignment = 4: ConNom1.ColWidth(13) = 1200: ConNom1.Text = "Sub.P/Empl."
-
-      ConNom1.Col = 14: ConNom1.CellAlignment = 4: ConNom1.ColWidth(14) = 1200: ConNom1.Text = "Imss"
-
-      ConNom1.Col = 15: ConNom1.CellAlignment = 4: ConNom1.ColWidth(15) = 1200: ConNom1.Text = "Prestamos"
-
-      ConNom1.Col = 16: ConNom1.CellAlignment = 4: ConNom1.ColWidth(16) = 1200: ConNom1.Text = "Fonacot"
-
-      ConNom1.Col = 17: ConNom1.CellAlignment = 4: ConNom1.ColWidth(17) = 1200: ConNom1.Text = "Pension Alimenticia"
-
-      ConNom1.Col = 18: ConNom1.CellAlignment = 4: ConNom1.ColWidth(18) = 1200: ConNom1.Text = "Infonavit"
-
-      ConNom1.Col = 19: ConNom1.CellAlignment = 4: ConNom1.ColWidth(19) = 1200: ConNom1.Text = "Tot.Deduc"
-
-      ConNom1.Col = 20: ConNom1.CellAlignment = 4: ConNom1.ColWidth(20) = 1200: ConNom1.Text = "Neto"
-
-      ConNom1.Col = 21: ConNom1.ColWidth(21) = 0
-
-      ConNom1.Col = 22: ConNom1.ColWidth(22) = 0
-
-      ConNom1.Col = 23: ConNom1.ColWidth(23) = 0
-
-      ConNom1.Col = 24: ConNom1.CellAlignment = 4: ConNom1.ColWidth(24) = 2400: ConNom1.Text = "Banamex"
-
+       ConNom1.Col = 9: ConNom1.CellAlignment = 4: ConNom1.ColWidth(9) = 1200: ConNom1.Text = "Otras"
+       ConNom1.Col = 10: ConNom1.CellAlignment = 4: ConNom1.ColWidth(10) = 1200: ConNom1.Text = "Perc.exenta."
+       ConNom1.Col = 11: ConNom1.CellAlignment = 4: ConNom1.ColWidth(11) = 1200: ConNom1.Text = "Tot.Ingr."
+       ConNom1.Col = 12: ConNom1.CellAlignment = 4: ConNom1.ColWidth(12) = 1200: ConNom1.Text = "Ispt"
+       ConNom1.Col = 13: ConNom1.CellAlignment = 4: ConNom1.ColWidth(13) = 1200: ConNom1.Text = "Sub.P/Empl."
+       ConNom1.Col = 14: ConNom1.CellAlignment = 4: ConNom1.ColWidth(14) = 1200: ConNom1.Text = "Imss"
+       ConNom1.Col = 15: ConNom1.CellAlignment = 4: ConNom1.ColWidth(15) = 1200: ConNom1.Text = "Prestamos"
+       ConNom1.Col = 16: ConNom1.CellAlignment = 4: ConNom1.ColWidth(16) = 1200: ConNom1.Text = "Fonacot"
+       ConNom1.Col = 17: ConNom1.CellAlignment = 4: ConNom1.ColWidth(17) = 1200: ConNom1.Text = "Pension Alimenticia"
+       ConNom1.Col = 18: ConNom1.CellAlignment = 4: ConNom1.ColWidth(18) = 1200: ConNom1.Text = "Infonavit"
+       ConNom1.Col = 19: ConNom1.CellAlignment = 4: ConNom1.ColWidth(19) = 1200: ConNom1.Text = "Tot.Deduc"
+       ConNom1.Col = 20: ConNom1.CellAlignment = 4: ConNom1.ColWidth(20) = 1200: ConNom1.Text = "Neto"
+       ConNom1.Col = 21: ConNom1.ColWidth(21) = 0
+       ConNom1.Col = 22: ConNom1.ColWidth(22) = 0
+       ConNom1.Col = 23: ConNom1.ColWidth(23) = 0
+       ConNom1.Col = 24: ConNom1.CellAlignment = 4: ConNom1.ColWidth(24) = 2400: ConNom1.Text = "Banamex"
 End Sub
 
 
@@ -1118,7 +1101,11 @@ Private Sub CmdCFDI_Click()
 
     
 
-    If InStr(uNom, "LIQ") > 0 Or InStr(uNom, "FIN") > 0 Or InStr(uNom, "INDEM") > 0 Then
+    If InStr(uNom, "FIN") > 0 Then
+
+        ViewerTipoEspecial = 3 ' Finiquito
+
+    ElseIf InStr(uNom, "LIQ") > 0 Or InStr(uNom, "INDEM") > 0 Then
 
         ViewerTipoEspecial = 1 ' Liquidaciones
 
@@ -1167,82 +1154,81 @@ End Sub
 
 
 Private Function EsPosteriorAOctubre2026(ByVal rutaArchivo As String, ByVal nombreArchivo As String) As Boolean
-
     On Error Resume Next
-
     Dim fechaArch As Date
-
     Dim uNom As String
-
-    uNom = UCase$(Trim$(nombreArchivo))
-
-    
-
-    ' 1. Intentar por fecha de archivo en disco
-
-    If rutaArchivo <> "" Then
-
-        If Dir(rutaArchivo) <> "" Then
-
-            fechaArch = FileDateTime(rutaArchivo)
-
-        End If
-
-    End If
-
-    If fechaArch = 0 And Dir(nombreArchivo) <> "" Then
-
-        fechaArch = FileDateTime(nombreArchivo)
-
-    End If
-
-    
-
-    If fechaArch >= DateSerial(2026, 10, 1) Then
-
-        EsPosteriorAOctubre2026 = True
-
-        Exit Function
-
-    End If
-
-    
-
-    ' 2. Analizar por nombre
-
     Dim k As Integer, anioEncontrado As Integer
-
-    For k = 1 To Len(uNom) - 3
-
-        If IsNumeric(Mid$(uNom, k, 4)) Then
-
-            anioEncontrado = Val(Mid$(uNom, k, 4))
-
-            If anioEncontrado >= 2027 Then
-
-                EsPosteriorAOctubre2026 = True
-
-                Exit Function
-
-            ElseIf anioEncontrado = 2026 Then
-
-                If InStr(uNom, "OCT") > 0 Or InStr(uNom, "NOV") > 0 Or InStr(uNom, "DIC") > 0 Then
-
-                    EsPosteriorAOctubre2026 = True
-
-                    Exit Function
-
-                End If
-
-            End If
-
-        End If
-
-    Next k
-
+    Dim mesPrefijo As String
     
-
-    EsPosteriorAOctubre2026 = False
-
+    uNom = UCase$(Trim$(nombreArchivo))
+    If InStrRev(uNom, "\") > 0 Then
+        uNom = Mid$(uNom, InStrRev(uNom, "\") + 1)
+    End If
+    
+    ' 1. Si es nómina normal, determinar antigüedad por prefijo de mes y año
+    If IsNormalPayrollName(uNom) Then
+        mesPrefijo = Left$(uNom, 3)
+        For k = 1 To Len(uNom) - 3
+            If IsNumeric(Mid$(uNom, k, 4)) Then
+                anioEncontrado = Val(Mid$(uNom, k, 4))
+                If anioEncontrado > 1990 And anioEncontrado < 2099 Then
+                    If anioEncontrado < 2026 Then
+                        EsPosteriorAOctubre2026 = False
+                        Exit Function
+                    ElseIf anioEncontrado > 2026 Then
+                        EsPosteriorAOctubre2026 = True
+                        Exit Function
+                    Else
+                        ' Año 2026
+                        Select Case mesPrefijo
+                            Case "ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP"
+                                EsPosteriorAOctubre2026 = False
+                                Exit Function
+                            Case "NOV", "DIC"
+                                EsPosteriorAOctubre2026 = True
+                                Exit Function
+                            Case "OCT"
+                                EsPosteriorAOctubre2026 = True
+                                Exit Function
+                        End Select
+                    End If
+                End If
+            End If
+        Next k
+    Else
+        ' Para nóminas especiales, verificar si el nombre incluye un año explícito
+        For k = 1 To Len(uNom) - 3
+            If IsNumeric(Mid$(uNom, k, 4)) Then
+                anioEncontrado = Val(Mid$(uNom, k, 4))
+                If anioEncontrado > 1990 And anioEncontrado < 2099 Then
+                    If anioEncontrado < 2026 Then
+                        EsPosteriorAOctubre2026 = False
+                        Exit Function
+                    ElseIf anioEncontrado > 2026 Then
+                        EsPosteriorAOctubre2026 = True
+                        Exit Function
+                    End If
+                End If
+            End If
+        Next k
+    End If
+    
+    ' 2. Validación de archivo en disco
+    If rutaArchivo <> "" Then
+        If Dir(rutaArchivo) <> "" Then
+            fechaArch = FileDateTime(rutaArchivo)
+        End If
+    End If
+    If fechaArch = 0 And nombreArchivo <> "" Then
+        If Dir(nombreArchivo) <> "" Then
+            fechaArch = FileDateTime(nombreArchivo)
+        End If
+    End If
+    
+    If fechaArch >= DateSerial(2026, 10, 10) Then
+        EsPosteriorAOctubre2026 = True
+    Else
+        EsPosteriorAOctubre2026 = False
+    End If
 End Function
 

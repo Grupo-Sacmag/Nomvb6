@@ -952,12 +952,13 @@ Private Sub Form_Load()
         
         ComboEspecial.Clear
         ComboEspecial.AddItem "1. Aguinaldo / PTU"
-        ComboEspecial.AddItem "2. Liquidaciones (Compensaciones/Antig" & Chr(252) & "edad/Indemnizaciones)"
-        ComboEspecial.AddItem "3. Otro"
+        ComboEspecial.AddItem "2. Liquidación (LIQ)"
+        ComboEspecial.AddItem "3. Finiquito (FIN)"
+        ComboEspecial.AddItem "4. Otro"
         ComboEspecial.ListIndex = 0
         N_ormal = 0
         OcultarCamposEspeciales
-        ActualizarEncabezados
+        LimpiarEncabezados
     Else
         Close 2
         MsgBox "No existe archivo de personal no es posible capturar la nomina"
@@ -2794,7 +2795,7 @@ Rem On Error GoTo manejador
          Case 4 To 6
               hs_ext = personal.ingr / 8
               
-            If N_ormal = 0 Or ComboEspecial.ListIndex = 2 Then
+            If N_ormal = 0 Then
               Select Case ruta
                  Case 4 To 6
                     dato_sal = dato_ent * hs_ext
@@ -2850,7 +2851,7 @@ Rem On Error GoTo manejador
            End If
          
          Case 7, 9
-              If N_ormal = 1 And ComboEspecial.ListIndex = 1 And ruta = 7 Then
+              If N_ormal = 1 And (ComboEspecial.ListIndex = 1 Or ComboEspecial.ListIndex = 2) And ruta = 7 Then
                   ' Liquidaciones: Indemnización directa en columna 7
                   ConNom1.Col = ruta
                   ConNom1.Text = Format(dato_ent, z1$)
@@ -3318,83 +3319,84 @@ Sub carganom()
     Rem 24 Cuenta de banco
 End Sub
 Sub define()
-   
-   ConNom1.Font = "Arial": ConNom1.Font.Size = 8: ConNom1.Font.Bold = True
-   
-   ConNom1.Row = 0
-   ConNom1.Col = 0: ConNom1.CellAlignment = 4: ConNom1.ColWidth(0) = 600: ConNom1.Text = "No."
-   ConNom1.Col = 1: ConNom1.CellAlignment = 4: ConNom1.ColWidth(1) = 3500: ConNom1.Text = "Nombre"
-   ConNom1.Col = 2: ConNom1.CellAlignment = 4: ConNom1.ColWidth(2) = 1200: ConNom1.Text = "dias T."
-   ConNom1.Col = 3: ConNom1.CellAlignment = 4: ConNom1.ColWidth(3) = 1200: ConNom1.Text = "Sueldo"
-   ConNom1.Col = 4: ConNom1.CellAlignment = 4: ConNom1.ColWidth(4) = 1200
-   If N_ormal = 0 Then
-       ConNom1.Text = "hs.Norm."
-   Else
-       If ComboEspecial.ListIndex = 0 Then
-           ConNom1.Text = "hs.Norm."
-       ElseIf ComboEspecial.ListIndex = 2 Then
-           ConNom1.Text = "hs.Norm."
-       Else
-           ConNom1.Text = "Sdo.Vac."
-       End If
-   End If
-   
-   ConNom1.Col = 5: ConNom1.CellAlignment = 4: ConNom1.ColWidth(5) = 1200
-   If N_ormal = 0 Then
-       ConNom1.Text = "hs.Dobles"
-   Else
-       If ComboEspecial.ListIndex = 0 Then
-           ConNom1.Text = "Aguinaldo"
-       ElseIf ComboEspecial.ListIndex = 2 Then
-           ConNom1.Text = "hs.Dobles"
-       Else
-           ConNom1.Text = "Compensac."
-       End If
-   End If
-   
-   ConNom1.Col = 6: ConNom1.CellAlignment = 4: ConNom1.ColWidth(6) = 1200
-   If N_ormal = 0 Then
-       ConNom1.Text = "hs.Triples"
-   Else
-       If ComboEspecial.ListIndex = 0 Then
-           ConNom1.Text = "Ptu"
-       ElseIf ComboEspecial.ListIndex = 2 Then
-           ConNom1.Text = "hs.Triples"
-       Else
-           ConNom1.Text = "P. Antig" & Chr(252) & "edad"
-       End If
-   End If
-   
-   ConNom1.Col = 7: ConNom1.CellAlignment = 4: ConNom1.ColWidth(7) = 1200
-   If N_ormal = 0 Then
-       ConNom1.Text = "O.F."
-   Else
-       If ComboEspecial.ListIndex = 0 Then
-           ConNom1.Text = "Bono"
-       ElseIf ComboEspecial.ListIndex = 2 Then
-           ConNom1.Text = "O.F."
-       Else
-           ConNom1.Text = "Indemnizac."
-       End If
-   End If
-   
-    ConNom1.Col = 8: ConNom1.CellAlignment = 4: ConNom1.ColWidth(8) = 1200: ConNom1.Text = "P.Vacac."
-    ConNom1.Col = 9: ConNom1.CellAlignment = 4: ConNom1.ColWidth(9) = 1200: ConNom1.Text = "Otras"
-    ConNom1.Col = 10: ConNom1.CellAlignment = 4: ConNom1.ColWidth(10) = 1200: ConNom1.Text = "Perc.exenta."
-    ConNom1.Col = 11: ConNom1.CellAlignment = 4: ConNom1.ColWidth(11) = 1200: ConNom1.Text = "Tot.Ingr."
-    ConNom1.Col = 12: ConNom1.CellAlignment = 4: ConNom1.ColWidth(12) = 1200: ConNom1.Text = "Ispt"
-    ConNom1.Col = 13: ConNom1.CellAlignment = 4: ConNom1.ColWidth(13) = 1200: ConNom1.Text = "Sub.P/Empl."
-    ConNom1.Col = 14: ConNom1.CellAlignment = 4: ConNom1.ColWidth(14) = 1200: ConNom1.Text = "Imss"
-    ConNom1.Col = 15: ConNom1.CellAlignment = 4: ConNom1.ColWidth(15) = 1200: ConNom1.Text = "Prestamos"
-    ConNom1.Col = 16: ConNom1.CellAlignment = 4: ConNom1.ColWidth(16) = 1200: ConNom1.Text = "Fonacot"
-    ConNom1.Col = 17: ConNom1.CellAlignment = 4: ConNom1.ColWidth(17) = 1200: ConNom1.Text = "Pension Alimenticia"
-    ConNom1.Col = 18: ConNom1.CellAlignment = 4: ConNom1.ColWidth(18) = 1200: ConNom1.Text = "Infonavit"
-    ConNom1.Col = 19: ConNom1.CellAlignment = 4: ConNom1.ColWidth(19) = 1200: ConNom1.Text = "Tot.Deduc"
-    ConNom1.Col = 20: ConNom1.CellAlignment = 4: ConNom1.ColWidth(20) = 1200: ConNom1.Text = "Neto"
-    ConNom1.Col = 21: ConNom1.ColWidth(21) = 0: Rem  ConNom1.Text = "Neto"
-    ConNom1.Col = 22: ConNom1.ColWidth(22) = 0: Rem  ConNom1.Text = "Neto"
-    ConNom1.Col = 23: ConNom1.ColWidth(23) = 0: Rem  ConNom1.Text = "Neto"
-    ConNom1.Col = 24: ConNom1.CellAlignment = 4: ConNom1.ColWidth(24) = 2400: ConNom1.Text = "Banamex"
+     ConNom1.Cols = 25
+     ConNom1.Font = "Arial": ConNom1.Font.Size = 8: ConNom1.Font.Bold = True
+     ConNom1.Row = 0
+     ConNom1.Col = 0: ConNom1.CellAlignment = 4: ConNom1.ColWidth(0) = 600: ConNom1.Text = "No."
+     ConNom1.Col = 1: ConNom1.CellAlignment = 4: ConNom1.ColWidth(1) = 3500: ConNom1.Text = "Nombre"
+     ConNom1.Col = 2: ConNom1.CellAlignment = 4: ConNom1.ColWidth(2) = 1200: ConNom1.Text = "dias T."
+     ConNom1.Col = 3: ConNom1.CellAlignment = 4: ConNom1.ColWidth(3) = 1200: ConNom1.Text = "Sueldo"
+     
+     ConNom1.Col = 4: ConNom1.CellAlignment = 4: ConNom1.ColWidth(4) = 1200
+     If N_ormal = 0 Then
+         ConNom1.Text = "hs.Norm."
+     Else
+         If ComboEspecial.ListIndex = 1 Then
+             ConNom1.Text = "Compens."
+         ElseIf ComboEspecial.ListIndex = 2 Then
+             ConNom1.Text = "Sdo.Vac."
+         Else
+             ConNom1.Text = "hs.Norm."
+         End If
+     End If
+     
+     ConNom1.Col = 5: ConNom1.CellAlignment = 4: ConNom1.ColWidth(5) = 1200
+     If N_ormal = 0 Then
+         ConNom1.Text = "hs.Dobles"
+     Else
+         If ComboEspecial.ListIndex = 1 Or ComboEspecial.ListIndex = 2 Then
+             ConNom1.Text = "Aguinaldo"
+         ElseIf ComboEspecial.ListIndex = 0 Or ComboEspecial.ListIndex = 3 Then
+             ConNom1.Text = "Aguinaldo"
+         Else
+             ConNom1.Text = "hs.Dobles"
+         End If
+     End If
+     
+     ConNom1.Col = 6: ConNom1.CellAlignment = 4: ConNom1.ColWidth(6) = 1200
+     If N_ormal = 0 Then
+         ConNom1.Text = "hs.Triples"
+     Else
+         If ComboEspecial.ListIndex = 1 Or ComboEspecial.ListIndex = 2 Then
+             ConNom1.Text = "P. Antig" & Chr(252) & "edad"
+         ElseIf ComboEspecial.ListIndex = 0 Or ComboEspecial.ListIndex = 3 Then
+             ConNom1.Text = "PTU"
+         Else
+             ConNom1.Text = "hs.Triples"
+         End If
+     End If
+     
+     ConNom1.Col = 7: ConNom1.CellAlignment = 4: ConNom1.ColWidth(7) = 1200
+     If N_ormal = 0 Then
+         ConNom1.Text = "O.F."
+     Else
+         If ComboEspecial.ListIndex = 1 Then
+             ConNom1.Text = "Indemnizac."
+         ElseIf ComboEspecial.ListIndex = 2 Then
+             ConNom1.Text = "O.F."
+         ElseIf ComboEspecial.ListIndex = 0 Or ComboEspecial.ListIndex = 3 Then
+             ConNom1.Text = "Bono"
+         Else
+             ConNom1.Text = "O.F."
+         End If
+     End If
+     
+     ConNom1.Col = 8: ConNom1.CellAlignment = 4: ConNom1.ColWidth(8) = 1200: ConNom1.Text = "P.Vacac."
+     ConNom1.Col = 9: ConNom1.CellAlignment = 4: ConNom1.ColWidth(9) = 1200: ConNom1.Text = "Otras"
+     ConNom1.Col = 10: ConNom1.CellAlignment = 4: ConNom1.ColWidth(10) = 1200: ConNom1.Text = "Perc.exenta."
+     ConNom1.Col = 11: ConNom1.CellAlignment = 4: ConNom1.ColWidth(11) = 1200: ConNom1.Text = "Tot.Ingr."
+     ConNom1.Col = 12: ConNom1.CellAlignment = 4: ConNom1.ColWidth(12) = 1200: ConNom1.Text = "Ispt"
+     ConNom1.Col = 13: ConNom1.CellAlignment = 4: ConNom1.ColWidth(13) = 1200: ConNom1.Text = "Sub.P/Empl."
+     ConNom1.Col = 14: ConNom1.CellAlignment = 4: ConNom1.ColWidth(14) = 1200: ConNom1.Text = "Imss"
+     ConNom1.Col = 15: ConNom1.CellAlignment = 4: ConNom1.ColWidth(15) = 1200: ConNom1.Text = "Prestamos"
+     ConNom1.Col = 16: ConNom1.CellAlignment = 4: ConNom1.ColWidth(16) = 1200: ConNom1.Text = "Fonacot"
+     ConNom1.Col = 17: ConNom1.CellAlignment = 4: ConNom1.ColWidth(17) = 1200: ConNom1.Text = "Pension Alimenticia"
+     ConNom1.Col = 18: ConNom1.CellAlignment = 4: ConNom1.ColWidth(18) = 1200: ConNom1.Text = "Infonavit"
+     ConNom1.Col = 19: ConNom1.CellAlignment = 4: ConNom1.ColWidth(19) = 1200: ConNom1.Text = "Tot.Deduc"
+     ConNom1.Col = 20: ConNom1.CellAlignment = 4: ConNom1.ColWidth(20) = 1200: ConNom1.Text = "Neto"
+     ConNom1.Col = 21: ConNom1.ColWidth(21) = 0: ConNom1.ColWidth(22) = 0: ConNom1.ColWidth(23) = 0
+     ConNom1.Col = 24: ConNom1.CellAlignment = 4: ConNom1.ColWidth(24) = 2400: ConNom1.Text = "Banamex"
+
 End Sub
 Sub genenom(gg)
     sum(1) = 0
@@ -3919,6 +3921,8 @@ Private Sub generarNominas()
     Close 6
     Close 12
     Close 14
+    Close 2: Open "personal.dno" For Random As 2 Len = Len(personal)
+    Close 8: Open "maestro.dno" For Random As 8 Len = Len(maestro)
 
     Open Arch$ For Random As 6 Len = Len(nomina)
     nm = LOF(6) / Len(nomina)
@@ -4140,6 +4144,8 @@ Private Sub generarNominaGeneral()
     Close 6: Open Arch$ For Random As 6 Len = Len(nomina): nm = LOF(6) / Len(nomina)
     Close 14: Open Arch1 For Random As 14 Len = Len(nom_com)
     Close 12: Open "bnxcla.dno" For Random As 12 Len = Len(Clbnx)
+    Close 2: Open "personal.dno" For Random As 2 Len = Len(personal)
+    Close 8: Open "maestro.dno" For Random As 8 Len = Len(maestro)
             
     ProgressBar1.Min = 0
     ProgressBar1.Max = Dm
@@ -4323,7 +4329,7 @@ Private Sub Option1_Click()
     Combo1.locked = False
     Combo1.Visible = True
     OcultarCamposEspeciales
-    ActualizarEncabezados
+    LimpiarEncabezados
 End Sub
 
 Private Sub Option2_Click()
@@ -4338,7 +4344,7 @@ On Error GoTo errorManejador
         
         MostrarCamposEspeciales
         ActualizarPrefijo
-        ActualizarEncabezados
+        LimpiarEncabezados
         Text1.SetFocus
     End If
 Exit Sub
@@ -4357,7 +4363,7 @@ Private Sub Option3_Click()
      If Option3 = True Then
           N_ormal = 0
           OcultarCamposEspeciales
-          ActualizarEncabezados
+          LimpiarEncabezados
           Label7.Caption = "Nomina de la 1a.quincena " + Combo1.Text + Str$(empresa.ao)
           dia_pago = 15 - 1
           Combo1.Visible = True
@@ -4372,7 +4378,7 @@ Private Sub Option4_Click()
      If Option4 = True Then
         N_ormal = 0
         OcultarCamposEspeciales
-        ActualizarEncabezados
+        LimpiarEncabezados
         Label7.Caption = "Nomina de la 2a.quincena " + Combo1.Text + Str$(empresa.ao)
         dia_pago = dd(meselegido) - 1
         
@@ -4392,42 +4398,43 @@ End Sub
 
 Private Sub Text1_KeyPress(KeyAscii As Integer)
 On Error GoTo ErrHandler
-  If KeyAscii = 13 Then
-      Text1.Text = UCase(Text1.Text)
-      If Len(Text1.Text) > 1 Then
-          If N_ormal = 1 Then
-              If ComboEspecial.ListIndex = 2 Then
-                  If UCase(Left(Text1.Text, 3)) = "LIQ" Or UCase(Left(Text1.Text, 3)) = "FIN" Or UCase(Left(Text1.Text, 3)) = "PTU" Or UCase(Left(Text1.Text, 4)) = "AGUI" Then
-                      MsgBox "En la opcion Otro el nombre no puede iniciar con LIQ, FIN, PTU o AGUI", vbExclamation, "Nombre no permitido"
-                      Text1.Text = ""
-                      Exit Sub
-                  End If
-              End If
-              If UCase(Left(Text1.Text, 3)) = "LIQ" Then
-                  ComboEspecial.ListIndex = 1
-              ElseIf UCase(Left(Text1.Text, 3)) = "ESP" And ComboEspecial.ListIndex <> 2 Then
-                  ComboEspecial.ListIndex = 0
-              End If
-              ActualizarEncabezados
-          End If
-          Label7.Caption = Text1.Text + " " + Str$(empresa.ao)
-          Option1 = False
-          Rem Option2 = False
-          Option3 = False
-          Option4 = False
-          Text3.SetFocus
-          ConNom1.Row = 1
-          ConNom1.Col = 2
-      End If
-      
-      If Text1.Text = "PTU" Then
-        Text3.Text = empresa.sm * 15
-      End If
-   End If
-Exit Sub
-ErrHandler:
-    MsgBox "Error en Text1_KeyPress: " & Err.Description
-End Sub
+    If KeyAscii = 13 Then
+        Text1.Text = UCase(Text1.Text)
+        If Len(Text1.Text) > 1 Then
+            If N_ormal = 1 Then
+                If ComboEspecial.ListIndex = 3 Then
+                    If UCase(Left(Text1.Text, 3)) = "LIQ" Or UCase(Left(Text1.Text, 3)) = "FIN" Or UCase(Left(Text1.Text, 3)) = "PTU" Or UCase(Left(Text1.Text, 4)) = "AGUI" Then
+                        MsgBox "En la opcion Otro el nombre no puede iniciar con LIQ, FIN, PTU o AGUI", vbExclamation, "Nombre no permitido"
+                        Text1.Text = ""
+                        Exit Sub
+                    End If
+                End If
+                If UCase(Left(Text1.Text, 3)) = "LIQ" Then
+                    ComboEspecial.ListIndex = 1
+                ElseIf UCase(Left(Text1.Text, 3)) = "FIN" Then
+                    ComboEspecial.ListIndex = 2
+                ElseIf UCase(Left(Text1.Text, 3)) = "ESP" And ComboEspecial.ListIndex <> 3 Then
+                    ComboEspecial.ListIndex = 0
+                End If
+            End If
+            Label7.Caption = Text1.Text + " " + Str$(empresa.ao)
+            Option1 = False
+            Rem Option2 = False
+            Option3 = False
+            Option4 = False
+            Text3.SetFocus
+            ConNom1.Row = 1
+            ConNom1.Col = 2
+        End If
+        
+        If Text1.Text = "PTU" Then
+          Text3.Text = empresa.sm * 15
+        End If
+     End If
+  Exit Sub
+  ErrHandler:
+      MsgBox "Error en Text1_KeyPress: " & Err.Description
+  End Sub
 
 Public Sub presionarEnterForm8()
     Text1_KeyPress 13
@@ -4664,23 +4671,25 @@ Private Sub Text4_KeyPress(KeyAscii As Integer)
 End Sub
 
 Private Sub ComboEspecial_Click()
-    ActualizarEncabezados
     ActualizarPrefijo
+    LimpiarEncabezados
 End Sub
 
 Private Sub ActualizarPrefijo()
 On Error GoTo ErrHandler
     If N_ormal = 1 Then
         Dim prefix As String
-        If ComboEspecial.ListIndex = 2 Then
+        If ComboEspecial.ListIndex = 3 Then
             Text1.locked = False
             Text1.Text = ""
             Exit Sub
         End If
         If ComboEspecial.ListIndex = 0 Then
             prefix = "ESP"
-        Else
+        ElseIf ComboEspecial.ListIndex = 1 Then
             prefix = "LIQ"
+        ElseIf ComboEspecial.ListIndex = 2 Then
+            prefix = "FIN"
         End If
         Text1.locked = False
         Text1.Text = prefix
@@ -4691,42 +4700,77 @@ ErrHandler:
     MsgBox "Error en ActualizarPrefijo: " & Err.Description
 End Sub
 
+Public Sub LimpiarEncabezados()
+    On Error Resume Next
+    Dim c As Long
+    For c = 0 To ConNom1.Cols - 1
+        ConNom1.TextMatrix(0, c) = ""
+    Next c
+End Sub
+
 Public Sub ActualizarEncabezados()
     On Error Resume Next
+    ConNom1.Cols = 25
     If N_ormal = 0 Then
         ConNom1.TextMatrix(0, 4) = "hs.Norm."
         ConNom1.TextMatrix(0, 5) = "hs.Dobles"
         ConNom1.TextMatrix(0, 6) = "hs.Triples"
         ConNom1.TextMatrix(0, 7) = "O.F."
     Else
-        If ComboEspecial.ListIndex = 0 Then
+        If ComboEspecial.ListIndex = 1 Then
+            ' Liquidacion (LIQ)
+            ConNom1.TextMatrix(0, 4) = "Compens."
+            ConNom1.TextMatrix(0, 5) = "Aguinaldo"
+            ConNom1.TextMatrix(0, 6) = "P. Antig" & Chr(252) & "edad"
+            ConNom1.TextMatrix(0, 7) = "Indemnizac."
+        ElseIf ComboEspecial.ListIndex = 2 Then
+            ' Finiquito (FIN)
+            ConNom1.TextMatrix(0, 4) = "Sdo.Vac."
+            ConNom1.TextMatrix(0, 5) = "Aguinaldo"
+            ConNom1.TextMatrix(0, 6) = "P. Antig" & Chr(252) & "edad"
+            ConNom1.TextMatrix(0, 7) = "O.F."
+        ElseIf ComboEspecial.ListIndex = 0 Or ComboEspecial.ListIndex = 3 Then
+            ' Aguinaldo / PTU / Otro
             ConNom1.TextMatrix(0, 4) = "hs.Norm."
             ConNom1.TextMatrix(0, 5) = "Aguinaldo"
-            ConNom1.TextMatrix(0, 6) = "Ptu"
+            ConNom1.TextMatrix(0, 6) = "PTU"
             ConNom1.TextMatrix(0, 7) = "Bono"
-        ElseIf ComboEspecial.ListIndex = 2 Then
+        Else
+            ' Otro
             ConNom1.TextMatrix(0, 4) = "hs.Norm."
             ConNom1.TextMatrix(0, 5) = "hs.Dobles"
             ConNom1.TextMatrix(0, 6) = "hs.Triples"
             ConNom1.TextMatrix(0, 7) = "O.F."
-        Else
-            ConNom1.TextMatrix(0, 4) = "Sdo.Vac."
-            ConNom1.TextMatrix(0, 5) = "Compensac."
-            ConNom1.TextMatrix(0, 6) = "P. Antig" & Chr(252) & "edad"
-            ConNom1.TextMatrix(0, 7) = "Indemnizac."
         End If
     End If
+    ConNom1.TextMatrix(0, 8) = "P.Vacac."
+    ConNom1.TextMatrix(0, 9) = "Otras"
+    ConNom1.TextMatrix(0, 10) = "Perc.exenta."
+    ConNom1.TextMatrix(0, 11) = "Tot.Ingr."
+    ConNom1.TextMatrix(0, 12) = "Ispt"
+    ConNom1.TextMatrix(0, 13) = "Sub.P/Empl."
+    ConNom1.TextMatrix(0, 14) = "Imss"
+    ConNom1.TextMatrix(0, 15) = "Prestamos"
+    ConNom1.TextMatrix(0, 16) = "Fonacot"
+    ConNom1.TextMatrix(0, 17) = "Pension Alimenticia"
+    ConNom1.TextMatrix(0, 18) = "Infonavit"
+    ConNom1.TextMatrix(0, 19) = "Tot.Deduc"
+    ConNom1.TextMatrix(0, 20) = "Neto"
+    ConNom1.ColWidth(21) = 0: ConNom1.ColWidth(22) = 0: ConNom1.ColWidth(23) = 0
+    ConNom1.TextMatrix(0, 24) = "Banamex"
 End Sub
 
 Private Sub Text1_Change()
 On Error GoTo ErrHandler
     If N_ormal = 1 Then
         Dim prefix As String
-        If ComboEspecial.ListIndex = 2 Then Exit Sub
+        If ComboEspecial.ListIndex = 3 Then Exit Sub
         If ComboEspecial.ListIndex = 0 Then
             prefix = "ESP"
-        Else
+        ElseIf ComboEspecial.ListIndex = 1 Then
             prefix = "LIQ"
+        ElseIf ComboEspecial.ListIndex = 2 Then
+            prefix = "FIN"
         End If
         
         If Len(Text1.Text) < Len(prefix) Or UCase(Left(Text1.Text, Len(prefix))) <> prefix Then
