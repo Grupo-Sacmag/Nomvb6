@@ -169,7 +169,7 @@ End If
 
         If (I_7 + 1) <= LOF(7) / Len(DATcf) Then
             Get 7, (I_7 + 1), DATcf
-            NOMCF.Text = Trim(DATcf.Concepto)
+            NOMCF.Text = Trim(DATcf.concepto)
         Else
             NOMCF.Text = ""   ' columnas nuevas sin encabezado
         End If
@@ -523,17 +523,17 @@ End Sub
 Private Sub NCfEdCop_Click()
     Dim i As Long, f As Long
     Dim Temporal1 As String
-    Dim r1 As Long, r2 As Long, c1 As Long, c2 As Long
+    Dim r1 As Long, r2 As Long, C1 As Long, C2 As Long
 
     r1 = IIf(NOMCF.Row < NOMCF.RowSel, NOMCF.Row, NOMCF.RowSel)
     r2 = IIf(NOMCF.Row < NOMCF.RowSel, NOMCF.RowSel, NOMCF.Row)
-    c1 = IIf(NOMCF.Col < NOMCF.ColSel, NOMCF.Col, NOMCF.ColSel)
-    c2 = IIf(NOMCF.Col < NOMCF.ColSel, NOMCF.ColSel, NOMCF.Col)
+    C1 = IIf(NOMCF.Col < NOMCF.ColSel, NOMCF.Col, NOMCF.ColSel)
+    C2 = IIf(NOMCF.Col < NOMCF.ColSel, NOMCF.ColSel, NOMCF.Col)
 
     For i = r1 To r2
-        For f = c1 To c2
+        For f = C1 To C2
             Temporal1 = Temporal1 & NOMCF.TextMatrix(i, f)
-            If f < c2 Then Temporal1 = Temporal1 & vbTab
+            If f < C2 Then Temporal1 = Temporal1 & vbTab
         Next f
         Temporal1 = Temporal1 & vbCrLf
     Next i
@@ -940,25 +940,49 @@ End If
         NOMCF2.NOMCF.TextMatrix(I7, 99) = Format(sue3, "#,##0.00")
     '99 100 P002G
     '100 101 P002E
+        '=========================================================
+        ' P002G / P002E - AGUINALDO
+        ' PLANTILLA 2
+        '
+        ' Indice 100 = P002G (Aguinaldo gravado)
+        ' Indice 101 = P002E (Aguinaldo exento)
+        '=========================================================
+        
         If g_TipoNominaActiva = tnAguinaldo Then
-            If IsNumeric(GridOrigen.TextMatrix(I7, 5)) Then
-                NOMCF2.NOMCF.TextMatrix(I7, 100) = Format(GridOrigen.TextMatrix(I7, 5), "###0.00"):  Rem 64 P002 GGratificación Anual (Aguinaldo)
-            If IsNumeric(GridOrigen.TextMatrix(I7, 6)) Then
-                NOMCF2.NOMCF.TextMatrix(I7, 101) = Format(0, "###0.00")
-                Else
-                NOMCF2.NOMCF.TextMatrix(I7, 101) = Format(GridOrigen.TextMatrix(I7, 10), "###0.00"): Rem 65 P002 GGratificación Anual (Aguinaldo exento)
-           End If
-           ElseIf GridOrigen.TextMatrix(I7, 5) = "" Then
-                NOMCF2.NOMCF.TextMatrix(I7, 100) = Format(0, "#,##0.00")
-                NOMCF2.NOMCF.TextMatrix(I7, 101) = Format(0, "#,##0.00")
-            End If
-                ElseIf g_TipoNominaActiva = tnLiquidacionFiniquito Then
-                NOMCF2.NOMCF.TextMatrix(I7, 100) = Format(g_GravadoAguiLiq, "###0.00")
-                NOMCF2.NOMCF.TextMatrix(I7, 101) = Format(g_ExentoAguiLiq, "###0.00")
+            '---------------------------------------------
+            ' AGUINALDO ESPECIAL
+            '---------------------------------------------
+        
+            ' Parte gravada del aguinaldo
+            If IsNumeric(GridOrigen.TextMatrix(I7, C_CONC5)) Then
+                NOMCF2.NOMCF.TextMatrix(I7, 100) = Format$(CCur(GridOrigen.TextMatrix(I7, C_CONC5)), "#,##0.00")
             Else
-                NOMCF2.NOMCF.TextMatrix(I7, 100) = Format(0, "#,##0.00")
-                NOMCF2.NOMCF.TextMatrix(I7, 101) = Format(0, "#,##0.00")
+                NOMCF2.NOMCF.TextMatrix(I7, 100) = "0.00"
             End If
+        
+            ' Parte exenta del aguinaldo
+            If IsNumeric(GridOrigen.TextMatrix(I7, C_EXENTA)) Then
+                NOMCF2.NOMCF.TextMatrix(I7, 101) = Format$(CCur(GridOrigen.TextMatrix(I7, C_EXENTA)), "#,##0.00")
+            Else
+                NOMCF2.NOMCF.TextMatrix(I7, 101) = "0.00"
+            End If
+        
+        ElseIf g_TipoNominaActiva = tnLiquidacionFiniquito Then
+            '---------------------------------------------
+            ' AGUINALDO EN LIQUIDACION / FINIQUITO
+            '---------------------------------------------
+        
+            NOMCF2.NOMCF.TextMatrix(I7, 100) = Format$(g_GravadoAguiLiq, "#,##0.00")
+            NOMCF2.NOMCF.TextMatrix(I7, 101) = Format$(g_ExentoAguiLiq, "#,##0.00")
+        Else
+            '---------------------------------------------
+            ' NOMINA SIN AGUINALDO ESPECIAL
+            '---------------------------------------------
+        
+            NOMCF2.NOMCF.TextMatrix(I7, 100) = "0.00"
+            NOMCF2.NOMCF.TextMatrix(I7, 101) = "0.00"
+        
+        End If
     '101 102
     '102 103
     'P003G PTU

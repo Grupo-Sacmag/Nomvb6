@@ -51,9 +51,9 @@ Begin VB.Form Form8
          Strikethrough   =   0   'False
       EndProperty
       Height          =   360
-      Left            =   6840
+      Left            =   7560
       TabIndex        =   16
-      Top             =   960
+      Top             =   1440
       Width           =   2295
    End
    Begin MSComctlLib.ProgressBar ProgressBar1 
@@ -93,9 +93,9 @@ Begin VB.Form Form8
          Strikethrough   =   0   'False
       EndProperty
       Height          =   360
-      Left            =   4920
+      Left            =   7560
       TabIndex        =   13
-      Top             =   1440
+      Top             =   960
       Width           =   1815
    End
    Begin VB.TextBox Text2 
@@ -290,9 +290,9 @@ Begin VB.Form Form8
          Strikethrough   =   0   'False
       EndProperty
       Height          =   330
-      Left            =   9240
+      Left            =   9960
       TabIndex        =   18
-      Top             =   960
+      Top             =   1440
       Visible         =   0   'False
       Width           =   1560
    End
@@ -316,9 +316,9 @@ Begin VB.Form Form8
          Strikethrough   =   0   'False
       EndProperty
       Height          =   255
-      Left            =   6000
+      Left            =   6720
       TabIndex        =   17
-      Top             =   1080
+      Top             =   1560
       Width           =   735
    End
    Begin VB.Label Label9 
@@ -341,9 +341,9 @@ Begin VB.Form Form8
          Strikethrough   =   0   'False
       EndProperty
       Height          =   255
-      Left            =   3360
+      Left            =   6000
       TabIndex        =   12
-      Top             =   1560
+      Top             =   1080
       Width           =   1455
    End
    Begin VB.Label Label7 
@@ -880,6 +880,21 @@ Dim PrincIngr As Long, PrincDesc As Long, Color_gris As Long, Nu_mero As Double,
 Public subsidioParaElEmpleo As Currency
 Private ActualizandoNombre As Boolean
 
+Private RutaNominaSesion As String
+Private RutaCmpSesion As String
+
+Private NominaNuevaSesion As Boolean
+Private CmpNuevoSesion As Boolean
+
+Private NominaArchivadaSesion As Boolean
+Private GuardadoFallidoSesion As Boolean
+
+Private CerrandoForm8 As Boolean
+
+Private SesionTemporalRegistrada As Boolean
+
+Private CapturaActivaSesion As Boolean
+
 Private Sub Borrarblancos_Click(Index As Integer)
     Dim i As Integer
     Dim vacia As Boolean
@@ -1004,6 +1019,19 @@ Private Sub nomcap_ini_Click(Index As Integer)
     Dim rutaNominas As String
     Dim tamArchivo As Long
     Dim registrosArchivo As Long
+    
+    '=======================================================
+    ' IMPEDIR OTRA CAPTURA MIENTRAS HAY UNA ACTIVA
+    '=======================================================
+    
+    If CapturaActivaSesion Then
+    
+        MsgBox "Ya existe una nomina en captura." & vbCrLf & vbCrLf & "Para iniciar otra nomina, primero debe " & "salir de la captura actual." & vbCrLf & vbCrLf & _
+               "Puede guardar, salir sin guardar " & "o cancelar la salida.", vbExclamation, "Captura activa"
+    
+        Exit Sub
+    
+    End If
 
     '=======================================================
     ' 1. CONSTRUIR EL NOMBRE DE LA NOMINA
@@ -1210,13 +1238,30 @@ Private Sub nomcap_ini_Click(Index As Integer)
     Debug.Print "C_EXENTA: "; C_EXENTA
     Debug.Print "C_TOTING: "; C_TOTING
     Debug.Print "C_NETO: "; C_NETO
-
+    
     '=======================================================
-    ' 7. CONTINUAR CON LA CAPTURA ORIGINAL
+    ' 7. CONTINUAR / REGISTRAR ARCHIVOS DE ESTA SESION
     '=======================================================
-
+    
+    RutaNominaSesion = fullArchPath
+    RutaCmpSesion = Left$(fullArchPath, Len(fullArchPath) - 4) & ".cmp"
+    
+    NominaNuevaSesion = (Len(Dir$(RutaNominaSesion)) = 0)
+    CmpNuevoSesion = (Len(Dir$(RutaCmpSesion)) = 0)
+    
+    SesionTemporalRegistrada = True
+    CapturaActivaSesion = True
+    
+    NominaArchivadaSesion = False
+    GuardadoFallidoSesion = False
+    
+    Debug.Print "NOM nuevo: "; NominaNuevaSesion
+    Debug.Print "CMP nuevo: "; CmpNuevoSesion
+    
     generarNominas
     FuncionImpuesto
+    
+    BloquearSeleccionNomina True
 
     Exit Sub
 
@@ -1226,10 +1271,7 @@ Private Sub nomcap_ini_Click(Index As Integer)
 
 ErrorManejador:
 
-    MsgBox "No fue posible iniciar o consultar la nomina." & _
-           vbCrLf & _
-           "Error " & Err.Number & ": " & Err.Description, _
-           vbCritical, "Nomina"
+    MsgBox "No fue posible iniciar o consultar la nomina." & vbCrLf & "Error " & Err.Number & ": " & Err.Description, vbCritical, "Nomina"
 
 End Sub
 Private Sub ReleaseObjects(o_Excel As Object, o_Libro As Object, o_Hoja As Object)
@@ -1665,11 +1707,8 @@ End Sub
 
 
 Private Sub CFDI2_Click()
-
     OrigenCFDI = 0
-
     NOMCF2.Show
-
 End Sub
 
 Private Sub cheajte_Click(Index As Integer)
@@ -1838,10 +1877,23 @@ Private Sub Form_Resize()
 End Sub
 
 Private Sub Form_Unload(Cancel As Integer)
-    capnosal_Click 1
-    Form1.Show
-End Sub
 
+    If CerrandoForm8 Then Exit Sub
+
+    If Not ConfirmarSalidaNomina() Then
+        Cancel = 1
+        Exit Sub
+    End If
+
+    CerrandoForm8 = True
+
+    FinalizarSalidaNomina
+
+    Form1.Show
+
+    CerrandoForm8 = False
+
+End Sub
 Private Sub GenBan_Click(Index As Integer)
     Form9.Show
 End Sub
@@ -3828,6 +3880,10 @@ Private Sub GridANomina(ByVal f As Long)
 End Sub
 
 Private Sub archnom_Click(Index As Integer)
+
+On Error GoTo ErrorGuardar
+GuardadoFallidoSesion = False
+
     Dim f As Long
     Dim colanti As Long, renati As Long
 
@@ -3859,8 +3915,18 @@ Private Sub archnom_Click(Index As Integer)
     ConNom1.Col = colanti
     ConNom1.Row = renati
     ConNom1.SetFocus
-
+    
+    NominaArchivadaSesion = True
+    GuardadoFallidoSesion = False
+    
     MsgBox ("Archivada con exito!")
+    
+    Exit Sub
+
+ErrorGuardar:
+    GuardadoFallidoSesion = True
+    MsgBox "Ocurrio un error al archivar la nomina." & vbCrLf & "Error " & Err.Number & ": " & Err.Description & vbCrLf & vbCrLf & "Los archivos se conservaran para revision.", vbCritical, "Error al guardar"
+
 End Sub
 
 Private Sub cap_act_Click(Index As Integer)
@@ -3967,37 +4033,29 @@ Private Sub capnomnum_Click(Index As Integer)
 End Sub
 
 Private Sub capnosal_Click(Index As Integer)
-    Clipboard.Clear
-    
-On Error GoTo salidaverdad
 
-    If archiva_o <> 0 Then
-        responde = MsgBox("Desea salir sin Archivar ", vbYesNo + vbCritical + vbDefaultButton2)
-        If responde = vbYes Then
-            archiva_o = 0
-            ConNom1.Clear
-            Close 2: Close 3: Close 4: Close 5
-            Form8.Hide
-            Form1.Show
-        Else
-            If ConNom1.TextMatrix(1, 0) <> "" Then archnom_Click 1
-            ConNom1.Clear
-            Close 2: Close 3: Close 4: Close 5
-            Form8.Hide
-            Form1.Show
-        End If
-    End If
+    On Error GoTo ErrorSalida
+    If Not ConfirmarSalidaNomina() Then Exit Sub
+    CerrandoForm8 = True
+    
+    FinalizarSalidaNomina
+
+    Me.Hide
+    Form1.Show
+
+    CerrandoForm8 = False
+
     Exit Sub
 
-salidaverdad:
-    MsgBox "Ups! ocurio un error" & Err.Description, vbOKCancel, Err.Number
-
+ErrorSalida:
+    CerrandoForm8 = False
+    MsgBox "Error al salir de la captura." & vbCrLf & Err.Number & ": " & Err.Description, vbCritical, "Nomina"
 End Sub
 
 Private Sub caprecind_Click(Index As Integer)
     colanti = ConNom1.Col
     renati = ConNom1.Row
-    
+    archnom_Click
     If ConNom1.Text <> "" Then
         rgtro = ConNom1.Text
     Else
@@ -4534,7 +4592,7 @@ End Sub
 
 Private Sub Option1_Click()
 
-    Combo1.locked = False
+    Combo1.Locked = False
     Combo1.Visible = True
 
     MostrarControlesEspecial False
@@ -4556,7 +4614,7 @@ On Error GoTo ErrorManejador
         N_ormal = 1
         dia_pago = 15 - 1
 
-        Combo1.locked = True
+        Combo1.Locked = True
         Combo1.Visible = False
 
         ' Limpiar nombre anterior.
@@ -4595,7 +4653,7 @@ MostrarControlesEspecial False
         dia_pago = 15 - 1
 
         Combo1.Visible = True
-        Combo1.locked = False
+        Combo1.Locked = False
         Combo1.SetFocus
     End If
 End Sub
@@ -5014,5 +5072,192 @@ Private Sub CargarPartesNombreEspecial()
 
     ' Volver a construir el nombre con los controles.
     ActualizarNombreEspecial
+
+End Sub
+
+Private Function EliminarTemporalesSesion() As Boolean
+    On Error GoTo ErrorEliminar
+    EliminarTemporalesSesion = False
+    
+    If Not SesionTemporalRegistrada Then
+    MsgBox "No se puede confirmar el origen de los archivos." & vbCrLf & "No se eliminara ningun archivo.", vbExclamation, "Proteccion de nomina"
+        Exit Function
+    End If
+
+    ' Nunca eliminar una nomina archivada
+    If NominaArchivadaSesion Then
+        EliminarTemporalesSesion = True
+        Exit Function
+    End If
+
+    ' Nunca eliminar despues de un guardado fallido
+    If GuardadoFallidoSesion Then
+        MsgBox "Hubo un error durante el guardado." & vbCrLf & "Los archivos no se eliminaran.", vbExclamation, "Nomina"
+        Exit Function
+    End If
+
+    ' Cerrar archivos de nomina y complemento
+    Close #6
+    Close #14
+
+    ' Eliminar solo archivos nuevos registrados
+    If NominaNuevaSesion Then
+        If Len(RutaNominaSesion) > 0 Then
+            If Len(Dir$(RutaNominaSesion)) > 0 Then
+                Kill RutaNominaSesion
+            End If
+        End If
+    End If
+
+    If CmpNuevoSesion Then
+        If Len(RutaCmpSesion) > 0 Then
+            If Len(Dir$(RutaCmpSesion)) > 0 Then
+                Kill RutaCmpSesion
+            End If
+        End If
+    End If
+
+    EliminarTemporalesSesion = True
+    Exit Function
+
+ErrorEliminar:
+
+    MsgBox "No fue posible completar la limpieza de archivos." & vbCrLf & "Error " & Err.Number & ": " & Err.Description & vbCrLf & "Revise los archivos antes de continuar.", vbCritical, "Nomina"
+
+End Function
+
+Private Function ConfirmarSalidaNomina() As Boolean
+
+    Dim responde As VbMsgBoxResult
+    ConfirmarSalidaNomina = False
+
+    ' Evitar procesos de salida simultaneos
+    If CerrandoForm8 Then Exit Function
+
+    ' Si no hay cambios pendientes, permitir salir
+    ' Si no hay captura activa, salir normalmente
+    If Not CapturaActivaSesion Then
+        ConfirmarSalidaNomina = True
+        Exit Function
+    End If
+    
+    ' Si ya se archivo y no hay cambios pendientes,
+    ' permitir salir conservando los archivos
+    If NominaArchivadaSesion And archiva_o = 0 Then
+        ConfirmarSalidaNomina = True
+        Exit Function
+    End If
+
+    responde = MsgBox("Desea archivar la nomina antes de salir?" & vbCrLf & vbCrLf & "SI: Guardar y salir." & vbCrLf & "NO: Salir sin guardar." & vbCrLf & _
+        "CANCELAR: Continuar capturando.", vbYesNoCancel + vbQuestion + vbDefaultButton3, "Salir de captura")
+
+    Select Case responde
+        Case vbYes
+
+            ' Guardar utilizando la rutina original
+            archnom_Click 1
+
+            ' No salir si hubo un error al guardar
+            If GuardadoFallidoSesion Then Exit Function
+
+            If Not NominaArchivadaSesion Then
+                MsgBox "No se confirmo el guardado de la nomina.", vbExclamation, "Nomina"
+                Exit Function
+            End If
+
+            ConfirmarSalidaNomina = True
+
+        Case vbNo
+
+            ' Nunca borrar archivos de una sesion no registrada
+            If Not SesionTemporalRegistrada Then
+                MsgBox "La captura no tiene archivos temporales " & "registrados." & vbCrLf & "Se conservaran los archivos y no se " & "cerrara automaticamente la captura.", vbExclamation, "Proteccion de nomina"
+                Exit Function
+            End If
+
+            ' No eliminar archivos despues de un guardado fallido
+            If GuardadoFallidoSesion Then
+                MsgBox "Se produjo un error al guardar." & vbCrLf & "Los archivos deben conservarse para revision.", vbExclamation, "Proteccion de nomina"
+                Exit Function
+            End If
+
+            ' Si ya se archivo anteriormente, nunca eliminar
+            ' sus archivos, aunque existan cambios nuevos.
+            If NominaArchivadaSesion Then
+                ConfirmarSalidaNomina = True
+                Exit Function
+            End If
+
+            ' Descartar archivos nuevos de esta sesion
+            If Not EliminarTemporalesSesion() Then
+                Exit Function
+            End If
+
+            SesionTemporalRegistrada = False
+            NominaNuevaSesion = False
+            CmpNuevoSesion = False
+
+            ConfirmarSalidaNomina = True
+
+        Case vbCancel
+            ' Continuar capturando
+            ConfirmarSalidaNomina = False
+    End Select
+
+End Function
+
+Private Sub BloquearSeleccionNomina(ByVal bloquear As Boolean)
+
+    Option1.Enabled = Not bloquear
+    Option2.Enabled = Not bloquear
+    Option3.Enabled = Not bloquear
+    Option4.Enabled = Not bloquear
+
+    Combo1.Enabled = Not bloquear
+    cboEspecial.Enabled = Not bloquear
+    txtPre.Enabled = Not bloquear
+
+End Sub
+
+Private Sub ReiniciarEstadoSesion()
+
+    CapturaActivaSesion = False
+    SesionTemporalRegistrada = False
+
+    NominaNuevaSesion = False
+    CmpNuevoSesion = False
+
+    NominaArchivadaSesion = False
+    GuardadoFallidoSesion = False
+
+    RutaNominaSesion = ""
+    RutaCmpSesion = ""
+
+    archiva_o = 0
+
+    BloquearSeleccionNomina False
+
+End Sub
+
+Private Sub FinalizarSalidaNomina()
+
+    On Error Resume Next
+
+    Close #6
+    Close #14
+    Close #95
+
+    Close #2
+    Close #3
+    Close #4
+    Close #5
+    Close #8
+    Close #12
+
+    ConNom1.Clear
+
+    ReiniciarEstadoSesion
+
+    On Error GoTo 0
 
 End Sub

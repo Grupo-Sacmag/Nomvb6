@@ -215,8 +215,18 @@ Attribute VB_Exposed = False
 ' ============================================================
 
 Private Sub Form_Load()
+    On Error GoTo manejadorError
+
+    ' Abrir el archivo de empresa
+    Close #1
+    Open "empresa.dno" For Random As #1 Len = Len(empresa)
+
+    ' Calcular el número de registros
+    cm = LOF(1) / Len(empresa)
+
+    ' Cargar los datos de la empresa
     If cm > 0 Then
-        Get 1, cm, empresa
+        Get #1, cm, empresa
 
         Text1.Text = empresa.name
         Text2.Text = empresa.ao
@@ -224,6 +234,13 @@ Private Sub Form_Load()
         Text4.Text = empresa.fecha
         Text5.Text = empresa.psub
     End If
+
+    Exit Sub
+
+manejadorError:
+    MsgBox "Error al cargar los datos de la empresa: " & _
+           Err.Description & " (" & Err.Number & ")", _
+           vbExclamation, "Empresa"
 End Sub
 
 Private Sub Command1_Click()
@@ -235,18 +252,15 @@ Private Sub Command1_Click()
     empresa.fecha = Text4.Text
     empresa.psub = Text5.Text
 
-    If cm = 0 Then
-        Open "EMPRESA.dno" For Random As 1 Len = Len(empresa)
-    End If
-
     cm = cm + 1
-    Put 1, cm, empresa
+    Put #1, cm, empresa
 
     ActualizarDatosEmpresaPrincipal
 
     Exit Sub
 
 manejadorError:
+    MsgBox "Error al guardar la empresa: " & Err.Description & " (" & Err.Number & ")", vbExclamation, "Empresa"
 End Sub
 
 Private Sub empsal_Click(Index As Integer)
@@ -289,7 +303,3 @@ Private Sub ActualizarDatosEmpresaPrincipal()
         " Salario Minimo $" + Str$(empresa.psub) + Chr(13) + _
         "UMA x dia :$ " + Format(empresa.sm, z1$)
 End Sub
-
-
-
-
