@@ -3243,14 +3243,14 @@ Sub carganom()
     If nomina.hs_nor <> 0 Then ConNom1.TextMatrix(li, 4) = Format(nomina.hs_nor, z1$) Else ConNom1.TextMatrix(li, ii) = ""
     ii = ii + 1: Rem 4 Horas Normales
     
-    If N_ormal = 1 And ComboEspecial.ListIndex <> 2 Then
+    If N_ormal = 1 Then
         If nomina.aguin <> 0 Then ConNom1.TextMatrix(li, 5) = Format(nomina.aguin, z1$) Else ConNom1.TextMatrix(li, ii) = ""
     Else
         If nomina.hs_dbl <> 0 Then ConNom1.TextMatrix(li, 5) = Format(nomina.hs_dbl, z1$) Else ConNom1.TextMatrix(li, ii) = ""
     End If
     ii = ii + 1: Rem 5 Horas dobles
    
-    If N_ormal = 1 And ComboEspecial.ListIndex <> 2 Then ' **********************  AQUI VA EL PTU EN LUGAR DE HORAS EXTRAS TRIPLES  *****************
+    If N_ormal = 1 Then ' **********************  AQUI VA EL PTU EN LUGAR DE HORAS EXTRAS TRIPLES  *****************
        If nomina.ptu <> 0 Then ConNom1.TextMatrix(li, 6) = Format(nomina.ptu, z1$) Else ConNom1.TextMatrix(li, ii) = ""
        Else
        If nomina.hs_tri <> 0 Then ConNom1.TextMatrix(li, 6) = Format(nomina.hs_tri, z1$) Else ConNom1.TextMatrix(li, ii) = ""
@@ -3532,12 +3532,12 @@ For f = 1 To limite
    If ConNom1.TextMatrix(f, 2) <> "" Then nomina.dias = ConNom1.TextMatrix(f, 2) Else nomina.dias = 0
    If ConNom1.TextMatrix(f, 3) <> "" Then nomina.sueldo = ConNom1.TextMatrix(f, 3) Else nomina.sueldo = 0
    If ConNom1.TextMatrix(f, 4) <> "" Then nomina.hs_nor = ConNom1.TextMatrix(f, 4) Else nomina.hs_nor = 0
-   If N_ormal = 1 And ComboEspecial.ListIndex <> 2 Then
+   If N_ormal = 1 Then
         If ConNom1.TextMatrix(f, 5) <> "" Then nomina.aguin = ConNom1.TextMatrix(f, 5) Else nomina.aguin = 0
         Else
         If ConNom1.TextMatrix(f, 5) <> "" Then nomina.hs_dbl = ConNom1.TextMatrix(f, 5) Else nomina.hs_dbl = 0
    End If
-   If N_ormal = 1 And ComboEspecial.ListIndex <> 2 Then
+   If N_ormal = 1 Then
         If ConNom1.TextMatrix(f, 6) <> "" Then nomina.ptu = ConNom1.TextMatrix(f, 6) Else nomina.ptu = 0
         Else
         If ConNom1.TextMatrix(f, 6) <> "" Then nomina.hs_tri = ConNom1.TextMatrix(f, 6) Else nomina.hs_tri = 0
