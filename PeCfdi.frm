@@ -90,6 +90,8 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+'Versión anterior
+
 Dim temporal, Temporal1
 Sub Col_Def()
 PCpCfdi.Clear: PCpCfdi.Rows = 200: PCpCfdi.Cols = 9: PCpCfdi.FixedCols = 0

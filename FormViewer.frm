@@ -1,188 +1,99 @@
 VERSION 5.00
-
-Object = "{F9043C88-F6F2-101A-A3C9-08002B2F49FB}#1.2#0"; "ComDlg32.OCX"
-
 Object = "{5E9E78A0-531B-11CF-91F6-C2863C385E30}#1.0#0"; "MSFLXGRD.OCX"
-
 Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
-
 Begin VB.Form FormViewer 
-
    Caption         =   "Visualizador de Nomina Histórica"
-
-   ClientHeight    =   8200
-
+   ClientHeight    =   8205
    ClientLeft      =   60
-
    ClientTop       =   345
-
    ClientWidth     =   12000
-
    LinkTopic       =   "FormViewer"
-
-   ScaleHeight     =   8200
-
+   ScaleHeight     =   8205
    ScaleWidth      =   12000
-
    StartUpPosition =   1  'CenterOwner
-
    Begin VB.CommandButton CmdCopyAll 
-
       Caption         =   "Copiar Todo"
-
       Height          =   375
-
       Left            =   120
-
       TabIndex        =   1
-
       Top             =   120
-
       Width           =   1695
-
    End
-
    Begin VB.CommandButton CmdCopySel 
-
       Caption         =   "Copiar Selección"
-
       Height          =   375
-
       Left            =   1920
-
       TabIndex        =   2
-
       Top             =   120
-
       Width           =   1695
-
    End
-
    Begin VB.CommandButton CmdExit 
-
       Caption         =   "Regresar"
-
       Height          =   375
-
       Left            =   3720
-
       TabIndex        =   3
-
       Top             =   120
-
       Width           =   1695
-
    End
-
    Begin VB.CommandButton CmdCFDI 
-
       Caption         =   "CFDI"
-
       Height          =   375
-
       Left            =   5520
-
       TabIndex        =   4
-
       Top             =   120
-
       Width           =   1695
-
    End
-
-   Begin VB.Label LblFile 
-
-      Caption         =   "Archivo:"
-
-      Height          =   255
-
-      Left            =   7320
-
-      TabIndex        =   5
-
-      Top             =   180
-
-      Width           =   6200
-
-      BeginProperty Font 
-
-         Name            =   "Arial"
-
-         Size            =   9
-
-         Charset         =   0
-
-         Weight          =   700
-
-         Underline       =   0   'False
-
-         Italic          =   0   'False
-
-         Strikethrough   =   0   'False
-
-      EndProperty
-
-   End
-
    Begin MSFlexGridLib.MSFlexGrid ConNom1 
-
       Height          =   7200
-
       Left            =   120
-
       TabIndex        =   0
-
       Top             =   600
-
       Width           =   11760
-
       _ExtentX        =   20743
-
       _ExtentY        =   12700
-
       _Version        =   393216
-
-      FixedRows       =   1
-
       AllowUserResizing=   3
-
    End
-
    Begin MSComctlLib.ProgressBar ProgressBar1 
-
       Height          =   255
-
       Left            =   120
-
-      TabIndex        =   5
-
+      TabIndex        =   6
       Top             =   7850
-
       Visible         =   0   'False
-
       Width           =   11760
-
       _ExtentX        =   20743
-
       _ExtentY        =   450
-
       _Version        =   393216
-
       Appearance      =   1
-
    End
-
+   Begin VB.Label LblFile 
+      Caption         =   "Archivo:"
+      BeginProperty Font 
+         Name            =   "Arial"
+         Size            =   9
+         Charset         =   0
+         Weight          =   700
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      Height          =   255
+      Left            =   7320
+      TabIndex        =   5
+      Top             =   180
+      Width           =   6200
+   End
 End
-
 Attribute VB_Name = "FormViewer"
-
 Attribute VB_GlobalNameSpace = False
-
 Attribute VB_Creatable = False
-
 Attribute VB_PredeclaredId = True
-
 Attribute VB_Exposed = False
+
+
+
+
+
 
 Public RutaCompletaArchivo As String
 Public ViewerTipoEspecial As Integer
@@ -221,53 +132,29 @@ End Sub
 Public Sub LoadPayroll(ByVal fName As String)
 
     On Error GoTo ErrorHandler
-
-    
-
     Dim nameOnly As String
 
     RutaCompletaArchivo = fName
-
     nameOnly = fName
 
-    
-
     Dim pos As Integer
-
     pos = InStrRev(fName, "\")
-
     If pos > 0 Then nameOnly = Mid$(fName, pos + 1)
-
-    
-
-    LblFile.Caption = "Archivo: " & nameOnly
-
-    
+        LblFile.Caption = "Archivo: " & nameOnly
 
     ' Abrir archivo de personal para obtener el total de empleados (Dm)
-
     Close 2
-
     Open "personal.dno" For Random As 2 Len = Len(personal)
-
     Dm = LOF(2) / Len(personal)
 
-    
-
     If Dm <= 0 Then
-
         MsgBox "No existe archivo de personal (personal.dno). No se puede abrir la nomina.", vbCritical, "Error"
-
         Close 2
-
         Exit Sub
-
     End If
 
+    ViewerEsPosteriorOct2026 = EsPosteriorAOctubre2026(RutaCompletaArchivo, nameOnly)
     
-
-            ViewerEsPosteriorOct2026 = EsPosteriorAOctubre2026(RutaCompletaArchivo, nameOnly)
-
     If IsNormalPayrollName(nameOnly) Then
         N_ormal = 0
         diat = 15 ' Valor por defecto para carga
@@ -293,124 +180,67 @@ Public Sub LoadPayroll(ByVal fName As String)
             ViewerTipoEspecial = 2
         End If
     End If
-
+    
     Arch = nameOnly
-
     Arch1 = Left$(nameOnly, Len(nameOnly) - 4) & ".cmp"
 
-    
-
     Close 6
-
     Close 12
-
     Close 14
-
     Close 8
 
-    
-
     Open Arch For Random As 6 Len = Len(nomina)
-
     nm = LOF(6) / Len(nomina)
-
-    
-
     Open Arch1 For Random As 14 Len = Len(nom_com)
-
     Open "bnxcla.dno" For Random As 12 Len = Len(Clbnx)
-
     Open "maestro.dno" For Random As 8 Len = Len(maestro)
 
-    
-
     If nm > 0 Then
-
         If nm < Dm Then
-
             fi_nm = Dm
-
         Else
-
             fi_nm = nm
-
         End If
-
         
-
         ConNom1.Clear
-
+        
         define
 
-        
-
         ConNom1.Rows = fi_nm + 2
-
         limite = 0
-
         renglon = 0
-
-        
-
+    
         ProgressBar1.Visible = True
-
         ProgressBar1.Min = 0
-
         ProgressBar1.Max = fi_nm
-
         ProgressBar1.Value = 0
-
-        
-
+    
         Dim r As Long
-
         Dim yavas As Integer
-
-        
-
+    
         For r = 1 To fi_nm
-
             ProgressBar1.Value = r
-
             Get #6, r, nomina
-
             Get #2, r, personal
-
             Get #8, r, maestro
-
             Get #14, r, nom_com
-
             
-
             yavas = 0
-
             verifica yavas
-
-            
-
+    
             If yavas > 0 Then
-
                 renglon = renglon + 1
-
                 ConNom1.Row = renglon
-
                 ConNom1.Col = 0
-
                 ConNom1.Text = Format(r, "#####")
-
                 limite = limite + 1
-
                 regtro = r
-
                 carganom
-
             End If
-
         Next r
-
         
-
-                eliminacion
+        eliminacion
+        
         If limite > 1 Then
             ConNom1.Row = 1
             ConNom1.Col = 1
@@ -418,45 +248,26 @@ Public Sub LoadPayroll(ByVal fName As String)
             ConNom1.Sort = 1
         End If
         sumavert
-
     Else
-
         MsgBox "El archivo de nomina está vacío o no contiene registros.", vbInformation, "Visor de Nomina"
-
     End If
 
-    
-
     ProgressBar1.Visible = False
-
     Close 6
-
     Close 14
-
     Close 12
-
     Close 8
-
     Close 2
 
     Exit Sub
 
-    
-
 ErrorHandler:
-
     MsgBox "Error al cargar la nomina: " & Err.Description, vbCritical, "Error"
-
     Close 6
-
     Close 14
-
     Close 12
-
     Close 8
-
     Close 2
-
 End Sub
 
 

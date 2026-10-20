@@ -15,6 +15,11 @@ Type Nacu
      Pagui As Currency
      PPTU As Currency
      Pexenta As Currency
+     PCompensa As Currency
+     PAntiguedad As Currency
+     PIndemniza As Currency
+     PSueldoVac As Currency
+     PBono As Currency
      DImpto As Currency
      DSubioAp As Currency
      DCrApl As Currency

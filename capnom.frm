@@ -1,5 +1,5 @@
 VERSION 5.00
-Object = "{F9043C88-F6F2-101A-A3C9-08002B2F49FB}#1.2#0"; "comdlg32.ocx"
+Object = "{F9043C88-F6F2-101A-A3C9-08002B2F49FB}#1.2#0"; "ComDlg32.OCX"
 Object = "{5E9E78A0-531B-11CF-91F6-C2863C385E30}#1.0#0"; "MSFLXGRD.OCX"
 Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCTL.OCX"
 Begin VB.Form Form8 
@@ -152,7 +152,7 @@ Begin VB.Form Form8
       EndProperty
       Height          =   360
       ItemData        =   "capnom.frx":0442
-      Left            =   3360
+      Left            =   3720
       List            =   "capnom.frx":0444
       TabIndex        =   6
       Top             =   1200
@@ -1209,7 +1209,7 @@ Private Sub CapArch_Click(Index As Integer)
          susal = RTrim(Dat_ide.suc)
     End If
       
-    ctaban = String(20 - Len(RTrim(Dat_ide.cta)), "0") + RTrim(Dat_ide.cta)
+    ctaban = String(20 - Len(RTrim(Dat_ide.CTA)), "0") + RTrim(Dat_ide.CTA)
     LINARCH$ = LINARCH$ + slinimp$ + slinca$ + "01" + susal + ctaban + String(20, " ")
     Print #11, LINARCH$
     Slinimpte = 0
@@ -1569,47 +1569,54 @@ Private Sub exportar_Click(Index As Integer)
 End Sub
 
 Public Sub FlexGrid_To_Excel(TheFlexgrid As MSFlexGrid, Optional GridStyle As Integer = 1, Optional WorkSheetName As String)
-Dim objXL As New Excel.Application
-Dim wbXL As New Excel.Workbook
-Dim wsXL As New Excel.Worksheet
-    
-    If Not IsObject(objXL) Then
-        MsgBox "Necesitas tener instalado Microsft Excel en tu equipo", vbExclamation, "Haresoftware - Export to Excel Function"
-        Exit Sub
-    End If
-    
-    On Error Resume Next
-    
-    ' Open Excel
+
+    Dim objXL As Object
+    Dim wbXL As Object
+    Dim wsXL As Object
+    Dim intRow As Long
+    Dim intCol As Long
+    Dim j As Long
+
+    On Error GoTo ErrHandler
+
+    'Crear la instancia de Excel
+    Set objXL = CreateObject("Excel.Application")
+
     objXL.Visible = True
+
     Set wbXL = objXL.Workbooks.Add
     Set wsXL = objXL.ActiveSheet
-    
-    ' name the worksheet
-    With wsXL
-        If Not WorkSheetName = "" Then
-            .name = WorkSheetName
-        End If
-    End With
-    
-    ' Este for imprime toda la grid
-    'For intRow = 1 To TheFlexgrid.Rows - 1
-    '    For intCol = 0 To TheFlexgrid.Cols
-    '        With TheFlexgrid
-    '            wsXL.Cells(intRow, intCol).Value = .TextMatrix(intRow, intCol)
-    '        End With
-    '    Next
-    'Next
-    
+
+    'Nombre de la hoja
+    If WorkSheetName <> "" Then
+        wsXL.name = WorkSheetName
+    End If
+
+    'Exportar datos
     For intRow = 1 To TheFlexgrid.Rows - 1
         j = 1
         For intCol = 0 To 1
-            With TheFlexgrid
-                wsXL.Cells(intRow, j).Value = .TextMatrix(intRow, intCol)
-            End With
+            wsXL.Cells(intRow, j).Value = TheFlexgrid.TextMatrix(intRow, intCol)
             j = j + 1
-        Next
-    Next
+        Next intCol
+    Next intRow
+
+    Exit Sub
+
+ErrHandler:
+    MsgBox "Necesitas tener instalado Microsoft Excel en tu equipo." & vbCrLf & _
+           "Detalle: " & Err.Description, _
+           vbExclamation, _
+           "Exportar a Excel"
+
+    Set wsXL = Nothing
+    Set wbXL = Nothing
+
+    If Not objXL Is Nothing Then
+        objXL.Quit
+    End If
+
+    Set objXL = Nothing
 
 End Sub
 Private Sub Form_Resize()
@@ -1690,12 +1697,12 @@ Private Sub Importar_Click()
 Dim oRS As New ADODB.Recordset
 Dim oConn As New ADODB.Connection
 
-    Excel.CancelError = True
+    excel.CancelError = True
     On Error GoTo ErrHandler
-    Excel.ShowOpen
+    excel.ShowOpen
     
-    If (Excel.FileName <> "") Then
-        oConn.Open "Provider=Microsoft.ACE.OLEDB.12.0;" & "data source=  '" + Excel.FileName + "' ; " & "Extended Properties= ""Excel 8.0;HDR=Yes"""
+    If (excel.FileName <> "") Then
+        oConn.Open "Provider=Microsoft.ACE.OLEDB.12.0;" & "data source=  '" + excel.FileName + "' ; " & "Extended Properties= ""Excel 8.0;HDR=Yes"""
         Set oRS = New ADODB.Recordset
             oRS.CursorLocation = adUseClient
             oRS.CursorType = adOpenStatic
@@ -3326,8 +3333,8 @@ Sub define()
      ConNom1.Col = 1: ConNom1.CellAlignment = 4: ConNom1.ColWidth(1) = 3500: ConNom1.Text = "Nombre"
      ConNom1.Col = 2: ConNom1.CellAlignment = 4: ConNom1.ColWidth(2) = 1200: ConNom1.Text = "dias T."
      ConNom1.Col = 3: ConNom1.CellAlignment = 4: ConNom1.ColWidth(3) = 1200: ConNom1.Text = "Sueldo"
-     
      ConNom1.Col = 4: ConNom1.CellAlignment = 4: ConNom1.ColWidth(4) = 1200
+     
      If N_ormal = 0 Then
          ConNom1.Text = "hs.Norm."
      Else
@@ -3374,8 +3381,10 @@ Sub define()
              ConNom1.Text = "Indemnizac."
          ElseIf ComboEspecial.ListIndex = 2 Then
              ConNom1.Text = "O.F."
-         ElseIf ComboEspecial.ListIndex = 0 Or ComboEspecial.ListIndex = 3 Then
+         ElseIf ComboEspecial.ListIndex = 0 Then
              ConNom1.Text = "Bono"
+         ElseIf ComboEspecial.ListIndex = 3 Then
+             ConNom1.Text = "Premio punt."
          Else
              ConNom1.Text = "O.F."
          End If
@@ -3505,6 +3514,7 @@ Private Sub archnom_Click(Index As Integer)
     Close 6:: Dm = LOF(2) / Len(personal)
     Open Arch$ For Random As 6 Len = Len(nomina)
     nm = LOF(6) / Len(nomina)
+    If N_ormal = 1 Then GrabarMarcaTipo nm
     
     colanti = ConNom1.Col
     renati = ConNom1.Row
@@ -3546,29 +3556,7 @@ For f = 1 To limite
    If ConNom1.TextMatrix(f, 8) <> "" Then nomina.pvac = ConNom1.TextMatrix(f, 8) Else nomina.pvac = 0
    If ConNom1.TextMatrix(f, 9) <> "" Then nomina.otras = ConNom1.TextMatrix(f, 9) Else nomina.otras = 0
    If ConNom1.TextMatrix(f, 10) <> "" Then nomina.exentos = ConNom1.TextMatrix(f, 10) Else nomina.exentos = 0
-   
-   
    If ConNom1.TextMatrix(f, 12) <> "" Then nomina.ispt = ConNom1.TextMatrix(f, 12) Else nomina.ispt = 0
-   '''''''Codigo de Modificacion''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-   
-   'If Option3 = True Then
-    'If ConNom1.TextMatrix(f, 12) <> "" Then nomina.ispt = ConNom1.TextMatrix(f, 12) Else nomina.ispt = 0
-   'End If
-   'If Option4 = True Then
-    
-    'mesNomina1 = Trim(Left(Combo1.Text, 3))
-    'AñoNomina1 = Right(Trim(Label7.Caption), 4)
-    'Close 39
-    'Open CStr(Trim(Form1.Dir1)) + "\" + mesNomina1 + "1" + AñoNomina1 + ".NOM" For Random As 39 Len = Len(nomina)
-    'Get 39, regtro, nomina
-    'ImpuestoAnteriorRetenido = nomina.ispt
-    'Close 39
-    
-    'If ConNom1.TextMatrix(f, 12) <> "" Then nomina.ispt = CCur(ConNom1.TextMatrix(f, 12)) - ImpuestoAnteriorRetenido Else nomina.ispt = 0
-   
-   'End If
-   '''''''''''''Codigo de Modificacion Termina'''''''''''''''''''''''''''''''''''
-   
    If ConNom1.TextMatrix(f, 13) <> "" Then nomina.crdsal = ConNom1.TextMatrix(f, 13) Else nomina.crdsal = 0
    If ConNom1.TextMatrix(f, 14) <> "" Then nomina.imss = ConNom1.TextMatrix(f, 14) Else nomina.imss = 0
    If ConNom1.TextMatrix(f, 15) <> "" Then nomina.prestamos = ConNom1.TextMatrix(f, 15) Else nomina.prestamos = 0
@@ -3871,231 +3859,231 @@ Public Sub main()
 End Sub
 
 
-Private Sub generarNominas()
-    ProgressBar1.Visible = True
-    QUIN = 0
-  
-  ' Si es una Nomina normal
-    If Option1 = True Then
-        ' Si es Primera quincena
-        If Option3 = True Then
-            QUIN = 1
-            Arch$ = UCase(Mid$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".NOM"
-            Arch1 = UCase(Mid$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".cmp"
-            ReferOper.Mes = (Combo1.ListIndex + 1)
-            ReferOper.dia = 15
-        Else
-        ' si es Segunda Quincena
-            QUIN = 2
-            Arch$ = UCase(Mid$(Combo1.Text, 1, 3)) + "2" + LTrim$(Str$(empresa.ao)) + ".NOM"
-            Arch1 = UCase(Mid$(Combo1.Text, 1, 3)) + "2" + LTrim$(Str$(empresa.ao)) + ".cmp"
-            ArchAnterior = UCase(Mid$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".NOM"
-            Arch1Anterior = UCase(Mid$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".cmp"
-            ReferOper.Mes = (Combo1.ListIndex + 1)
-            ReferOper.dia = dd(ReferOper.Mes)
-            
-            Close 95
-    
-            Open ArchAnterior For Random As 95 Len = Len(nominaAnterior)
-            largoNomina = LOF(95) / Len(nominaAnterior)
-    
-       End If
-    Else ' Si es una nomina especial
-        Arch$ = Trim(Text1.Text) + ".NOM"
-        Arch1 = Trim(Text1.Text) + ".cmp"
-        diat = 0
-    End If
-
-    Rem *******     NOMBRE DEL ARCHIVO   ********
-    ' Modifica el mes para que nunca sea cero
-    If meselegido < 0 Then meselegido = 1
-    ' Agrega cero a los numeros inferiores a 10
-    If meselegido < 10 Then mif$ = LTrim$(Str$(dia_pago)) + "/0" + LTrim$(Str$(meselegido)) + "/" + LTrim$(Str$(empresa.ao))
-    ' Emite el nombre de las nomnas antes del mes de octubre
-    If meselegido > 9 Then mif$ = LTrim$(Str$(dia_pago)) + "/" + LTrim$(Str$(meselegido)) + "/" + LTrim$(Str$(empresa.ao))
-    
-    MiFecha = mif$
-    checa_fecha MiFecha, 0, 0
-    
-    ' Abre archivos necesarios para Nomina
-    Close 6
-    Close 12
-    Close 14
-    Close 2: Open "personal.dno" For Random As 2 Len = Len(personal)
-    Close 8: Open "maestro.dno" For Random As 8 Len = Len(maestro)
-
-    Open Arch$ For Random As 6 Len = Len(nomina)
-    nm = LOF(6) / Len(nomina)
-    
-    Open Arch1 For Random As 14 Len = Len(nom_com)
-    Open "bnxcla.dno" For Random As 12 Len = Len(Clbnx)
-    
-    ProgressBar1.Min = 0
-    ProgressBar1.Max = Dm
-    ProgressBar1.Value = 0
-            
-    If nm > 0 Then
-        If nm < Dm Then
-            fi_nm = (Dm)
-        Else
-            fi_nm = (nm)
+    Private Sub generarNominas()
+        ProgressBar1.Visible = True
+        QUIN = 0
+      
+      ' Si es una Nomina normal
+        If Option1 = True Then
+            ' Si es Primera quincena
+            If Option3 = True Then
+                QUIN = 1
+                Arch$ = UCase(Mid$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".NOM"
+                Arch1 = UCase(Mid$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".cmp"
+                ReferOper.mes = (Combo1.ListIndex + 1)
+                ReferOper.dia = 15
+            Else
+            ' si es Segunda Quincena
+                QUIN = 2
+                Arch$ = UCase(Mid$(Combo1.Text, 1, 3)) + "2" + LTrim$(Str$(empresa.ao)) + ".NOM"
+                Arch1 = UCase(Mid$(Combo1.Text, 1, 3)) + "2" + LTrim$(Str$(empresa.ao)) + ".cmp"
+                ArchAnterior = UCase(Mid$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".NOM"
+                Arch1Anterior = UCase(Mid$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".cmp"
+                ReferOper.mes = (Combo1.ListIndex + 1)
+                ReferOper.dia = dd(ReferOper.mes)
+                
+                Close 95
+        
+                Open ArchAnterior For Random As 95 Len = Len(nominaAnterior)
+                largoNomina = LOF(95) / Len(nominaAnterior)
+        
+           End If
+        Else ' Si es una nomina especial
+            Arch$ = Trim(Text1.Text) + ".NOM"
+            Arch1 = Trim(Text1.Text) + ".cmp"
+            diat = 0
         End If
-        
-        ConNom1.Clear
-        
-        define
-
-        ConNom1.Rows = fi_nm + 2
-        limite = 0
-        renglon = 0
-        
-        For r = 1 To fi_nm
-            Get #6, r, nomina
-            Get #2, r, personal
-            Get #8, r, maestro
-            Get #14, r, nom_com
     
-            regtro = r
-            yavas = 0
-            
-            verifica yavas
-            
-            aobaja = Val(Mid$(personal.fab, 7, 4))
-            mesbaja = Val(Mid$(personal.fab, 4, 2))
-            diabaja = Val(Mid$(personal.fab, 1, 2))
-            
-            verifica yavas
+        Rem *******     NOMBRE DEL ARCHIVO   ********
+        ' Modifica el mes para que nunca sea cero
+        If meselegido < 0 Then meselegido = 1
+        ' Agrega cero a los numeros inferiores a 10
+        If meselegido < 10 Then mif$ = LTrim$(Str$(dia_pago)) + "/0" + LTrim$(Str$(meselegido)) + "/" + LTrim$(Str$(empresa.ao))
+        ' Emite el nombre de las nomnas antes del mes de octubre
+        If meselegido > 9 Then mif$ = LTrim$(Str$(dia_pago)) + "/" + LTrim$(Str$(meselegido)) + "/" + LTrim$(Str$(empresa.ao))
+        
+        MiFecha = mif$
+        checa_fecha MiFecha, 0, 0
+        
+        ' Abre archivos necesarios para Nomina
+        Close 6
+        Close 12
+        Close 14
+        Close 2: Open "personal.dno" For Random As 2 Len = Len(personal)
+        Close 8: Open "maestro.dno" For Random As 8 Len = Len(maestro)
+    
+        Open Arch$ For Random As 6 Len = Len(nomina)
+        nm = LOF(6) / Len(nomina)
+        
+        Open Arch1 For Random As 14 Len = Len(nom_com)
+        Open "bnxcla.dno" For Random As 12 Len = Len(Clbnx)
+        
+        ProgressBar1.Min = 0
+        ProgressBar1.Max = Dm
+        ProgressBar1.Value = 0
                 
-            If yavas > 0 Then ' Aplica para primera quincena y nomina especial
-                renglon = renglon + 1
-                ConNom1.Row = renglon
-                ConNom1.Col = 0
-                ConNom1.Text = Format(r, "#####")
-                limite = limite + 1
-                ' Solo imprime primera quincena
-                carganom
+        If nm > 0 Then
+            If nm < Dm Then
+                fi_nm = (Dm)
             Else
-                ' Que si la nomina es especial y no es primera quincena
+                fi_nm = (nm)
             End If
-                
-            If Option2 = True Then ' Especial
-                If ((aobaja > 0) And (aobaja < (empresa.ao) - 1) And (yavas = 0)) Then
-                    GoTo sigueLE
-                End If
-            Else
-                If ((aobaja > 0) And (aobaja < empresa.ao) And (yavas = 0)) Then
-                    GoTo sigueLE
-                End If
-            End If
-                 
-            If Option2 = True Then ' Aplica para nomina especial y bajas
-                'If ((mesbaja > 0) And (mesbaja <= meselegido)) And (aobaja = (empresa.ao)) Then
-                 '   renglon = renglon + 1
-                 '   ConNom1.Row = renglon
-                 '   ConNom1.Col = 0
-                 '   ConNom1.Text = Format(r, "#####")
-                 '   limite = limite + 1
-                 '   ConNom1.CellBackColor = vbRed
-                 '   ConNom1.CellForeColor = vbWhite
-                    ' ___________________________________2
-                    'carganom
-                'End If
-            Else
-                If ((mesbaja > 0) And (mesbaja < meselegido)) And (aobaja = (empresa.ao)) Then
-                    GoTo sigueLE
-                End If
-            End If
-sigueLE:
             
-        Next r
-          
-    Else
             ConNom1.Clear
+            
             define
-            ConNom1.Rows = Dm + 2
+    
+            ConNom1.Rows = fi_nm + 2
             limite = 0
-            Close 13
-            Open "Empcomp.dno" For Random As 13 Len = Len(Dat_ide)
-            Get 13, 1, Dat_ide
-            ceroscompl
+            renglon = 0
             
-            ' Optimizacion Op B: Abrir archivos de retencion antes del bucle
-            keepFilesOpen = True
-            If Option3.Value = True Then
-                Close 3: Open (Trim(Dir_imptos) + "Tab08Kin.ISR") For Random As #3 Len = Len(articulo)
-                Close 4: Open (Trim(Dir_imptos) + "Tab08Kin.SUB") For Random As #4 Len = Len(subsidio)
-            ElseIf Option4.Value = True Then
-                Dim mesNominaOpt As String, anioNominaOpt As String
-                mesNominaOpt = Trim(Left(Combo1.Text, 3))
-                anioNominaOpt = Right(Trim(Label7.Caption), 4)
-                Close 35: Open CStr(Trim(Form1.Dir1)) + "\" + mesNominaOpt + "1" + anioNominaOpt + ".NOM" For Random As 35 Len = Len(nomina)
-                Close 36: Open CStr(Trim(Form1.Dir1)) + "\" + mesNominaOpt + "1" + anioNominaOpt + ".cmp" For Random As 36 Len = Len(nom_com)
-                Close 3: Open (Trim(Dir_imptos) + "Tab08Mes.ISR") For Random As #3 Len = Len(articulo)
-                Close 4: Open (Trim(Dir_imptos) + "Tab08Mes.SUB") For Random As #4 Len = Len(subsidio)
-            End If
-            
-            For r = 1 To Dm: Get #2, r, personal
-                rgtro = r
-                regtro = r
-                
-                    
+            For r = 1 To fi_nm
+                Get #6, r, nomina
+                Get #2, r, personal
                 Get #8, r, maestro
+                Get #14, r, nom_com
+        
+                regtro = r
+                yavas = 0
+                
+                verifica yavas
+                
                 aobaja = Val(Mid$(personal.fab, 7, 4))
                 mesbaja = Val(Mid$(personal.fab, 4, 2))
                 diabaja = Val(Mid$(personal.fab, 1, 2))
-                diat = 0
+                
+                verifica yavas
+                    
+                If yavas > 0 Then ' Aplica para primera quincena y nomina especial
+                    renglon = renglon + 1
+                    ConNom1.Row = renglon
+                    ConNom1.Col = 0
+                    ConNom1.Text = Format(r, "#####")
+                    limite = limite + 1
+                    ' Solo imprime primera quincena
+                    carganom
+                Else
+                    ' Que si la nomina es especial y no es primera quincena
+                End If
+                    
                 If Option2 = True Then ' Especial
                     If ((aobaja > 0) And (aobaja < (empresa.ao) - 1) And (yavas = 0)) Then
-                        GoTo SIGUE
+                        GoTo sigueLE
                     End If
                 Else
-                    If ((aobaja > 0) And (aobaja < empresa.ao) - 1) Then
-                        GoTo SIGUE
+                    If ((aobaja > 0) And (aobaja < empresa.ao) And (yavas = 0)) Then
+                        GoTo sigueLE
                     End If
                 End If
-                
-                If Option2 = False Then ' Segunda quincena
-                    If ((mesbaja > 0) And (mesbaja < meselegido)) And (aobaja = (empresa.ao)) Then GoTo sigueLE
-                End If
-                
-                If Mid$(personal.nom, 1, 3) <= "   " Then GoTo SIGUE
-                
-                If (Option3 = True) Then diat = 15 ' Primera
-                
-                If (Option4 = True) And (Dat_ide.dias = 1) Then ' Segunda
-                    diat = (dd(meselegido) - 15)
+                     
+                If Option2 = True Then ' Aplica para nomina especial y bajas
+                    'If ((mesbaja > 0) And (mesbaja <= meselegido)) And (aobaja = (empresa.ao)) Then
+                     '   renglon = renglon + 1
+                     '   ConNom1.Row = renglon
+                     '   ConNom1.Col = 0
+                     '   ConNom1.Text = Format(r, "#####")
+                     '   limite = limite + 1
+                     '   ConNom1.CellBackColor = vbRed
+                     '   ConNom1.CellForeColor = vbWhite
+                        ' ___________________________________2
+                        'carganom
+                    'End If
                 Else
-                    diat = 15
+                    If ((mesbaja > 0) And (mesbaja < meselegido)) And (aobaja = (empresa.ao)) Then
+                        GoTo sigueLE
+                    End If
                 End If
+sigueLE:
                 
-                If Option2 = True Then diat = 0 ' Segunda quincena
-                
-                renglon = renglon + 1: ConNom1.Row = renglon
-                limite = limite + 1
-                genenom r
-SIGUE:
-                ProgressBar1.Value = r
             Next r
-            
-            ' Optimizacion Op B: Cerrar archivos y restablecer flag
-            If keepFilesOpen Then
-                keepFilesOpen = False
-                Close 3: Close 4: Close 35: Close 36
+              
+        Else
+                ConNom1.Clear
+                define
+                ConNom1.Rows = Dm + 2
+                limite = 0
+                Close 13
+                Open "Empcomp.dno" For Random As 13 Len = Len(Dat_ide)
+                Get 13, 1, Dat_ide
+                ceroscompl
+                
+                ' Optimizacion Op B: Abrir archivos de retencion antes del bucle
+                keepFilesOpen = True
+                If Option3.Value = True Then
+                    Close 3: Open (Trim(Dir_imptos) + "Tab08Kin.ISR") For Random As #3 Len = Len(articulo)
+                    Close 4: Open (Trim(Dir_imptos) + "Tab08Kin.SUB") For Random As #4 Len = Len(subsidio)
+                ElseIf Option4.Value = True Then
+                    Dim mesNominaOpt As String, anioNominaOpt As String
+                    mesNominaOpt = Trim(Left(Combo1.Text, 3))
+                    anioNominaOpt = Right(Trim(Label7.Caption), 4)
+                    Close 35: Open CStr(Trim(Form1.Dir1)) + "\" + mesNominaOpt + "1" + anioNominaOpt + ".NOM" For Random As 35 Len = Len(nomina)
+                    Close 36: Open CStr(Trim(Form1.Dir1)) + "\" + mesNominaOpt + "1" + anioNominaOpt + ".cmp" For Random As 36 Len = Len(nom_com)
+                    Close 3: Open (Trim(Dir_imptos) + "Tab08Mes.ISR") For Random As #3 Len = Len(articulo)
+                    Close 4: Open (Trim(Dir_imptos) + "Tab08Mes.SUB") For Random As #4 Len = Len(subsidio)
+                End If
+                
+                For r = 1 To Dm: Get #2, r, personal
+                    rgtro = r
+                    regtro = r
+                    
+                        
+                    Get #8, r, maestro
+                    aobaja = Val(Mid$(personal.fab, 7, 4))
+                    mesbaja = Val(Mid$(personal.fab, 4, 2))
+                    diabaja = Val(Mid$(personal.fab, 1, 2))
+                    diat = 0
+                    If Option2 = True Then ' Especial
+                        If ((aobaja > 0) And (aobaja < (empresa.ao) - 1) And (yavas = 0)) Then
+                            GoTo SIGUE
+                        End If
+                    Else
+                        If ((aobaja > 0) And (aobaja < empresa.ao) - 1) Then
+                            GoTo SIGUE
+                        End If
+                    End If
+                    
+                    If Option2 = False Then ' Segunda quincena
+                        If ((mesbaja > 0) And (mesbaja < meselegido)) And (aobaja = (empresa.ao)) Then GoTo sigueLE
+                    End If
+                    
+                    If Mid$(personal.nom, 1, 3) <= "   " Then GoTo SIGUE
+                    
+                    If (Option3 = True) Then diat = 15 ' Primera
+                    
+                    If (Option4 = True) And (Dat_ide.dias = 1) Then ' Segunda
+                        diat = (dd(meselegido) - 15)
+                    Else
+                        diat = 15
+                    End If
+                    
+                    If Option2 = True Then diat = 0 ' Segunda quincena
+                    
+                    renglon = renglon + 1: ConNom1.Row = renglon
+                    limite = limite + 1
+                    genenom r
+SIGUE:
+                    ProgressBar1.Value = r
+                Next r
+                
+                ' Optimizacion Op B: Cerrar archivos y restablecer flag
+                If keepFilesOpen Then
+                    keepFilesOpen = False
+                    Close 3: Close 4: Close 35: Close 36
+                End If
             End If
-        End If
+            
+        sumavert
+            
+        Close 10
         
-    sumavert
-        
-    Close 10
+        ConNom1.SetFocus
+        ConNom1.Row = 1
+        ConNom1.Col = 2
+        ConNom1.Rows = limite + 3
+        nomordeli_Click (Index)
+        ProgressBar1.Visible = False
     
-    ConNom1.SetFocus
-    ConNom1.Row = 1
-    ConNom1.Col = 2
-    ConNom1.Rows = limite + 3
-    nomordeli_Click (Index)
-    ProgressBar1.Visible = False
-
-End Sub
+    End Sub
 Private Sub generarNominaGeneral()
     ProgressBar1.Visible = True
     QUIN = 0
@@ -4106,7 +4094,7 @@ Private Sub generarNominaGeneral()
             QUIN = 1
             Arch$ = UCase(Mid$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".NOM"
             Arch1 = UCase(Mid$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".cmp"
-            ReferOper.Mes = (Combo1.ListIndex + 1)
+            ReferOper.mes = (Combo1.ListIndex + 1)
             ReferOper.dia = 15
         Else
         ' si es Segunda Quincena
@@ -4115,8 +4103,8 @@ Private Sub generarNominaGeneral()
             Arch1 = UCase(Mid$(Combo1.Text, 1, 3)) + "2" + LTrim$(Str$(empresa.ao)) + ".cmp"
             ArchAnterior = UCase(Mid$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".NOM"
             Arch1Anterior = UCase(Mid$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".cmp"
-            ReferOper.Mes = (Combo1.ListIndex + 1)
-            ReferOper.dia = dd(ReferOper.Mes)
+            ReferOper.mes = (Combo1.ListIndex + 1)
+            ReferOper.dia = dd(ReferOper.mes)
        End If
     Else
            
@@ -4810,4 +4798,41 @@ Private Sub MostrarCamposEspeciales()
     Label5.Visible = True
     Text3.Visible = True
     Label8.Visible = True
+End Sub
+
+' Deja un archivo .TIP junto al .NOM de una nómina especial: TIPO|VERSION|MES
+Private Sub GrabarMarcaTipo(ByVal nmRegistros As Long)
+    Const CORTE As Date = #10/10/2026#
+    Dim ruta As String, tp As String, ver As Integer, mes As Integer
+    Dim f As Integer, fm As Date
+
+    ruta = Left$(Arch$, Len(Arch$) - 4) & ".TIP"
+    If Dir$(ruta) <> "" Then Exit Sub          ' ya tiene marca: no se toca
+
+    Select Case ComboEspecial.ListIndex
+        Case 0: tp = "ESP"
+        Case 1: tp = "LIQ"
+        Case 2: tp = "FIN"
+        Case Else: tp = "OTR"
+    End Select
+
+    ver = 2
+    fm = Date                                  ' archivo nuevo: hoy
+    If nmRegistros > 0 Then                    ' ya existía: se usa su fecha de modificación
+        On Error Resume Next
+        fm = FileDateTime(Arch$)
+        On Error GoTo 0
+        If DateValue(fm) < CORTE Then ver = 1  ' creado con el esquema anterior
+    End If
+    mes = Month(fm)
+
+    On Error GoTo fin
+    f = FreeFile
+    Open ruta For Output As #f
+    Print #f, tp & "|" & CStr(ver) & "|" & CStr(mes)
+    Close #f
+    Exit Sub
+fin:
+    On Error Resume Next
+    Close #f
 End Sub
