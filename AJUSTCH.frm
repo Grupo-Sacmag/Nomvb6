@@ -117,10 +117,10 @@ Private Sub achSal_Click(Index As Integer)
 End Sub
 
 Private Sub AJTE_EnterCell()
-   If AJTE.Row = 1 And AJTE.Col = 2 Then AJTE.Col = 1: AJTE_EnterCell
-   If AJTE.Row = 7 And AJTE.Col = 2 Then AJTE.Col = 1: AJTE_EnterCell
-   If AJTE.Row = 8 And AJTE.Col = 2 Then AJTE.Col = 1: AJTE_EnterCell
-   If AJTE.Row > 8 And AJTE.Col = 1 Then AJTE.Col = 2: AJTE_EnterCell
+   If AJTE.Row = 1 And AJTE.col = 2 Then AJTE.col = 1: AJTE_EnterCell
+   If AJTE.Row = 7 And AJTE.col = 2 Then AJTE.col = 1: AJTE_EnterCell
+   If AJTE.Row = 8 And AJTE.col = 2 Then AJTE.col = 1: AJTE_EnterCell
+   If AJTE.Row > 8 And AJTE.col = 1 Then AJTE.col = 2: AJTE_EnterCell
     AJTE.CellBackColor = vbGreen
 End Sub
 
@@ -212,29 +212,210 @@ Private Sub AJTE_KeyPress(KeyAscii As Integer)
 End Sub
 
 Private Sub Form_Load()
-    apeajte
-    cargaaj
-    AJTE.Row = 0
-    AJTE.ColWidth(0) = 3600: AJTE.Col = 0: AJTE.CellAlignment = 4: AJTE.Text = "CONCEPTO"
-    AJTE.ColWidth(1) = 600: AJTE.TextMatrix(0, 1) = "Reng."
-    AJTE.ColWidth(2) = 600: AJTE.TextMatrix(0, 2) = "Col."
-    AJTE.TextMatrix(1, 0) = "Total renglones de la forma"
-    AJTE.TextMatrix(2, 0) = "Fecha"
-    AJTE.TextMatrix(3, 0) = "Beneficiario"
-    AJTE.TextMatrix(4, 0) = "Importe en número"
-    AJTE.TextMatrix(5, 0) = "Importe en letra"
-    AJTE.TextMatrix(6, 0) = "Concepto"
-    AJTE.TextMatrix(7, 0) = "Inicio aplicación"
-    AJTE.TextMatrix(8, 0) = "Sumas iguales"
-    AJTE.TextMatrix(9, 0) = "Cuenta"
-    AJTE.TextMatrix(10, 0) = "Subcuenta"
-    AJTE.TextMatrix(11, 0) = "Nombre Cta-Subcta"
-    AJTE.TextMatrix(12, 0) = "Parcial"
-    AJTE.TextMatrix(13, 0) = "Debe"
-    AJTE.TextMatrix(14, 0) = "Haber"
-    AJTE.Row = 1: AJTE.Col = 1
-    AJTE_RowColChange
-    AJTE.GridColor = vbRed
+    On Error GoTo ErrorGeneracionCFDI
+
+    Dim GridOrigenCFDI As Object
+    Dim ultimaFila As Long
+    Dim x8 As Long
+    Dim x9 As Long
+
+    ' Comprobar la fecha de separacion nueva ANTES de crear una plantilla.
+    ' Para nominas ordinarias / legacy se mantiene el codigo preexistente.
+    If EsSeparacionNueva() Then
+        If Len(Trim$(g_FechaPagoCFDI2026)) = 0 Then
+            Err.Raise vbObjectError + 5210, "NOMCF2.Form_Load", _
+                      "No se recibio la fecha de pago de la nueva nomina."
+        End If
+        Call FechaCFDI_InterpretarDMY(g_FechaPagoCFDI2026)
+    End If
+
+    IniCols
+
+    Close 10
+    Close 7
+
+    Open "EMP_CFDI.DNO" For Random As 10 Len = Len(EmpCFDI)
+    Open "Perscfdi.dno" For Random As 7 Len = Len(Empleado_1)
+    Open "PerOtre.dno" For Random As 9 Len = Len(Otros_Rgtros)
+
+    Get 10, 1, EmpCFDI
+
+    Folio = InputBox("Dame el numero de Folio Anterior", "CFDI NOMINA", EmpCFDI.Folio)
+    serie = InputBox("Dame la serie", "CFDI NOMINA", EmpCFDI.serie)
+    ConNomina = InputBox("Numero de nomina consecutivo ", "CFDI NOMINA", (EmpCFDI.consecutivo + 1))
+
+ERRORDEPAGO:
+    Met_pago = InputBox("Metodo de Pago (utiliza la clave numerica)" & Chr(13) & "01" & Chr(9) & "EFECTIVO" & Chr(13) & "02" & Chr(9) & "CHEQUE NOMINATIVO" & Chr(13) & "03" & Chr(9) & "TRANSFERENCIA ELECTRONICA" & Chr(13) & "28" & Chr(9) & "TARJETA DE DEBITO", "CFDI NOMINA", "28")
+
+    Select Case Met_pago
+        Case "01", "02", "03", "28"
+            If Met_pago = "01" Then Met_pagcon = "01 Eectivo"
+            If Met_pago = "02" Then Met_pagcon = "02 Cheque nominativo"
+            If Met_pago = "03" Then Met_pagcon = "03 TRANSFERENCIA"
+            If Met_pago = "28" Then Met_pagcon = "28 Tarjeta de Debito"
+        Case Else
+            MsgBox "LA CLAVE NO EXISTE"
+            GoTo ERRORDEPAGO
+    End Select
+
+    Reg_Patr = InputBox("Registro Patronal Imss ", "CFDI NOMINA", EmpCFDI.RegPatr)
+    EntradaDATOS = "Riesgo Patronal(utiliza la clave numerica)" & Chr(13) & "1" & Chr(9) & "CLASE I" & Chr(13) & "2" & Chr(9) & "CLASE II" & Chr(13) & "3" & Chr(9) & "CLASE III" & Chr(13) & "4" & Chr(9) & "CLASE IV" & Chr(13) & "5" & Chr(9) & "CLASE V" & Chr(13)
+
+DENUEVO:
+    RiesgoImss = InputBox(EntradaDATOS, "CFDI NOMINA", 1)
+
+    Select Case RiesgoImss
+        Case 1 To 5
+            If RiesgoImss = "1" Then RiesgoImss = "1-Clase I"
+            If RiesgoImss = "2" Then RiesgoImss = "2-Clase II"
+            If RiesgoImss = "3" Then RiesgoImss = "3-Clase III"
+            If RiesgoImss = "4" Then RiesgoImss = "4-Clase IV"
+            If RiesgoImss = "5" Then RiesgoImss = "5-Clase V"
+        Case Else
+            MsgBox "LA CLAVE NO EXISTE"
+            GoTo DENUEVO
+    End Select
+
+    EmpCFDI.Folio = Folio
+    EmpCFDI.consecutivo = ConNomina
+    EmpCFDI.serie = serie
+    EmpCFDI.RegPatr = Reg_Patr
+    EmpCFDI.RiesgoImss = RiesgoImss
+    Put 10, 1, EmpCFDI
+
+    I8 = 0
+
+    Get 10, 1, EmpCFDI
+    EmpCFDI.Folio = Folio
+    Put 10, 1, EmpCFDI
+    Close 10
+
+    SDI_Click (Index)
+    fila = 0
+
+    ' =========================================================
+    ' GENERACION CFDI DESDE FORM8 O FORMVIEWER
+    ' =========================================================
+    If OrigenCFDI = 1 Then
+        Set GridOrigenCFDI = FormViewer.ConNom1
+    Else
+        Set GridOrigenCFDI = Form8.ConNom1
+    End If
+
+    If GridOrigenCFDI.Rows < 3 Then
+        MsgBox "No hay empleados para generar el CFDI.", _
+               vbExclamation, "CFDI"
+        GoTo FinGeneracionCFDI
+    End If
+
+    ultimaFila = GridOrigenCFDI.Rows - 2
+
+    Debug.Print "=================================="
+    Debug.Print "INICIO GENERACION CFDI"
+    Debug.Print "Origen: "; OrigenCFDI
+    Debug.Print "Rows origen: "; GridOrigenCFDI.Rows
+    Debug.Print "Ultima fila: "; ultimaFila
+    Debug.Print "Cols origen: "; GridOrigenCFDI.Cols
+
+    For I7 = 1 To ultimaFila
+        If Len(Trim$(GridOrigenCFDI.TextMatrix(I7, C_NUM))) > 0 Then
+            If IsNumeric(GridOrigenCFDI.TextMatrix(I7, C_NUM)) Then
+                NumerodePersonal = CLng(GridOrigenCFDI.TextMatrix(I7, C_NUM))
+                If NumerodePersonal > 0 Then
+                    Debug.Print "Empleado: "; NumerodePersonal
+                    Debug.Print "Fila origen: "; I7
+
+                    reng
+                    MdAbr_1
+
+                    ' Sobrescribir SOLO las 5 posiciones generales
+                    ' para las NUEVAS Liquidaciones y Finiquitos.
+                    ' El resto de las 296 posiciones se conserva igual.
+                    If EsSeparacionNueva() Then
+                        CompletarCamposGeneralesCFDI2026
+                    End If
+                End If
+            End If
+        End If
+    Next I7
+
+FinGeneracionCFDI:
+    Close 7, 9
+
+    ' =========================================================
+    ' VALIDACION DE SALARIOS EN EL GRID CFDI (CODIGO EXISTENTE)
+    ' =========================================================
+    For fila = 1 To NomCf.Rows - 2
+        If IsNumeric(NomCf.TextMatrix(fila, 56)) And _
+           IsNumeric(NomCf.TextMatrix(fila, 58)) Then
+            If CCur(NomCf.TextMatrix(fila, 56)) >= _
+               CCur(NomCf.TextMatrix(fila, 58)) Then
+                pintarRojo fila
+            End If
+        End If
+    Next fila
+
+    Exit Sub
+
+ErrorGeneracionCFDI:
+    Dim numeroError As Long
+    Dim descripcionError As String
+    numeroError = Err.Number
+    descripcionError = Err.Description
+
+    On Error Resume Next
+    Close 7, 9, 10
+    On Error GoTo 0
+
+    MsgBox "No se pudo completar la plantilla de CFDI." & vbCrLf & _
+           "Error " & CStr(numeroError) & ": " & descripcionError, _
+           vbCritical, "NOMCF2"
+End Sub
+
+' Este procedimiento solo se usa DESPUES de MdAbr_1 en formatos nuevos.
+' Conserva el criterio ANTERIOR para las fechas y antiguedad:
+'   Fecha inicial: dia 1 o 16; fecha final: la misma fecha de pago.
+'   Antiguedad: diferencia entre anos calendario, como MdAbr_1 antigua.
+Private Sub CompletarCamposGeneralesCFDI2026()
+    Dim fechaPago As Date
+    Dim fechaInicio As Date
+    Dim fechaAlta As Date
+    Dim anosAntiguedad As Long
+
+    fechaPago = FechaCFDI_InterpretarDMY(g_FechaPagoCFDI2026)
+
+    Get #2, NumerodePersonal, personal
+    fechaAlta = FechaCFDI_InterpretarDMY(Trim$(personal.fal))
+
+    If fechaAlta > fechaPago Then
+        Err.Raise vbObjectError + 5211, "CompletarCamposGeneralesCFDI2026", _
+                  "La fecha de alta del empleado " & CStr(NumerodePersonal) & _
+                  " es posterior a la fecha de pago de la nomina."
+    End If
+
+    If Day(fechaPago) < 16 Then
+        fechaInicio = DateSerial(Year(fechaPago), Month(fechaPago), 1)
+    Else
+        fechaInicio = DateSerial(Year(fechaPago), Month(fechaPago), 16)
+    End If
+
+    ' Fechas en ISO 8601 para las columnas 43, 44 y 45 del Excel.
+    NomCf.TextMatrix(I7, 43) = FechaCFDI_FormatoISO(fechaPago)
+    NomCf.TextMatrix(I7, 44) = FechaCFDI_FormatoISO(fechaInicio)
+    NomCf.TextMatrix(I7, 45) = FechaCFDI_FormatoISO(fechaPago)
+
+    ' Misma regla de antiguedad de la version ANTERIOR: diferencia de anos.
+    anosAntiguedad = Year(fechaPago) - Year(fechaAlta)
+    NomCf.TextMatrix(I7, 51) = CStr(anosAntiguedad)
+
+    ' Dato REAL de personal.dno; nunca sustituir por sueldo diario.
+    NomCf.TextMatrix(I7, 58) = Format$(personal.integrado, "#,##0.00")
+
+    Debug.Print "CFDI 2026 empleado "; NumerodePersonal
+    Debug.Print "  Fecha pago: "; NomCf.TextMatrix(I7, 43)
+    Debug.Print "  Fecha inicio: "; NomCf.TextMatrix(I7, 44)
+    Debug.Print "  Antiguedad (anos calendario): "; anosAntiguedad
+    Debug.Print "  SDI: "; personal.integrado
 End Sub
 
 ' comentario

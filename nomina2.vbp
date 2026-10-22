@@ -47,6 +47,7 @@ Form=nominaConfig.frm
 Form=Form19.frm
 Form=FormViewer.frm
 Module=modColumnas; modColumnas.bas
+Module=modFechasCFDI; modFechasCFDI.bas
 IconForm="Form1"
 Startup="Form1"
 HelpFile=""

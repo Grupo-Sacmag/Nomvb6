@@ -1654,8 +1654,23 @@ End Sub
 
 
 Private Sub CFDI2_Click()
+    On Error GoTo ErrorCFDI
+
     OrigenCFDI = 0
+    g_FechaPagoCFDI2026 = ""
+
+    If EsSeparacionNueva() Then
+        ' GenerarNominas ya establecio MiFecha (dd/mm/aaaa).
+        ' Normalizar antes de cargar NOMCF2 para que no use fechas viejas.
+        g_FechaPagoCFDI2026 = FechaCFDI_FormatoDMY(FechaCFDI_InterpretarDMY(CStr(MiFecha)))
+    End If
+
     NOMCF2.Show
+    Exit Sub
+
+ErrorCFDI:
+    MsgBox "No fue posible preparar la fecha de la nomina." & vbCrLf & _
+           "Error " & Err.Number & ": " & Err.Description, vbCritical, "CFDI"
 End Sub
 
 Private Sub cheajte_Click(Index As Integer)
@@ -1665,13 +1680,13 @@ Private Sub cheajte_Click(Index As Integer)
 End Sub
 
 Private Sub cheind_Click(Index As Integer)
-    colanti = ConNom1.Col
+    colanti = ConNom1.col
     renati = ConNom1.Row
     If ConNom1.Text <> "" Then rgtro = ConNom1.Text Else rgtro = 0
     If rgtro > 0 Then
         lin_che ConNom1.Row, ConNom1.RowSel
         ConNom1.SelectionMode = flexSelectionFree
-        ConNom1.Col = colanti
+        ConNom1.col = colanti
         ConNom1.Row = renati
         ConNom1.SetFocus
     Else
@@ -1700,15 +1715,15 @@ ErrHandler:
 End Sub
 
 Private Sub chetot_Click(Index As Integer)
-   colanti = ConNom1.Col
+   colanti = ConNom1.col
    renati = ConNom1.Row
    ConNom1.Row = 1
-    ConNom1.Col = 0
+    ConNom1.col = 0
    If ConNom1.Text <> "" Then rgtro = ConNom1.Text Else rgtro = 0
    If rgtro > 0 Then
             
             lin_che 1, limite
-            ConNom1.Col = colanti
+            ConNom1.col = colanti
             ConNom1.Row = renati
             ConNom1.SetFocus
      Else
@@ -1724,7 +1739,7 @@ End Sub
 Private Sub EdiNomSel_Click()
     Clipboard.Clear
     ConNom1.Row = 0
-    ConNom1.Col = 0
+    ConNom1.col = 0
     ConNom1.RowSel = ConNom1.Rows - 1
     ConNom1.ColSel = ConNom1.Cols - 1
 End Sub
@@ -1742,7 +1757,7 @@ Private Sub EdNomCopiar_Click()
     ' Iterar sobre las filas seleccionadas
     For i = ConNom1.Row To ConNom1.RowSel
         ' Iterar sobre las columnas seleccionadas
-        For j = ConNom1.Col To ConNom1.ColSel
+        For j = ConNom1.col To ConNom1.ColSel
             ' Añadir el texto de la celda a la cadena
             textoSeleccionado = textoSeleccionado & ConNom1.TextMatrix(i, j)
             
@@ -1855,7 +1870,7 @@ Private Sub funcionPegar_Click()
     Temporal1 = ""
     temporal = Clipboard.GetText()
 
-    RetornoCarro = ConNom1.Col
+    RetornoCarro = ConNom1.col
     InicioCopia = ConNom1.Row
     DeAqui = InicioCopia
     InIPGr = InicioCopia
@@ -1874,7 +1889,7 @@ Private Sub funcionPegar_Click()
                 Case Chr(13)
                     ' Verificar si el texto es un número antes de asignarlo
                     If IsNumeric(Mid(temporal, DeAqui, (i - DeAqui))) Then
-                        Temporal1 = Temporal1 + ConNom1.TextMatrix(ConNom1.Row, ConNom1.Col) & Chr(13)
+                        Temporal1 = Temporal1 + ConNom1.TextMatrix(ConNom1.Row, ConNom1.col) & Chr(13)
                         ConNom1.Text = Mid(temporal, DeAqui, (i - DeAqui))
                         Text2.Text = Mid(temporal, DeAqui, (i - DeAqui))
                         Text2_KeyPress (13)
@@ -1897,7 +1912,7 @@ Private Sub funcionPegar_Click()
             End Select
         Next i
         ' Restaurar posición del cursor
-        ConNom1.Col = RetornoCarro
+        ConNom1.col = RetornoCarro
     End If
 
     Clipboard.Clear
@@ -1943,7 +1958,7 @@ On Error GoTo ErrSub
     Dim c As Integer
     ' Selecciona
     ConNom1.Row = 1
-    ConNom1.Col = 0
+    ConNom1.col = 0
       
     ConNom1.RowSel = ConNom1.Rows - 1
     ConNom1.ColSel = ConNom1.Cols - 1
@@ -1974,13 +1989,13 @@ Screen.MousePointer = vbDefault
 End Sub
 
 Private Sub minToMax_Click()
-    colanti = ConNom1.Col
+    colanti = ConNom1.col
     renati = ConNom1.Row
     ConNom1.Row = 1
-    ConNom1.Col = 3
+    ConNom1.col = 3
     ConNom1.RowSel = limite
     ConNom1.Sort = 3
-    ConNom1.Col = colanti
+    ConNom1.col = colanti
     ConNom1.Row = renati
     ConNom1.SetFocus
 End Sub
@@ -2250,7 +2265,7 @@ On Error GoTo manejadorError:
             Printer.FontName = "Arial"
             Printer.FontSize = 9
             Printer.FontBold = True
-            ConNom1.Col = 1
+            ConNom1.col = 1
             Printer.CurrentY = 380 + aumento(g)
             Printer.CurrentX = 30
             Printer.Print personal.RFC;
@@ -2580,7 +2595,7 @@ Sub eliminacion()
     Dim re As Long
     Dim Borrar As Boolean
 
-    antecol = ConNom1.Col
+    antecol = ConNom1.col
     anteren = ConNom1.Row
     re = 1
 
@@ -2611,7 +2626,7 @@ Sub eliminacion()
         ConNom1.Row = limite
     End If
     If antecol >= 0 And antecol < ConNom1.Cols Then
-        ConNom1.Col = antecol
+        ConNom1.col = antecol
     End If
     sumavert
 End Sub
@@ -2895,7 +2910,7 @@ End Sub
 
 Sub ida()
     For i = 2 To 22
-        ConNom1.Col = i
+        ConNom1.col = i
         If ConNom1.Text <> "" Then
             sum(i) = ConNom1.Text
         Else
@@ -2903,12 +2918,12 @@ Sub ida()
         End If
     Next i
     
-    ConNom1.Col = 0
+    ConNom1.col = 0
     sum(0) = ConNom1.Text
 
 End Sub
 Sub ida_1()
-    For i = 2 To 22: ConNom1.Col = i
+    For i = 2 To 22: ConNom1.col = i
         If ConNom1.Text <> "" Then
             sumv(i) = ConNom1.Text
         Else
@@ -2916,22 +2931,22 @@ Sub ida_1()
         End If
     Next i
     
-ConNom1.Col = 0
+ConNom1.col = 0
 sumv(0) = ConNom1.Text
 End Sub
 Sub regre()
-         ConNom1.Col = 0
+         ConNom1.col = 0
          ConNom1.Text = Format(sumv(0), "###0")
-         ConNom1.Col = 1
+         ConNom1.col = 1
          ConNom1.Text = compa$
-         For i = 2 To 20: ConNom1.Col = i
+         For i = 2 To 20: ConNom1.col = i
             If sumv(i) <> 0 Then
               ConNom1.Text = Format(sumv(i), z1$)
               Else
               ConNom1.Text = ""
               End If
          Next i
-         For i = 21 To 22: ConNom1.Col = i
+         For i = 21 To 22: ConNom1.col = i
             If sumv(i) <> 0 Then
               ConNom1.Text = sumv(i)
               Else
@@ -2940,16 +2955,16 @@ Sub regre()
          Next i
 End Sub
 Sub regre_1()
-    ConNom1.Col = 0
+    ConNom1.col = 0
     ConNom1.Text = Format(sum(0), "###0")
-         For i = 2 To 20: ConNom1.Col = i
+         For i = 2 To 20: ConNom1.col = i
               If sum(i) <> 0 Then
               ConNom1.Text = Format(sum(i), z1$)
               Else
               ConNom1.Text = ""
               End If
          Next i
-         For i = 21 To 22: ConNom1.Col = i
+         For i = 21 To 22: ConNom1.col = i
               If sum(i) <> 0 Then
               ConNom1.Text = Format(sum(i), z1$)
               Else
@@ -2960,7 +2975,7 @@ Sub regre_1()
 End Sub
 Sub datoper()
 On Error GoTo handler
-      ruta = ConNom1.Col
+      ruta = ConNom1.col
 
     If ConNom1.Text = "" Then
         dato_ent = 0
@@ -2968,17 +2983,17 @@ On Error GoTo handler
         dato_ent = ConNom1.Text
     End If
 
-      ConNom1.Col = C_FLAG_ISR: If ConNom1.Text <> "" Then si_impto = ConNom1.Text Else si_impto = 0
-      ConNom1.Col = C_FLAG_IMSS: If ConNom1.Text <> "" Then si_imss = ConNom1.Text Else si_imss = 0
+      ConNom1.col = C_FLAG_ISR: If ConNom1.Text <> "" Then si_impto = ConNom1.Text Else si_impto = 0
+      ConNom1.col = C_FLAG_IMSS: If ConNom1.Text <> "" Then si_imss = ConNom1.Text Else si_imss = 0
       dato_sal = 0: rgtro = 0
-      ConNom1.Col = C_NUM
+      ConNom1.col = C_NUM
 
       If ConNom1.Text <> "" Then
           regtro = ConNom1.Text
           Get 2, regtro, personal
           Get 8, regtro, maestro
       End If
-      ConNom1.Col = ruta
+      ConNom1.col = ruta
 
 Exit Sub
 
@@ -2993,14 +3008,14 @@ End Sub
 
 Sub checanum(camcol, datoret As Currency)
    
-   antecol = ConNom1.Col
-   ConNom1.Col = camcol
+   antecol = ConNom1.col
+   ConNom1.col = camcol
    If ConNom1.Text = "" Then
       datoret = 0
    Else: datoret = ConNom1.Text
    End If
    
-   ConNom1.Col = antecol
+   ConNom1.col = antecol
 End Sub
 ' REVISION 2026: PTU exenta SOLO para captura PTU.
 ' La base proviene de empresa.sm; revisar ejercicio, zona y exencion anual.
@@ -3030,24 +3045,24 @@ Sub checar()
 
     datoper
     If regtro > 0 Then
-      Select Case ConNom1.Col
+      Select Case ConNom1.col
 
          '---------------------------------------------------------- dias
          Case C_DIAS
               diat = dato_ent
               If diat > 0 Then
                   ConNom1.Text = Format(diat, "##0.00")
-                  ConNom1.Col = C_SUELDO
+                  ConNom1.col = C_SUELDO
                   ConNom1.Text = Format(diat * personal.ingr, z1$)
               Else
                   ConNom1.Text = ""
-                  ConNom1.Col = C_SUELDO
+                  ConNom1.col = C_SUELDO
                   ConNom1.Text = ""
                   ' REVISION 2026: no borrar bono/prima capturados en especial.
                   If g_TipoNominaActiva = tnOrdinaria And N_ormal = 0 Then
-                      ConNom1.Col = C_CONC7
+                      ConNom1.col = C_CONC7
                       ConNom1.Text = ""
-                      ConNom1.Col = C_CONC8
+                      ConNom1.col = C_CONC8
                       ConNom1.Text = ""
                   End If
               End If
@@ -3055,15 +3070,15 @@ Sub checar()
               ' del archivo permanente de personal.
               If g_TipoNominaActiva = tnOrdinaria And N_ormal = 0 Then
                   If personal.viat > 0 Then
-                      ConNom1.Col = C_CONC7
+                      ConNom1.col = C_CONC7
                       ConNom1.Text = Format(diat * personal.viat, z1$)
                   End If
                   If personal.otras > 0 Then
-                      ConNom1.Col = C_OTRAS
+                      ConNom1.col = C_OTRAS
                       ConNom1.Text = Format(diat * personal.otras, z1$)
                   End If
               End If
-              ConNom1.Col = ruta
+              ConNom1.col = ruta
 
          '-------------------------------------------------------- sueldo
          Case C_SUELDO
@@ -3078,12 +3093,12 @@ Sub checar()
               If g_TipoNominaActiva = tnOrdinaria And N_ormal = 0 Then
                   ' Nomina ordinaria: conservar horas extras del diseno original.
                   dato_sal = dato_ent * hs_ext
-                  ConNom1.Col = ruta
+                  ConNom1.col = ruta
                   ConNom1.Text = Format$(dato_sal, z1$)
               Else
                   Select Case ruta
                      Case C_CONC4
-                        ConNom1.Col = ruta
+                        ConNom1.col = ruta
                         ConNom1.Text = Format$(dato_ent, z1$)
 
                      Case C_CONC5
@@ -3139,7 +3154,7 @@ Sub checar()
               If g_TipoNominaActiva <> tnOrdinaria Or N_ormal <> 0 Then
                   ' REVISION 2026: PTU/Aguinaldo/Bono/Liq/Finiquito.
                   ' Conceptos libres; no recalcular ni escribir personal.dno.
-                  ConNom1.Col = ruta
+                  ConNom1.col = ruta
                   If dato_ent <> 0 Then
                       ConNom1.Text = Format$(dato_ent, z1$)
                   Else
@@ -3180,7 +3195,7 @@ Sub checar()
                   End If
                   MsgBox "El salario integrado en el archivo de personal fue cambiado", vbExclamation
                   Put #2, regtro, personal
-                  ConNom1.Col = ruta
+                  ConNom1.col = ruta
                   ConNom1.Text = Format$(dato_ent, z1$)
               End If
 
@@ -3190,13 +3205,13 @@ Sub checar()
               If respuesta = vbYes Then
                   si_impto = 1
                   ConNom1.Text = Format(dato_ent, z1$)
-                  ConNom1.Col = C_FLAG_ISR: ConNom1.Text = 1
-                  ConNom1.Col = C_SUBEMP: ConNom1.Text = ""
-                  ConNom1.Col = ruta
+                  ConNom1.col = C_FLAG_ISR: ConNom1.Text = 1
+                  ConNom1.col = C_SUBEMP: ConNom1.Text = ""
+                  ConNom1.col = ruta
               Else
                   si_impto = 0
-                  ConNom1.Col = C_FLAG_ISR: ConNom1.Text = 1
-                  ConNom1.Col = ruta
+                  ConNom1.col = C_FLAG_ISR: ConNom1.Text = 1
+                  ConNom1.col = ruta
                   ConNom1.Text = Format(valcelant, z1$)
               End If
 
@@ -3206,13 +3221,13 @@ Sub checar()
               If respuesta = vbYes Then
                   si_impto = 1
                   ConNom1.Text = Format(dato_ent, z1$)
-                  ConNom1.Col = C_FLAG_ISR: ConNom1.Text = 1
-                  ConNom1.Col = C_ISPT: ConNom1.Text = ""
-                  ConNom1.Col = ruta
+                  ConNom1.col = C_FLAG_ISR: ConNom1.Text = 1
+                  ConNom1.col = C_ISPT: ConNom1.Text = ""
+                  ConNom1.col = ruta
               Else
                   si_impto = 0
-                  ConNom1.Col = C_FLAG_ISR: ConNom1.Text = 0
-                  ConNom1.Col = ruta
+                  ConNom1.col = C_FLAG_ISR: ConNom1.Text = 0
+                  ConNom1.col = ruta
                   ConNom1.Text = Format(valcelant, z1$)
               End If
 
@@ -3222,12 +3237,12 @@ Sub checar()
               If respuesta = vbYes Then
                   si_imss = 1
                   ConNom1.Text = Format(dato_ent, z1$)
-                  ConNom1.Col = C_FLAG_IMSS: ConNom1.Text = 1
-                  ConNom1.Col = ruta
+                  ConNom1.col = C_FLAG_IMSS: ConNom1.Text = 1
+                  ConNom1.col = ruta
               Else
                   si_imss = 0
-                  ConNom1.Col = C_FLAG_IMSS: ConNom1.Text = 0
-                  ConNom1.Col = ruta
+                  ConNom1.col = C_FLAG_IMSS: ConNom1.Text = 0
+                  ConNom1.col = ruta
                   ConNom1.Text = Format(valcelant, z1$)
               End If
 
@@ -3256,7 +3271,7 @@ Sub checar()
          '---------------------- resto de columnas (incluye los conceptos
          '---------------------- de Liq, la Exenta y los totales)
          Case Else
-              ConNom1.Col = ruta
+              ConNom1.col = ruta
               If dato_ent <> 0 Then
                   ConNom1.Text = Format(dato_ent, z1$)
               Else
@@ -3283,7 +3298,7 @@ Sub sumavert()
 
     ' REVISION 2026: sumar solo renglones con numero de empleado valido;
     ' no tomar las filas vacias ni las filas de total como empleados.
-    colantiLocal = ConNom1.Col
+    colantiLocal = ConNom1.col
     renatiLocal = ConNom1.Row
     ProgressBar1.Min = 0
     ProgressBar1.Max = ConNom1.Rows
@@ -3323,7 +3338,7 @@ Sub sumavert()
         End If
     Next columna
 
-    ConNom1.Col = colantiLocal
+    ConNom1.col = colantiLocal
     ConNom1.Row = renatiLocal
     ProgressBar1.Visible = False
 End Sub
@@ -3339,7 +3354,7 @@ Sub sumah(si_impto1 As Integer, si_imss1 As Integer)
     sum(1) = 0
     sum(2) = 0
     sum(3) = 0
-    colanti = ConNom1.Col
+    colanti = ConNom1.col
 
     If g_TipoNominaActiva = tnLiquidacionFiniquito Then
         cPV = C_LQ_PRIMAVAC
@@ -3483,7 +3498,7 @@ saltaAnual:
         ConNom1.TextMatrix(li, C_IMSS) = ""
     End If
 
-    ConNom1.Col = C_EXENTA
+    ConNom1.col = C_EXENTA
     If ConNom1.TextMatrix(li, C_EXENTA) <> "" Then
         sum(1) = sum(1) + ConNom1.TextMatrix(li, C_EXENTA)
     End If
@@ -3508,7 +3523,7 @@ saltaAnual:
     Else
         ConNom1.TextMatrix(li, C_NETO) = ""
     End If
-    ConNom1.Col = colanti
+    ConNom1.col = colanti
 End Sub
 
 Sub inte_grar()
@@ -3922,27 +3937,24 @@ Private Sub archnom_Click(Index As Integer)
 
     Text4.Text = ""
 
+    ' Capturar el formato ANTES de inicializar registros.
     nuevaSeparacion = EsSeparacionNueva()
 
     Close #6
     Dm = LOF(2) / Len(personal)
-
     Open Arch$ For Random As #6 Len = Len(nomina)
     nm = LOF(6) / Len(nomina)
 
-    colanti = ConNom1.Col
+    colanti = ConNom1.col
     renati = ConNom1.Row
 
-    '==================================================
-    ' 1. INICIALIZAR LOS REGISTROS
-    '==================================================
-
+    ' 1) Inicializar TODOS los registros del archivo.
     LimpiaNomina
 
-    ' Las nuevas Liquidaciones/Finiquitos deben
-    ' tener la marca en TODOS los registros,
-    ' aunque el empleado no participe en la nomina.
-
+    ' Importante: el lector examina el primer registro para
+    ' identificar archivos de Liquidacion/Finiquito nuevos.
+    ' Por eso la marca se escribe tambien para empleados
+    ' que NO participan en esta nomina.
     If nuevaSeparacion Then
         nomina.hstri = CCur(MARCA_SEPARACION_2026)
     End If
@@ -3951,74 +3963,52 @@ Private Sub archnom_Click(Index As Integer)
         Put #6, f, nomina
     Next f
 
-    '==================================================
-    ' 2. GUARDAR LOS IMPORTES DE LA CUADRICULA
-    '==================================================
-
+    ' 2) Guardar cada empleado presente en la cuadricula.
     For f = 1 To limite
-
         regtro = Val(ConNom1.TextMatrix(f, C_NUM))
-
         If regtro > 0 Then
-
             Get #6, regtro, nomina
-
             GridANomina f
 
-            ' Reafirmar marca solo en formato nuevo.
+            ' Reafirmar la marca SOLO en el formato nuevo.
             If nuevaSeparacion Then
                 nomina.hstri = CCur(MARCA_SEPARACION_2026)
             End If
 
             Put #6, regtro, nomina
-
         End If
-
     Next f
 
-    '==================================================
-    ' 3. VERIFICAR MARCA DEL PRIMER REGISTRO
-    '==================================================
-
+    ' 3) Verificacion basica del primer registro.
     If nuevaSeparacion And Dm > 0 Then
-
         Get #6, 1, primerRegistro
-
-        If primerRegistro.hstri <> _
-           CCur(MARCA_SEPARACION_2026) Then
-
+        If primerRegistro.hstri <> CCur(MARCA_SEPARACION_2026) Then
             Err.Raise vbObjectError + 2026, "archnom_Click", "No se pudo conservar la marca de formato nuevo."
-
         End If
-
     End If
 
-    '==================================================
-    ' 4. FINALIZAR EL GUARDADO
-    '==================================================
-
     archiva_o = 0
-
-    ConNom1.Col = colanti
+    ConNom1.col = colanti
     ConNom1.Row = renati
     ConNom1.SetFocus
+
+    ' Guardar la fecha REAL usada en la captura.
+    ' No modifica el tamaño ni el contenido de los registros .NOM.
+    If nuevaSeparacion Then
+        FechaCFDI_GuardarFicha RutaNominaSesion, CStr(MiFecha)
+    End If
 
     NominaArchivadaSesion = True
     GuardadoFallidoSesion = False
 
-    MsgBox "Archivada con exito!", _
-           vbInformation, "Nomina"
-
+    MsgBox "Archivada con exito!", vbInformation, "Nomina"
     Exit Sub
 
 ErrorGuardar:
-
     GuardadoFallidoSesion = True
-
     MsgBox "Ocurrio un error al archivar la nomina." & vbCrLf & "Error " & Err.Number & ": " & Err.Description & vbCrLf & vbCrLf & "Los archivos se conservaran para revision.", vbCritical, "Error al guardar"
 
 End Sub
-
 Private Sub cap_act_Click(Index As Integer)
     sumavert
 End Sub
@@ -4029,7 +4019,7 @@ End Sub
 
 Private Sub FuncionImpuesto()
     rrenat = ConNom1.Row
-    rcolant = ConNom1.Col
+    rcolant = ConNom1.col
 
     ProgressBar1.Min = 0
     ProgressBar1.Max = ConNom1.Rows
@@ -4066,7 +4056,7 @@ Private Sub FuncionImpuesto()
 
     ProgressBar1.Visible = False
     ConNom1.Row = rrenat
-    ConNom1.Col = rcolant
+    ConNom1.col = rcolant
     archiva_o = 1
 End Sub
 Private Sub capimpno_Click(Index As Integer)
@@ -4104,25 +4094,25 @@ Sale:
 End Sub
 
 Private Sub capnoalf_Click(Index As Integer)
-    colanti = ConNom1.Col
+    colanti = ConNom1.col
     renati = ConNom1.Row
     ConNom1.Row = 1
-    ConNom1.Col = 1
+    ConNom1.col = 1
     ConNom1.RowSel = limite
     ConNom1.Sort = 1
-    ConNom1.Col = colanti
+    ConNom1.col = colanti
     ConNom1.Row = renati
     ConNom1.SetFocus
     End Sub
 
 Private Sub capnomnum_Click(Index As Integer)
-    colanti = ConNom1.Col
+    colanti = ConNom1.col
     renati = ConNom1.Row
     ConNom1.Row = 1
-    ConNom1.Col = 0
+    ConNom1.col = 0
     ConNom1.RowSel = limite
     ConNom1.Sort = 3
-    ConNom1.Col = colanti
+    ConNom1.col = colanti
     ConNom1.Row = renati
     ConNom1.SetFocus
 End Sub
@@ -4150,7 +4140,7 @@ ErrorSalida:
 End Sub
 
 Private Sub caprecind_Click(Index As Integer)
-    colanti = ConNom1.Col
+    colanti = ConNom1.col
     renati = ConNom1.Row
     archnom_Click
     If ConNom1.Text <> "" Then
@@ -4164,7 +4154,7 @@ Private Sub caprecind_Click(Index As Integer)
         Get 14, rgtro, nom_com
         lin_rbo ConNom1.Row, ConNom1.RowSel
         ConNom1.SelectionMode = flexSelectionFree
-        ConNom1.Col = colanti
+        ConNom1.col = colanti
         ConNom1.Row = renati
         ConNom1.SetFocus
     Else
@@ -4173,16 +4163,16 @@ Private Sub caprecind_Click(Index As Integer)
 End Sub
 
 Private Sub caprectd_Click(Index As Integer)
-   colanti = ConNom1.Col
+   colanti = ConNom1.col
    renati = ConNom1.Row
    ConNom1.Row = 1
-    ConNom1.Col = 0
+    ConNom1.col = 0
    If ConNom1.Text <> "" Then rgtro = ConNom1.Text Else rgtro = 0
    If rgtro > 0 Then
             regtro = ConNom1.TextMatrix(ConNom1.Row, 0)
             Get 14, rgtro, nom_com
             lin_rbo 1, limite
-            ConNom1.Col = colanti
+            ConNom1.col = colanti
             ConNom1.Row = renati
             ConNom1.SetFocus
      Else
@@ -4222,7 +4212,7 @@ Private Sub Combo1_dblClick()
    Combo1_Change
    ConNom1.SetFocus
    ConNom1.Row = 1
-   ConNom1.Col = 2
+   ConNom1.col = 2
 End Sub
 
 Private Sub Combo1_KeyPress(KeyAscii As Integer)
@@ -4230,12 +4220,12 @@ Private Sub Combo1_KeyPress(KeyAscii As Integer)
        Combo1_Change
        ConNom1.SetFocus
        ConNom1.Row = 1
-       ConNom1.Col = 2
+       ConNom1.col = 2
     End If
 End Sub
 
 Private Sub ConNom1_EnterCell()
-    If ConNom1.Col > 1 And ConNom1.Row > 0 Then
+    If ConNom1.col > 1 And ConNom1.Row > 0 Then
         ConNom1.CellBackColor = &H80FF80
     End If
 End Sub
@@ -4265,7 +4255,7 @@ Private Sub ConNom1_KeyPress(KeyAscii As Integer)
 End Sub
 
 Private Sub ConNom1_LeaveCell()
-   If ConNom1.Col > 1 And ConNom1.Row > 0 Then
+   If ConNom1.col > 1 And ConNom1.Row > 0 Then
          ConNom1.CellBackColor = vbWhite
    End If
 End Sub
@@ -4376,7 +4366,7 @@ Private Sub generarNominas()
             If yavas > 0 Then ' Aplica para primera quincena y nomina especial
                 renglon = renglon + 1
                 ConNom1.Row = renglon
-                ConNom1.Col = 0
+                ConNom1.col = 0
                 ConNom1.Text = Format(r, "#####")
                 limite = limite + 1
                 ' Solo imprime primera quincena
@@ -4476,7 +4466,7 @@ SIGUE:
     
     ConNom1.SetFocus
     ConNom1.Row = 1
-    ConNom1.Col = 2
+    ConNom1.col = 2
     ConNom1.Rows = limite + 3
     nomordeli_Click (Index)
     ProgressBar1.Visible = False
@@ -4567,7 +4557,7 @@ Private Sub generarNominaGeneral()
                 
             renglon = renglon + 1
             ConNom1.Row = renglon
-            ConNom1.Col = 0
+            ConNom1.col = 0
             ConNom1.Text = Format(r, "#####")
             limite = limite + 1
             carganom
@@ -4586,7 +4576,7 @@ Private Sub generarNominaGeneral()
                 If ((mesbaja > 0) And (mesbaja <= meselegido)) And (aobaja = (empresa.ao)) Then
                     renglon = renglon + 1
                     ConNom1.Row = renglon
-                    ConNom1.Col = 0
+                    ConNom1.col = 0
                     ConNom1.Text = Format(r, "#####")
                     limite = limite + 1
                     carganom
@@ -4638,7 +4628,7 @@ SIGUE:
         Close 10
         ConNom1.SetFocus
         ConNom1.Row = 1
-        ConNom1.Col = 2
+        ConNom1.col = 2
         ConNom1.Rows = limite + 3
         ProgressBar1.Visible = False
 
@@ -4660,14 +4650,14 @@ Private Sub nomordeli_Click(Index As Integer)
         
     eliminacion
     If (ConNom1.Rows <> 4) Then
-        colanti = ConNom1.Col
+        colanti = ConNom1.col
         renati = ConNom1.Row
         ConNom1.Row = 1
-        ConNom1.Col = 1
+        ConNom1.col = 1
         ConNom1.RowSel = limite
         
         ConNom1.Sort = 1
-        ConNom1.Col = colanti
+        ConNom1.col = colanti
         ConNom1.Row = renati
         ConNom1.SetFocus
     End If
@@ -4792,12 +4782,12 @@ Private Sub Text2_GotFocus()
 
     On Error Resume Next
 
-    antiguo = ConNom1.Col
+    antiguo = ConNom1.col
 
-    ConNom1.Col = 1
+    ConNom1.col = 1
     ConNom1.CellBackColor = &H80FF80
 
-    ConNom1.Col = antiguo
+    ConNom1.col = antiguo
 
     ' Colocar el cursor al final del contenido.
     Text2.SelStart = Len(Text2.Text)
@@ -4825,9 +4815,9 @@ Private Sub Text2_KeyPress(KeyAscii As Integer)
 End Sub
 
 Private Sub Text2_LostFocus()
-   antiguo = ConNom1.Col
-   ConNom1.Col = 1: ConNom1.CellBackColor = Color_gris
-   ConNom1.Col = antiguo
+   antiguo = ConNom1.col
+   ConNom1.col = 1: ConNom1.CellBackColor = Color_gris
+   ConNom1.col = antiguo
    
    ' Buscar la siguiente fila visible resultante del filtro
    Dim nextRow As Long
@@ -5006,7 +4996,7 @@ Private Sub Text4_KeyPress(KeyAscii As Integer)
         For i = 1 To limite
             If ConNom1.RowHeight(i) > 0 Then
                 ConNom1.Row = i
-                ConNom1.Col = 1
+                ConNom1.col = 1
                 ConNom1.SetFocus
                 Exit For
             End If
@@ -5016,7 +5006,7 @@ Private Sub Text4_KeyPress(KeyAscii As Integer)
 End Sub
 
 Private Sub Encab(ByVal c As Long, ByVal txt As String, ByVal ancho As Long)
-    ConNom1.Col = c
+    ConNom1.col = c
     ConNom1.CellAlignment = 4
     ConNom1.ColWidth(c) = ancho
     ConNom1.Text = txt
@@ -5302,7 +5292,7 @@ Private Sub checarSeparacionNueva()
     Dim respuestaLocal As VbMsgBoxResult
 
     ' La cuenta bancaria es TEXTO; no debe pasar por datoper/CCur.
-    If ConNom1.Col = C_BANAMEX Then
+    If ConNom1.col = C_BANAMEX Then
         fila = ConNom1.Row
         regtro = Val(ConNom1.TextMatrix(fila, C_NUM))
         If regtro > 0 Then
@@ -5426,7 +5416,7 @@ Private Sub checarSeparacionNueva()
     ' En especiales conservar la politica de IMSS existente.
     If ConNom1.TextMatrix(fila, C_FLAG_ESP) = "1" Then si_imss = 1
     sumah si_impto, si_imss
-    ConNom1.Col = ruta
+    ConNom1.col = ruta
 End Sub
 
 Private Sub sumahSeparacionNueva(ByVal bloquearISR As Integer, ByVal bloquearIMSS As Integer)
@@ -5438,7 +5428,7 @@ Private Sub sumahSeparacionNueva(ByVal bloquearISR As Integer, ByVal bloquearIMS
     Dim deduccionFila As Currency
     Dim normalBruto As Currency
 
-    colAnterior = ConNom1.Col
+    colAnterior = ConNom1.col
     bruto = 0
     deduccionFila = 0
     rgtro = Val(ConNom1.TextMatrix(li, C_NUM))
@@ -5529,7 +5519,7 @@ Private Sub sumahSeparacionNueva(ByVal bloquearISR As Integer, ByVal bloquearIMS
     sum(1) = bruto
     sum(2) = deduccionFila
     sum(3) = bruto - deduccionFila
-    ConNom1.Col = colAnterior
+    ConNom1.col = colAnterior
 End Sub
 
 Private Function CelCur(ByVal f As Long, ByVal c As Long) As Currency

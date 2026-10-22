@@ -1415,24 +1415,33 @@ Private Sub Form_Resize()
 End Sub
 
 Private Sub mnuCFDI_Click()
+    Dim numeroError As Long
+    Dim descripcionError As String
 
     On Error GoTo ErrorCFDI
 
     OrigenCFDI = 1
+    g_FechaPagoCFDI2026 = ""
 
-    'La última fila válida es la última fila de empleados.
-    'La fila siguiente contiene los totales.
+    ' Solo las nuevas Liquidaciones y Finiquitos usan la ficha persistida.
+    ' No dependemos de la variable MiFecha que dejo Form8.
+    If EsSeparacionNueva() Then
+        g_FechaPagoCFDI2026 = FechaCFDI_LeerFicha(Arch)
+    End If
+
     UltimaFilaCFDI = limite
     AbrirArchivosParaCFDI
     NOMCF2.Show vbModal
     CerrarArchivosCFDI
-
     Exit Sub
 
 ErrorCFDI:
+    numeroError = Err.Number
+    descripcionError = Err.Description
     CerrarArchivosCFDI
-    MsgBox "Error al generar el CFDI." & vbCrLf & "Error: " & Err.Number & vbCrLf & Err.Description, vbCritical, "CFDI"
+    MsgBox "Error al generar el CFDI." & vbCrLf & "Error " & CStr(numeroError) & ": " & descripcionError, vbCritical, "CFDI"
 End Sub
+
 
 Private Sub mnuCopiarSeleccion_Click()
     CmdCopySel_Click
