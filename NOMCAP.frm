@@ -107,7 +107,7 @@ Dim c_p As Integer
 Dim EntradaDATOS
 Dim NumerodePersonal As Long
 Dim Folio As Long, serie As String, Nombrey As String
-Dim Sub_total As Currency, Des_cto As Currency, Gravado As Currency, ConNomina As Currency
+Dim Sub_total As Currency, Des_cto As Currency, gravado As Currency, ConNomina As Currency
 Dim Ex_to As Currency, T_ingreso As Currency, T_desctos As Currency, T_isr As Currency, T_gravado As Currency
 Dim T_exento As Currency, T_imss As Currency, Reg_Patr As String
 Dim Met_pago As String, MiFechaAlta, RiesgoImss, VMiFechaAlta, VMiFecha, VMiFecha1, VFal, ViaTico As Currency
@@ -163,7 +163,7 @@ End If
     Open "DatCFDI.dno" For Random As 7 Len = Len(DATcf)
 
     For I_7 = 0 To cm - 1
-        NOMCF.Col = I_7
+        NOMCF.col = I_7
         NOMCF.CellAlignment = 4
         NOMCF.ColWidth(I_7) = 1200
 
@@ -307,7 +307,7 @@ Private Sub Form_Load()
     
     Folio = InputBox("Dame el numero de Folio Anterior", "CFDI NOMINA", EmpCFDI.Folio)
     serie = InputBox("Dame la serie", "CFDI NOMINA", EmpCFDI.serie)
-    ConNomina = InputBox("Numero de nomina consecutivo ", "CFDI NOMINA", (EmpCFDI.Consecutivo + 1))
+    ConNomina = InputBox("Numero de nomina consecutivo ", "CFDI NOMINA", (EmpCFDI.consecutivo + 1))
     
 ERRORDEPAGO:
     Met_pago = InputBox("Metodo de Pago (utiliza la clave numerica)" & Chr(13) & "01" & Chr(9) & "EFECTIVO" & Chr(13) & "02" & Chr(9) & "CHEQUE NOMINATIVO" & Chr(13) & "03" & Chr(9) & "TRANSFERENCIA ELECTRONICA" & Chr(13) & "28" & Chr(9) & "TARJETA DE DEBITO", "CFDI NOMINA", "28")
@@ -341,7 +341,7 @@ DENUEVO:
             GoTo DENUEVO
     End Select
         
-    EmpCFDI.Folio = Folio: EmpCFDI.Consecutivo = ConNomina: EmpCFDI.serie = serie:  EmpCFDI.RegPatr = Reg_Patr: EmpCFDI.RiesgoImss = RiesgoImss
+    EmpCFDI.Folio = Folio: EmpCFDI.consecutivo = ConNomina: EmpCFDI.serie = serie:  EmpCFDI.RegPatr = Reg_Patr: EmpCFDI.RiesgoImss = RiesgoImss
 
     Put 10, 1, EmpCFDI
     Dim x8 As Long
@@ -514,7 +514,7 @@ Private Sub Llenar_FlexGrid(cn As Connection, Rs As Recordset)
     Sua.Cols = Rs.Fields.Count
     'Selecciona
     Sua.Row = 1
-    Sua.Col = 0
+    Sua.col = 0
     Sua.RowSel = Sua.Rows - 1
     Sua.ColSel = Sua.Cols - 1
     'Devuelve o establece el contenido de las celdas en _
@@ -538,7 +538,7 @@ End Sub
 Private Sub pintarRojo(fila)
     For i = 1 To NOMCF.Cols - 1
         NOMCF.Row = fila
-        NOMCF.Col = i
+        NOMCF.col = i
         NOMCF.CellForeColor = &HFF&
     Next
         
@@ -559,8 +559,8 @@ Private Sub NCfEdCop_Click()
 
     r1 = IIf(NOMCF.Row < NOMCF.RowSel, NOMCF.Row, NOMCF.RowSel)
     r2 = IIf(NOMCF.Row < NOMCF.RowSel, NOMCF.RowSel, NOMCF.Row)
-    C1 = IIf(NOMCF.Col < NOMCF.ColSel, NOMCF.Col, NOMCF.ColSel)
-    C2 = IIf(NOMCF.Col < NOMCF.ColSel, NOMCF.ColSel, NOMCF.Col)
+    C1 = IIf(NOMCF.col < NOMCF.ColSel, NOMCF.col, NOMCF.ColSel)
+    C2 = IIf(NOMCF.col < NOMCF.ColSel, NOMCF.ColSel, NOMCF.col)
 
     For i = r1 To r2
         For f = C1 To C2
@@ -584,7 +584,7 @@ Private Sub NCFEDPRIM_Click()
     Screen.MousePointer = vbHourglass
 
     ' Selección visual (opcional)
-    NOMCF.Row = 1: NOMCF.Col = 0
+    NOMCF.Row = 1: NOMCF.col = 0
     NOMCF.RowSel = NOMCF.Rows - 1
     NOMCF.ColSel = 97
 
@@ -603,7 +603,7 @@ End Sub
 Private Sub NCfEdSel_Click()
      Dim limite As Long
     Clipboard.Clear
-    NOMCF.Row = 1: NOMCF.Col = 0
+    NOMCF.Row = 1: NOMCF.col = 0
    For limite = 1 To NOMCF.Rows - 1
        renglon = limite
     If IsNumeric(NOMCF.TextMatrix(renglon, 0)) Then
@@ -657,7 +657,7 @@ Private Sub NomCf_KeyDown(KeyCode As Integer, Shift As Integer)
     Select Case KeyCode
             Case vbKeyDelete
                For q = NOMCF.Row To NOMCF.RowSel
-                 For W = NOMCF.Col To NOMCF.ColSel
+                 For W = NOMCF.col To NOMCF.ColSel
                     NOMCF.TextMatrix(q, W) = ""
                  Next W
                Next q
@@ -701,6 +701,12 @@ Debug.Print "Rows NOMCF = "; NOMCF2.NOMCF.Rows
 Debug.Print "Cols NOMCF = "; NOMCF2.NOMCF.Cols
 
 On Error GoTo ErrorHandler
+
+    ' Solo nuevas separaciones: plantilla corregida sin columnas legacy.
+    If EsSeparacionNueva() Then
+        MdAbr_1SeparacionNueva
+        Exit Sub
+    End If
 
     Call InicializarGridCFDI
 
@@ -1017,21 +1023,20 @@ End If
         End If
     '101 102
     '102 103
-    'P003G PTU
-    'P003E PTU
-    Rem **************** MODIFICADO CON EL PARCHE DEL 6/6/17 *************************************
-    If N_ormal = 1 Then
-         
-        If IsNumeric(GridOrigen.TextMatrix(I7, 6)) Then
-            NOMCF2.NOMCF.TextMatrix(I7, 102) = Format(ptu_1, "###0.00"):          Rem 66 P003E PTU
-            NOMCF2.NOMCF.TextMatrix(I7, 103) = Format(ptu_2, "###0.00"):          Rem 67 P003G PTU
-        ElseIf GridOrigen.TextMatrix(I7, 6) = "" Then
-            NOMCF2.NOMCF.TextMatrix(I7, 102) = Format(0, "#,##0.00")
-            NOMCF2.NOMCF.TextMatrix(I7, 103) = Format(0, "#,##0.00")
-        End If
+    '=========================================================
+    ' PTU - PLANTILLA 2
+    ' P003G = indice 102
+    ' P003E = indice 103
+    '=========================================================
+    
+    If g_TipoNominaActiva = tnPTU Then
+        ' PTU gravada
+        NOMCF2.NOMCF.TextMatrix(I7, 102) = Format$(ptu_1, "#,##0.00")
+        ' PTU exenta
+        NOMCF2.NOMCF.TextMatrix(I7, 103) = Format$(ptu_2, "#,##0.00")
     Else
-            NOMCF2.NOMCF.TextMatrix(I7, 102) = Format(0, "#,##0.00")
-            NOMCF2.NOMCF.TextMatrix(I7, 103) = Format(0, "#,##0.00")
+        NOMCF2.NOMCF.TextMatrix(I7, 102) = "0.00"
+        NOMCF2.NOMCF.TextMatrix(I7, 103) = "0.00"
     End If
     
     '103 104 P004G - BONO / PREMIO DE PUNTUALIDAD
@@ -1473,6 +1478,393 @@ ErrorHandler:
     Err.Clear
     Exit Sub
 
+End Sub
+
+'==========================================================================
+' NOMCF2 - Solo nueva Liquidacion / Finiquito formato 2026.
+' NO cambia el CFDI de nominas normales, PTU, Aguinaldo ni legacy.
+'
+' PRECAUCION FISCAL: distribucion de Perc.exenta automatica por prioridad
+' Antigua prioridad: Prima Antiguedad, Indemnizacion; luego Aguinaldo,
+' Prima Vacacional y Otras. Es una regla TECNICA de pruebas, NO una
+' determinacion fiscal certificada. Revisar antes de timbrar.
+'==========================================================================
+Private Function LeerCFDINueva(ByVal gr As Object, ByVal col As Long) As Currency
+    Dim valor As String
+    If col < 0 Then Exit Function
+    If col >= gr.Cols Then Exit Function
+    valor = Trim$(gr.TextMatrix(I7, col))
+    If valor = "" Then Exit Function
+    If Not IsNumeric(valor) Then
+        Err.Raise vbObjectError + 406, "LeerCFDINueva", _
+                  "Valor no numerico en columna " & CStr(col)
+    End If
+    LeerCFDINueva = CCur(valor)
+End Function
+
+Private Function MenorCFDI(ByVal x As Currency, ByVal y As Currency) As Currency
+    If x < y Then
+        MenorCFDI = x
+    Else
+        MenorCFDI = y
+    End If
+End Function
+
+Private Sub MdAbr_1SeparacionNueva()
+    On Error GoTo ErrorNueva
+
+    Dim GridOrigen As Object
+    Dim c As Long
+    Dim brutoSueldo As Currency
+    Dim brutoVacaciones As Currency
+    Dim brutoAguinaldo As Currency
+    Dim brutoAntig As Currency
+    Dim brutoPrimaVac As Currency
+    Dim brutoComp As Currency
+    Dim brutoIndem As Currency
+    Dim brutoBono As Currency
+    Dim brutoOtras As Currency
+    Dim exentoRestante As Currency
+    Dim exAntig As Currency, exIndem As Currency
+    Dim exAgui As Currency, exPV As Currency, exOtras As Currency
+    Dim sepTotal As Currency
+    Dim totalSeparacion As Currency
+    Dim verificacion As Currency
+
+    If OrigenCFDI = 1 Then
+        Set GridOrigen = FormViewer.ConNom1
+    Else
+        Set GridOrigen = Form8.ConNom1
+    End If
+
+    Call InicializarGridCFDI
+    If I7 < 1 Or I7 >= NOMCF2.NOMCF.Rows Then
+        Err.Raise vbObjectError + 401, "MdAbr_1SeparacionNueva", _
+                  "Fila de empleado fuera del rango de NOMCF."
+    End If
+    If NOMCF2.NOMCF.Cols < 296 Then
+        Err.Raise vbObjectError + 402, "MdAbr_1SeparacionNueva", _
+                  "NOMCF2 necesita 296 columnas."
+    End If
+
+    brutoSueldo = LeerCFDINueva(GridOrigen, C_SUELDO)
+    brutoVacaciones = LeerCFDINueva(GridOrigen, C_LQ_SDOVAC)
+    brutoAguinaldo = LeerCFDINueva(GridOrigen, C_LQ_AGUI)
+    brutoAntig = LeerCFDINueva(GridOrigen, C_LQ_ANTIG)
+    brutoPrimaVac = LeerCFDINueva(GridOrigen, C_LQ_PRIMAVAC)
+    brutoComp = LeerCFDINueva(GridOrigen, C_LQ_COMPENS)
+    brutoIndem = LeerCFDINueva(GridOrigen, C_LQ_INDEMN)
+    brutoBono = LeerCFDINueva(GridOrigen, C_LQ_BONO)
+    brutoOtras = LeerCFDINueva(GridOrigen, C_OTRAS)
+
+    ' Regla automatica de DESGLOSE en memoria. Se conserva el exento
+    ' que capturo el contador, sin recalcularlo ni duplicar ingresos.
+    exentoRestante = CCur(t_ext)
+    exAntig = MenorCFDI(exentoRestante, brutoAntig)
+    exentoRestante = exentoRestante - exAntig
+    exIndem = MenorCFDI(exentoRestante, brutoIndem)
+    exentoRestante = exentoRestante - exIndem
+    exAgui = MenorCFDI(exentoRestante, brutoAguinaldo)
+    exentoRestante = exentoRestante - exAgui
+    exPV = MenorCFDI(exentoRestante, brutoPrimaVac)
+    exentoRestante = exentoRestante - exPV
+    exOtras = MenorCFDI(exentoRestante, brutoOtras)
+    exentoRestante = exentoRestante - exOtras
+
+    If exentoRestante <> 0 Then
+        Err.Raise vbObjectError + 403, "MdAbr_1SeparacionNueva", _
+                  "No es posible distribuir toda la Perc.exenta entre " & _
+                  "los conceptos que tienen campo exento en esta plantilla."
+    End If
+
+    totalSeparacion = brutoComp + brutoAntig + brutoIndem
+    sepTotal = totalSeparacion
+
+    ' Metadatos y plantilla 1: reutilizar esquema original (0..97).
+    '1 2 FOLIO
+        NOMCF2.NOMCF.TextMatrix(I7, 0) = Folio
+    '2 3 SERIE
+        NOMCF2.NOMCF.TextMatrix(I7, 1) = serie:
+    '3 4 NOMBRE
+        Get 2, NumerodePersonal, personal:
+        MiFechaAlta = Trim(personal.fal)
+        Nombrey = UCase(Trim(personal.nom) + " " + Trim(personal.ape1) + " " + Trim(personal.ape2))
+        NOMCF2.NOMCF.TextMatrix(I7, 2) = Nombrey:
+        Get 7, NumerodePersonal, Empleado_1
+    '4 5 DIRECCION
+        NOMCF2.NOMCF.TextMatrix(I7, 3) = UCase(Trim(Empleado_1.Direccion)):
+    '5 6 COLONIA
+        NOMCF2.NOMCF.TextMatrix(I7, 4) = UCase(Trim(Empleado_1.Colonia)):
+    '6 7 CIUDAD
+        NOMCF2.NOMCF.TextMatrix(I7, 5) = UCase(Trim(Empleado_1.Ciudad)):
+    '7 8 ESTADO
+        NOMCF2.NOMCF.TextMatrix(I7, 6) = UCase(Trim(Empleado_1.Estado)):
+    '8 9 DELEGACION
+        NOMCF2.NOMCF.TextMatrix(I7, 7) = UCase(Trim(Empleado_1.Delegacion)):
+    '9 10 CP
+        NOMCF2.NOMCF.TextMatrix(I7, 8) = Trim(Empleado_1.Cpostal):
+    '10 11 RFC
+        NOMCF2.NOMCF.TextMatrix(I7, 9) = UCase(Trim(personal.RFC)):
+    '11 12 PAIS
+        NOMCF2.NOMCF.TextMatrix(I7, 10) = "MEXICO":
+    '12 13 CORREO
+        NOMCF2.NOMCF.TextMatrix(I7, 11) = Trim(Empleado_1.correo):
+    '13 14 OBSERVACIONES
+        NOMCF2.NOMCF.TextMatrix(I7, 12) = ""
+    '14 15 MONEDA
+        NOMCF2.NOMCF.TextMatrix(I7, 13) = "PESOS"
+    '15 16 TIPOCAMBIO
+        NOMCF2.NOMCF.TextMatrix(I7, 14) = 1
+'******************************************LLAMADO AL MODULO ***********************************************
+    '16 17 TOTAL
+        NOMCF2.NOMCF.TextMatrix(I7, 15) = Format(T_neto, "#,##0.00")
+    '17 18 SUBTOTAL
+        NOMCF2.NOMCF.TextMatrix(I7, 16) = Format(t_per, "#,##0.00")
+    '18 19 DESCUENTO
+        NOMCF2.NOMCF.TextMatrix(I7, 17) = Format(t_ded, "#,##0.00")
+    '19 20 TOTALGRAVADOPERCEPCIONES
+        NOMCF2.NOMCF.TextMatrix(I7, 18) = Format(t_grav, "#,##0.00")
+    '20 21 TOTALEXENTOPERCEPCIONES
+        NOMCF2.NOMCF.TextMatrix(I7, 19) = Format(t_ext, "#,##0.00")
+    '21 22 TOTALPERCEPCIONES
+        NOMCF2.NOMCF.TextMatrix(I7, 20) = Format(t_per, "#,##0.00")
+    '22 23 TOTALDEDUCCIONES
+        NOMCF2.NOMCF.TextMatrix(I7, 21) = Format(t_ded, "#,##0.00")
+    '23 24 TOTALOTROSPAGOS
+        NOMCF2.NOMCF.TextMatrix(I7, 22) = Format(sub13, "#,##0.00")
+    
+    '24 25 TOTALSUELDOS
+     NOMCF2.NOMCF.TextMatrix(I7, 23) = Format$(t_per - totalSeparacion, "#,##0.00")
+    
+    '25 26 TOTALSEPARACIONINDEMNIZACION
+    NOMCF2.NOMCF.TextMatrix(I7, 24) = Format$(totalSeparacion, "#,##0.00")
+    '26 27 TOTALJUBILACIONPENSIONRETIRO
+        NOMCF2.NOMCF.TextMatrix(I7, 25) = Format(0, "#,##0.00")
+    '27 28 TOTALOTRASDEDUCCIONES
+        NOMCF2.NOMCF.TextMatrix(I7, 26) = Format(t_oded, "#,##0.00")
+    '28 29 TOTALIMPUESTOSRETENIDOS
+        NOMCF2.NOMCF.TextMatrix(I7, 27) = Format(isr12, "#,##0.00")
+    '29 30 VALORUNITARIO
+        NOMCF2.NOMCF.TextMatrix(I7, 28) = Format(t_per, "#,##0.00")
+    '30 31 IMPORTE
+        NOMCF2.NOMCF.TextMatrix(I7, 29) = Format(t_per, "#,##0.00")
+    Aletra (T_neto)
+    '31 32 TOTALCONLETRA
+        NOMCF2.NOMCF.TextMatrix(I7, 30) = LetrVal
+    '32 33 TIPODENOMINA
+      NOMCF2.NOMCF.TextMatrix(I7, 31) = "EXTRAORDINARIA"
+    '33 34 SINDICALIZADO
+        NOMCF2.NOMCF.TextMatrix(I7, 32) = "No"
+    '34 35 METODOPAGO
+        NOMCF2.NOMCF.TextMatrix(I7, 33) = Met_pagcon
+    '35 36 LUGAREXPEDICION
+        NOMCF2.NOMCF.TextMatrix(I7, 34) = "DIF"
+    '36 37 REGIMEN
+        NOMCF2.NOMCF.TextMatrix(I7, 35) = "601"
+        
+        '-*********************************************************************
+    '36
+        NOMCF2.NOMCF.TextMatrix(I7, 36) = "G03 Gastos en general"
+        '-*********************************************************************
+        
+    '37 38 NUMCTAPAG
+        'NOMCF2.NOMCF.TextMatrix(I7, 37) = CStr(GridOrigen.TextMatrix(I7, 24))
+        NOMCF2.NOMCF.TextMatrix(I7, 37) = Right$(Trim$(GridOrigen.TextMatrix(I7, C_BANAMEX)), 4)
+    '38 39 REGISTROPATRONAL
+        NOMCF2.NOMCF.TextMatrix(I7, 38) = Reg_Patr
+    '39 40 NUMEMPLEADO
+        NOMCF2.NOMCF.TextMatrix(I7, 39) = NumerodePersonal
+    '40 41 CURP
+        Get 9, NumerodePersonal, Otros_Rgtros
+        NOMCF2.NOMCF.TextMatrix(I7, 40) = UCase(Trim(Otros_Rgtros.curp))
+    '41 42 TIPOREGIMEN
+        NOMCF2.NOMCF.TextMatrix(I7, 41) = "02 Sueldos"
+    '42 43 NUMSEGURIDADSOCIAL
+        NOMCF2.NOMCF.TextMatrix(I7, 42) = Trim(personal.imss)
+        
+        DDINI = Left(MiFecha, 2)
+             If DDINI < 16 Then
+                  DDINI = 1
+                  MiFecha1 = "01" + Mid(MiFecha, 3)
+                  Else
+                  DDINI = 16
+                  MiFecha1 = "16" + Mid(MiFecha, 3)
+             End If
+        VMiFecha = Mid(Trim(MiFecha), 7, 4) + "-" + Mid(Trim(MiFecha), 4, 2) + "-" + Mid(Trim(MiFecha), 1, 2)
+        VMiFecha1 = Mid(Trim(MiFecha1), 7, 4) + "-" + Mid(Trim(MiFecha1), 4, 2) + "-" + Mid(Trim(MiFecha1), 1, 2)
+        
+    '43 44 FECHAPAGO
+        NOMCF2.NOMCF.TextMatrix(I7, 43) = VMiFecha
+    '44 45 FECHAINICIALPAGO
+        NOMCF2.NOMCF.TextMatrix(I7, 44) = VMiFecha1
+    '45 46 FECHAFINALPAGO
+        NOMCF2.NOMCF.TextMatrix(I7, 45) = VMiFecha
+    Rem *****************   MODIFICADO CON PARCHE DEL 6/6/17
+    '46 47 NUMDIASPAGADOS
+       NOMCF2.NOMCF.TextMatrix(I7, 46) = GridOrigen.TextMatrix(I7, C_DIAS)
+    '47 48 DEPARTAMENTO
+        NOMCF2.NOMCF.TextMatrix(I7, 47) = "ADMINISTRACION"
+    '48 49 CLABE
+        NOMCF2.NOMCF.TextMatrix(I7, 48) = ""
+    '49 50 BANCO
+        NOMCF2.NOMCF.TextMatrix(I7, 49) = "002"
+    '50 51 FECHAINICIORELLABORAL
+        VFal = Mid(Trim(personal.fal), 7, 4) + "-" + Mid(Trim(personal.fal), 4, 2) + "-" + Mid(Trim(personal.fal), 1, 2)
+        NOMCF2.NOMCF.TextMatrix(I7, 50) = VFal
+    '51 52 ANTIGUEDAD
+        NOMCF2.NOMCF.TextMatrix(I7, 51) = Year(MiFecha) - Year(MiFechaAlta)
+    '52 53 PUESTO
+        NOMCF2.NOMCF.TextMatrix(I7, 52) = "Administracion"
+    '53 54 TIPOCONTRATO
+        NOMCF2.NOMCF.TextMatrix(I7, 53) = "01 Contrato de trabajo por tiempo indeterminado"
+    '54 55 TIPOJORNADA
+        NOMCF2.NOMCF.TextMatrix(I7, 54) = "01 Diurna"
+    '55 56 PERIODICIDADPAGO
+        NOMCF2.NOMCF.TextMatrix(I7, 55) = "99 OTRA PERIODICIDAD"
+    '56 57 SALARIOBASECOTAPOR
+        NOMCF2.NOMCF.TextMatrix(I7, 56) = Format(personal.ingr, "#,##0.00")
+    '57 58 RIESGOPUESTO
+        NOMCF2.NOMCF.TextMatrix(I7, 57) = RiesgoImss
+    '58 59 SALARIODIARIOINTEGRADO
+        'NOMCF2.NOMCF.TextMatrix(I7, 58) = Format(personal.integrado, "#,##0.00")
+    '59 60 ENTIDADFEDERATIVA
+        NOMCF2.NOMCF.TextMatrix(I7, 59) = "CMX"
+    '60 61 RFCLABORA
+    '61 62 PORCENTAJETIEMPO
+        'If RFC_EXTERNO <> "" Then
+            NOMCF2.NOMCF.TextMatrix(I7, 60) = RFC_EXTERNO
+            NOMCF2.NOMCF.TextMatrix(I7, 61) = 100
+        'Else
+            'NOMCF2.NOMCF.TextMatrix(I7, 61) = Format(0, "#,##0.00")
+        'End If
+        
+        '********************Modificacion de la plantilla 1 18/02/2020 ************
+    '62 63 DINCAPACIDADR
+        NOMCF2.NOMCF.TextMatrix(I7, 62) = Format(0, "#,##0.00")
+    '63 64 DINCAPACIDADI
+        NOMCF2.NOMCF.TextMatrix(I7, 63) = Format(0, "#,##0.00")
+    '64 65 DINCAPACIDADM
+        NOMCF2.NOMCF.TextMatrix(I7, 64) = Format(0, "#,##0.00")
+    '65 66 DINCAPACIDADC
+        NOMCF2.NOMCF.TextMatrix(I7, 65) = Format(0, "#,##0.00")
+    '66 67 P014DINCAR
+        NOMCF2.NOMCF.TextMatrix(I7, 66) = Format(0, "#,##0.00")
+    '67 68 P014DINCA
+        NOMCF2.NOMCF.TextMatrix(I7, 67) = Format(0, "#,##0.00")
+    '68 69 P014DINCAM
+        NOMCF2.NOMCF.TextMatrix(I7, 68) = Format(0, "#,##0.00")
+    '69 70 P014DINCAC
+        NOMCF2.NOMCF.TextMatrix(I7, 69) = Format(0, "#,##0.00")
+    '70 71 P054G   *** NUEVA ***
+        NOMCF2.NOMCF.TextMatrix(I7, 70) = Format(0, "#,##0.00")
+    '71 72 P054E   *** NUEVA ***
+        NOMCF2.NOMCF.TextMatrix(I7, 71) = Format(0, "#,##0.00")
+    '72 73 P055G   *** NUEVA ***
+        NOMCF2.NOMCF.TextMatrix(I7, 72) = Format(0, "#,##0.00")
+    '73 74 P055E   *** NUEVA ***
+        NOMCF2.NOMCF.TextMatrix(I7, 73) = Format(0, "#,##0.00")
+    '74 75 HORASTRIPLES
+        NOMCF2.NOMCF.TextMatrix(I7, 74) = Format(0, "#,##0.00")
+    '75 76 DIASHESIMPLES
+        NOMCF2.NOMCF.TextMatrix(I7, 75) = Format(0, "#,##0.00")
+    '76 77 HORASSIMPLES
+        NOMCF2.NOMCF.TextMatrix(I7, 76) = Format(0, "#,##0.00")
+    '76 77 AT_VMERCADO
+        NOMCF2.NOMCF.TextMatrix(I7, 77) = Format(0, "#,##0.00")
+    '77 78 AT_POTORGARSE
+        NOMCF2.NOMCF.TextMatrix(I7, 78) = Format(0, "#,##0.00")
+    '78 79 JB_TEXTHIBICION
+        NOMCF2.NOMCF.TextMatrix(I7, 79) = Format(0, "#,##0.00")
+    '79 80 JB_TPARCIAL
+        NOMCF2.NOMCF.TextMatrix(I7, 80) = Format(0, "#,##0.00")
+    '80 81 JB_MDIARIO
+        NOMCF2.NOMCF.TextMatrix(I7, 81) = Format(0, "#,##0.00")
+    '81 82 JB_IACUM
+        NOMCF2.NOMCF.TextMatrix(I7, 82) = Format(0, "#,##0.00")
+    '82 83 JB_INOACUM
+        NOMCF2.NOMCF.TextMatrix(I7, 83) = Format(0, "#,##0.00")
+    '83 84 SI_TPAGADO
+        NOMCF2.NOMCF.TextMatrix(I7, 84) = Format(totalSeparacion, "#,##0.00")
+    '84 85 SI_ASERVICIO
+        NOMCF2.NOMCF.TextMatrix(I7, 85) = Format(0, "#,##0.00")
+    '85 86 SI_USUELDO
+        NOMCF2.NOMCF.TextMatrix(I7, 86) = Format(0, "#,##0.00")
+    '86 87 SI_IACUM
+        NOMCF2.NOMCF.TextMatrix(I7, 87) = Format(0, "#,##0.00")
+    '87 88 SI_INOACUM
+        NOMCF2.NOMCF.TextMatrix(I7, 88) = Format(0, "#,##0.00")
+    '88 89 CSF_SALFAV
+        NOMCF2.NOMCF.TextMatrix(I7, 89) = Format(0, "#,##0.00")
+    '89 90 CSF_ANIO
+        NOMCF2.NOMCF.TextMatrix(I7, 90) = Format(0, "#,##0.00")
+    '90 91 CSF_RSFAV
+        NOMCF2.NOMCF.TextMatrix(I7, 91) = Format(0, "#,##0.00")
+    '91 92 SE_SCAUSADO
+        NOMCF2.NOMCF.TextMatrix(I7, 92) = Format(subc13, "#,##0.00")
+    '92 93 UUID_DOCREL
+        NOMCF2.NOMCF.TextMatrix(I7, 93) = ""
+    '93 94 H2TOT
+        NOMCF2.NOMCF.TextMatrix(I7, 94) = Format(0, "#,##0.00")
+    '94 95 H3TOT
+        NOMCF2.NOMCF.TextMatrix(I7, 95) = Format(0, "#,##0.00")
+    '95 96 HSTOT
+        NOMCF2.NOMCF.TextMatrix(I7, 96) = Format(0, "#,##0.00")
+    '96 97 BANDERA
+        NOMCF2.NOMCF.TextMatrix(I7, 97) = 1
+
+
+    ' Plantilla 2: inicializar 198 celdas (indices 98..295).
+    For c = 98 To 295
+        NOMCF2.NOMCF.TextMatrix(I7, c) = "0.00"
+    Next c
+
+    NOMCF2.NOMCF.TextMatrix(I7, 98) = Trim$(personal.RFC)
+    NOMCF2.NOMCF.TextMatrix(I7, 99) = Format$(brutoSueldo + brutoVacaciones, "#,##0.00")   ' P001G
+    NOMCF2.NOMCF.TextMatrix(I7, 100) = Format$(brutoAguinaldo - exAgui, "#,##0.00")   ' P002G
+    NOMCF2.NOMCF.TextMatrix(I7, 101) = Format$(exAgui, "#,##0.00")                    ' P002E
+    NOMCF2.NOMCF.TextMatrix(I7, 126) = Format$(brutoPrimaVac - exPV, "#,##0.00")     ' P021G
+    NOMCF2.NOMCF.TextMatrix(I7, 127) = Format$(exPV, "#,##0.00")                      ' P021E
+    NOMCF2.NOMCF.TextMatrix(I7, 128) = Format$(brutoAntig - exAntig, "#,##0.00")     ' P022G
+    NOMCF2.NOMCF.TextMatrix(I7, 129) = Format$(exAntig, "#,##0.00")                   ' P022E
+    NOMCF2.NOMCF.TextMatrix(I7, 130) = Format$(brutoComp, "#,##0.00")                  ' P023G
+    NOMCF2.NOMCF.TextMatrix(I7, 133) = Format$(brutoIndem - exIndem, "#,##0.00")     ' P025G
+    NOMCF2.NOMCF.TextMatrix(I7, 134) = Format$(exIndem, "#,##0.00")                   ' P025E
+
+    ' Bono generico se trata provisionalmente como Otros salarios P038G,
+    ' NO como premio de puntualidad P010 sin identificar su naturaleza.
+    NOMCF2.NOMCF.TextMatrix(I7, 148) = Format$(brutoOtras + brutoBono - exOtras, "#,##0.00")
+    NOMCF2.NOMCF.TextMatrix(I7, 149) = Format$(exOtras, "#,##0.00")                   ' P038E
+
+    ' Deducciones: indices del Excel real, no del .DNO anterior.
+    NOMCF2.NOMCF.TextMatrix(I7, 171) = Format$(ims14, "#,##0.00")  ' D001
+    NOMCF2.NOMCF.TextMatrix(I7, 172) = Format$(isr12, "#,##0.00")  ' D002
+    NOMCF2.NOMCF.TextMatrix(I7, 174) = Format$(pre15, "#,##0.00")  ' D004
+    NOMCF2.NOMCF.TextMatrix(I7, 180) = Format$(pea17, "#,##0.00")  ' D007
+    NOMCF2.NOMCF.TextMatrix(I7, 183) = Format$(ifv18, "#,##0.00")  ' D010
+    NOMCF2.NOMCF.TextMatrix(I7, 184) = Format$(fon16, "#,##0.00")  ' D011
+    NOMCF2.NOMCF.TextMatrix(I7, 286) = Format$(sub13, "#,##0.00")  ' OP002
+    NOMCF2.NOMCF.TextMatrix(I7, 295) = "1"                     ' BANDERA
+
+    ' Verificar suma de los conceptos CFDI; suma exenta identica a capturada.
+    verificacion = brutoSueldo + brutoVacaciones + brutoAguinaldo + _
+                   brutoPrimaVac + brutoAntig + brutoComp + brutoIndem + _
+                   brutoOtras + brutoBono
+    If Abs(verificacion - CCur(t_per)) > CCur(0.01) Then
+        Err.Raise vbObjectError + 404, "MdAbr_1SeparacionNueva", _
+                  "No coincide el total de percepciones."
+    End If
+    If exAntig + exIndem + exAgui + exPV + exOtras <> CCur(t_ext) Then
+        Err.Raise vbObjectError + 405, "MdAbr_1SeparacionNueva", _
+                  "No coincide el importe total exento."
+    End If
+    Exit Sub
+
+ErrorNueva:
+    MsgBox "No se pudo preparar la plantilla de la separacion " & _
+           "para el empleado " & CStr(NumerodePersonal) & "." & vbCrLf & _
+           "Error " & Err.Number & ": " & Err.Description, _
+           vbCritical, "NOMCF2 - Pruebas 2026"
+    Err.Raise Err.Number, "MdAbr_1SeparacionNueva", Err.Description
 End Sub
 
 

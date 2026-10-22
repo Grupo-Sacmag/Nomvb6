@@ -77,6 +77,13 @@ Dim GridOrigen As Object
         Set GridOrigen = Form8.ConNom1
     End If
     
+
+    ' FORMATO NUEVO: NO USAR POSICIONES FIJAS LEGACY.
+    If EsSeparacionNueva() Then
+        rengSeparacionNueva GridOrigen
+        Exit Sub
+    End If
+
     If GridOrigen Is Nothing Then
         MsgBox "GridOrigen es Nothing" & vbCrLf & _
                "OrigenCFDI = " & OrigenCFDI
@@ -227,9 +234,16 @@ Dim GridOrigen As Object
                 ptu_1 = ptu_1 - ptu_2
             End If
          End If
-         ptu_3 = ptu_1 + ptu_2
-         t_per = ptu_3
-         pee10 = ptu_2
+         ' PTU gravada + PTU exenta
+        ptu_3 = ptu_1 + ptu_2
+        
+        ' La exenta ya fue acumulada antes en t_per.
+        ' Retirarla temporalmente para no duplicarla
+        ' al sumar la PTU completa.
+        t_per = t_per - pee10 + ptu_3
+        
+        ' Conservar la parte exenta para el total exento CFDI
+        pee10 = ptu_2
       End If
     End If
     
@@ -396,6 +410,7 @@ Dim GridOrigen As Object
     Debug.Print "=================================="
     
 End Sub
+
 Public Function ClasificarTipoNomina(ByVal nombreArch As String) As TipoNominaCFDI
     Dim n As String
     n = NombreBaseNomina(nombreArch)
@@ -469,4 +484,128 @@ Public Function EsNominaNormal(ByVal nombre As String) As Boolean
     If Not (b Like "???[12]####") Then Exit Function
     EsNominaNormal = (InStr("|ENE|FEB|MAR|ABR|MAY|JUN|JUL|AGO|SEP|OCT|NOV|DIC|", "|" & Left$(b, 3) & "|") > 0)
 End Function
+
+Public Sub SepararPTU(ByVal importePTU As Currency, ByVal salarioMinimoDiario As Currency, ByRef ptuGravada As Currency, ByRef ptuExenta As Currency)
+
+    Dim limiteExento As Currency
+
+    ptuGravada = 0
+    ptuExenta = 0
+
+    If importePTU <= 0 Then Exit Sub
+    limiteExento = salarioMinimoDiario * 15
+    If importePTU <= limiteExento Then
+        ptuExenta = importePTU
+    Else
+        ptuExenta = limiteExento
+        ptuGravada = importePTU - limiteExento
+    End If
+End Sub
+
+Private Function ImporteCFDINuevo(ByVal gr As Object, ByVal fila As Long, _
+                                 ByVal columna As Long) As Currency
+    Dim dato As String
+    If columna < 0 Then Exit Function
+    If columna >= gr.Cols Then Exit Function
+    If fila < 1 Or fila >= gr.Rows Then Exit Function
+    dato = Trim$(gr.TextMatrix(fila, columna))
+    If Len(dato) = 0 Then Exit Function
+    If IsNumeric(dato) Then
+        ImporteCFDINuevo = CCur(dato)
+    Else
+        Err.Raise vbObjectError + 301, "ImporteCFDINuevo", _
+                  "Importe no numerico en fila " & CStr(fila) & _
+                  ", columna " & CStr(columna) & ": " & dato
+    End If
+End Function
+
+Private Sub rengSeparacionNueva(ByVal gr As Object)
+    Dim importeIngreso As Currency
+    Dim importeExento As Currency
+    Dim sumaConceptos As Currency
+    Dim deduccionGrid As Currency
+    Dim creditoGrid As Currency
+
+    On Error GoTo ErrorSeparacion
+
+    ' Reiniciar las variables de trabajo heredadas.
+    t_per = 0: t_ded = 0: t_oi = 0: T_neto = 0
+    t_grav = 0: t_ext = 0: t_gravded = 0: t_extded = 0
+    t_oded = 0: sub13 = 0: subc13 = 0
+    sue3 = 0: via7 = 0: pva8 = 0: otr9 = 0: pee10 = 0
+    agui5 = 0: ptu_1 = 0: ptu_2 = 0: ptu_3 = 0
+    isr12 = 0: ims14 = 0: pre15 = 0: fon16 = 0
+    pea17 = 0: ifv18 = 0
+    g_ExentoAntig = 0: g_GravadoAntig = 0
+    g_ExentoIndem = 0: g_GravadoIndem = 0
+    g_ExentoAguiLiq = 0: g_GravadoAguiLiq = 0
+    g_ExentoPVacLiq = 0: g_GravadoPVacLiq = 0
+
+    sumaConceptos = ImporteCFDINuevo(gr, I7, C_SUELDO) + _
+                    ImporteCFDINuevo(gr, I7, C_OTRAS) + _
+                    ImporteCFDINuevo(gr, I7, C_LQ_AGUI) + _
+                    ImporteCFDINuevo(gr, I7, C_LQ_ANTIG) + _
+                    ImporteCFDINuevo(gr, I7, C_LQ_PRIMAVAC) + _
+                    ImporteCFDINuevo(gr, I7, C_LQ_COMPENS) + _
+                    ImporteCFDINuevo(gr, I7, C_LQ_INDEMN) + _
+                    ImporteCFDINuevo(gr, I7, C_LQ_BONO) + _
+                    ImporteCFDINuevo(gr, I7, C_LQ_SDOVAC)
+
+    importeIngreso = ImporteCFDINuevo(gr, I7, C_TOTING)
+    importeExento = ImporteCFDINuevo(gr, I7, C_EXENTA)
+
+    If Abs(sumaConceptos - importeIngreso) > CCur(0.01) Then
+        Err.Raise vbObjectError + 302, "rengSeparacionNueva", _
+            "El total de conceptos no coincide con Tot.Ingr. del empleado " & _
+            gr.TextMatrix(I7, C_NUM)
+    End If
+    If importeExento < 0 Or importeExento > importeIngreso Then
+        Err.Raise vbObjectError + 303, "rengSeparacionNueva", _
+            "Perc.exenta fuera del rango de ingresos."
+    End If
+
+    t_per = importeIngreso
+    t_ext = importeExento
+    t_grav = importeIngreso - importeExento
+    pee10 = importeExento
+    sue3 = ImporteCFDINuevo(gr, I7, C_SUELDO) + _
+           ImporteCFDINuevo(gr, I7, C_LQ_SDOVAC)
+    otr9 = ImporteCFDINuevo(gr, I7, C_OTRAS)
+    agui5 = ImporteCFDINuevo(gr, I7, C_LQ_AGUI)
+
+    isr12 = ImporteCFDINuevo(gr, I7, C_ISPT)
+    ims14 = ImporteCFDINuevo(gr, I7, C_IMSS)
+    pre15 = ImporteCFDINuevo(gr, I7, C_PRESTAMOS)
+    fon16 = ImporteCFDINuevo(gr, I7, C_FONACOT)
+    pea17 = ImporteCFDINuevo(gr, I7, C_PENSION)
+    ifv18 = ImporteCFDINuevo(gr, I7, C_INFONAVIT)
+    creditoGrid = ImporteCFDINuevo(gr, I7, C_SUBEMP)
+
+    ' Un subsidio negativo en la cuadricula es un otro pago positivo.
+    If creditoGrid < 0 Then
+        sub13 = -creditoGrid
+    End If
+
+    t_ded = isr12 + ims14 + pre15 + fon16 + pea17 + ifv18
+    If creditoGrid > 0 Then t_ded = t_ded + creditoGrid
+    t_oded = t_ded - isr12
+    t_extded = t_oded
+    T_neto = t_per + sub13 - t_ded
+
+    deduccionGrid = ImporteCFDINuevo(gr, I7, C_TOTDED)
+    If Abs((t_ded - sub13) - deduccionGrid) > CCur(0.01) Then
+        Err.Raise vbObjectError + 304, "rengSeparacionNueva", _
+            "Las deducciones no coinciden con Tot.Deduc."
+    End If
+    If Abs(T_neto - ImporteCFDINuevo(gr, I7, C_NETO)) > CCur(0.01) Then
+        Err.Raise vbObjectError + 305, "rengSeparacionNueva", _
+            "El neto calculado no coincide con el neto del Generador."
+    End If
+
+    Exit Sub
+
+ErrorSeparacion:
+    Err.Raise Err.Number, "rengSeparacionNueva", Err.Description
+End Sub
+
 

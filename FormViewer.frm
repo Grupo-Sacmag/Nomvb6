@@ -252,7 +252,7 @@ Private Sub CmdLimpiarFiltro_Click()
 
     If ConNom1.Rows > 1 Then
         ConNom1.Row = 1
-        ConNom1.Col = 0
+        ConNom1.col = 0
     End If
 
 End Sub
@@ -372,8 +372,8 @@ Public Sub LoadPayroll(ByVal fName As String)
 
     If Len(nameOnly) < 5 Then
 
-        MsgBox "El nombre del archivo de nómina no es válido.", _
-               vbExclamation, "Visor de nómina"
+        MsgBox "El nombre del archivo de n mina no es v lido.", _
+               vbExclamation, "Visor de n mina"
 
         GoTo Salida
 
@@ -430,8 +430,8 @@ Public Sub LoadPayroll(ByVal fName As String)
 
     If Dm <= 0 Then
 
-        MsgBox "No existe información válida en personal.dno." & _
-               vbCrLf & "No se puede abrir la nómina.", _
+        MsgBox "No existe informaci n v lida en personal.dno." & _
+               vbCrLf & "No se puede abrir la n mina.", _
                vbCritical, "Error"
 
         GoTo Salida
@@ -444,7 +444,8 @@ Public Sub LoadPayroll(ByVal fName As String)
 
     etapaCarga = "AplicarTipoNomina"
 
-    AplicarTipoNomina nameOnly
+    ' Usar la ruta completa para comprobar marca interna 20261010.
+    AplicarTipoNomina Arch
 
     If EsNominaNormal(nameOnly) Then
 
@@ -492,9 +493,9 @@ Public Sub LoadPayroll(ByVal fName As String)
 
     If nm <= 0 Then
 
-        MsgBox "El archivo de nómina está vacío o " & _
+        MsgBox "El archivo de n mina est  vac o o " & _
                "no contiene registros.", _
-               vbInformation, "Visor de Nómina"
+               vbInformation, "Visor de N mina"
 
         GoTo Salida
 
@@ -539,8 +540,8 @@ Public Sub LoadPayroll(ByVal fName As String)
     If fi_nm <= 0 Then
 
         MsgBox "No existen registros compatibles entre " & _
-               "la nómina y personal.dno.", _
-               vbInformation, "Visor de Nómina"
+               "la n mina y personal.dno.", _
+               vbInformation, "Visor de N mina"
 
         GoTo Salida
 
@@ -560,7 +561,7 @@ Public Sub LoadPayroll(ByVal fName As String)
 
     ConNom1.Row = 0
     ConNom1.RowSel = 0
-    ConNom1.Col = 0
+    ConNom1.col = 0
     ConNom1.ColSel = 0
 
     Debug.Print "ANTES DE DEFINE"
@@ -671,7 +672,7 @@ Public Sub LoadPayroll(ByVal fName As String)
             etapaCarga = "Seleccionar fila del grid"
 
             ConNom1.Row = renglon
-            ConNom1.Col = C_NUM
+            ConNom1.col = C_NUM
 
             '----------------------------------------
             ' NUMERO DE EMPLEADO
@@ -727,7 +728,7 @@ Public Sub LoadPayroll(ByVal fName As String)
     ConNom1.Row = 0
     ConNom1.RowSel = 0
 
-    ConNom1.Col = 0
+    ConNom1.col = 0
     ConNom1.ColSel = 0
 
     '========================================================
@@ -782,7 +783,7 @@ Public Sub LoadPayroll(ByVal fName As String)
 
     End If
 
-    ConNom1.Col = 0
+    ConNom1.col = 0
     ConNom1.ColSel = 0
 
     '========================================================
@@ -835,7 +836,7 @@ ErrorHandler:
     Debug.Print "Columnas del Grid: "; ConNom1.Cols
 
     Debug.Print "Fila seleccionada: "; ConNom1.Row
-    Debug.Print "Columna seleccionada: "; ConNom1.Col
+    Debug.Print "Columna seleccionada: "; ConNom1.col
 
     Debug.Print "Limite: "; limite
     Debug.Print "Renglon: "; renglon
@@ -853,12 +854,12 @@ ErrorHandler:
 
     On Error GoTo 0
 
-    MsgBox "Error al cargar la nómina." & vbCrLf & _
+    MsgBox "Error al cargar la n mina." & vbCrLf & _
            vbCrLf & _
            "Etapa: " & etapaCarga & vbCrLf & _
            "Registro: " & CStr(registroActual) & vbCrLf & _
-           "Número: " & CStr(numeroError) & vbCrLf & _
-           "Descripción: " & descripcionError, _
+           "N mero: " & CStr(numeroError) & vbCrLf & _
+           "Descripci n: " & descripcionError, _
            vbCritical, "Error FormViewer"
 
     '========================================================
@@ -871,7 +872,6 @@ Salida:
     cargandoNomina = False
 
 End Sub
-
 Private Function IsNormalPayrollName(ByVal fName As String) As Boolean
     Dim namePart As String
     If Len(fName) = 12 Then
@@ -902,89 +902,133 @@ Private Sub PonCel(ByVal f As Long, ByVal c As Long, ByVal v As Currency, Option
 End Sub
 
 Sub carganom()
-    li = ConNom1.Row
-    ingresos = 0
-    deducciones = 0
-    neto = 0
+    Dim liLocal As Long
+    Dim ingresosLocal As Currency
+    Dim deduccionesLocal As Currency
+    Dim netoLocal As Currency
 
-    ' Nombre completo del empleado
-    ConNom1.TextMatrix(li, C_NOMBRE) = RTrim$(personal.ape1) + " " + RTrim$(personal.ape2) + " " + RTrim$(personal.nom)
+    liLocal = ConNom1.Row
+    ingresosLocal = nomina.sueldo
 
-    PonCel li, C_DIAS, nomina.dias, "##0.00"
-    PonCel li, C_SUELDO, nomina.sueldo
+    ConNom1.TextMatrix(liLocal, C_NOMBRE) = _
+        RTrim$(personal.ape1) & " " & RTrim$(personal.ape2) & " " & RTrim$(personal.nom)
+
+    PonCel liLocal, C_DIAS, nomina.dias, "##0.00"
+    PonCel liLocal, C_SUELDO, nomina.sueldo
 
     If g_TipoNominaActiva = tnLiquidacionFiniquito Then
-        ' ---- Liquidacion / Finiquito: un concepto por columna ----
-        PonCel li, C_LQ_SDOVAC, nomina.viaticos
-        PonCel li, C_LQ_PRIMAVAC, nomina.pvac
-        PonCel li, C_LQ_AGUI, nomina.aguin
-        PonCel li, C_LQ_ANTIG, nomina.hs_dbl
-        PonCel li, C_LQ_COMPENS, nomina.hs_nor
-        PonCel li, C_LQ_INDEMN, nomina.hs_tri
-        PonCel li, C_LQ_BONO, nomina.hsnor
-        ingresos = nomina.sueldo + nomina.viaticos + nomina.pvac + nomina.aguin + _
-                   nomina.hs_dbl + nomina.hs_nor + nomina.hs_tri + nomina.hsnor
+        ' Los indices no habilitados valen -1. Nunca escribir en -1.
+        ' Acumular los conceptos visibles segun el tipo y la version.
+        If C_LQ_SDOVAC >= 0 Then
+            PonCel liLocal, C_LQ_SDOVAC, nomina.viaticos
+            ingresosLocal = ingresosLocal + nomina.viaticos
+        End If
+        If C_LQ_AGUI >= 0 Then
+            PonCel liLocal, C_LQ_AGUI, nomina.aguin
+            ingresosLocal = ingresosLocal + nomina.aguin
+        End If
+        If C_LQ_ANTIG >= 0 Then
+            PonCel liLocal, C_LQ_ANTIG, nomina.hs_dbl
+            ingresosLocal = ingresosLocal + nomina.hs_dbl
+        End If
+        If C_LQ_COMPENS >= 0 Then
+            PonCel liLocal, C_LQ_COMPENS, nomina.hs_nor
+            ingresosLocal = ingresosLocal + nomina.hs_nor
+        End If
+        If C_LQ_INDEMN >= 0 Then
+            PonCel liLocal, C_LQ_INDEMN, nomina.hs_tri
+            ingresosLocal = ingresosLocal + nomina.hs_tri
+        End If
+        If C_LQ_BONO >= 0 Then
+            PonCel liLocal, C_LQ_BONO, nomina.hsnor
+            ingresosLocal = ingresosLocal + nomina.hsnor
+        End If
+        If C_LQ_PRIMAVAC >= 0 Then
+            PonCel liLocal, C_LQ_PRIMAVAC, nomina.pvac
+            ingresosLocal = ingresosLocal + nomina.pvac
+        End If
     Else
-        ' ---- Normal y especiales PTU / Aguinaldo / Bono: igual que siempre ----
-        PonCel li, C_CONC4, nomina.hs_nor
+        ' Logica anterior de ordinarias y especiales no-separacion.
+        PonCel liLocal, C_CONC4, nomina.hs_nor
+        ingresosLocal = ingresosLocal + nomina.hs_nor
         If N_ormal = 1 Then
-            PonCel li, C_CONC5, nomina.aguin
+            PonCel liLocal, C_CONC5, nomina.aguin
+            ingresosLocal = ingresosLocal + nomina.aguin
         Else
-            PonCel li, C_CONC5, nomina.hs_dbl
+            PonCel liLocal, C_CONC5, nomina.hs_dbl
+            ingresosLocal = ingresosLocal + nomina.hs_dbl
         End If
         If N_ormal = 1 Then
-            PonCel li, C_CONC6, nomina.ptu
+            PonCel liLocal, C_CONC6, nomina.ptu
+            ingresosLocal = ingresosLocal + nomina.ptu
         Else
-            PonCel li, C_CONC6, nomina.hs_tri
+            PonCel liLocal, C_CONC6, nomina.hs_tri
+            ingresosLocal = ingresosLocal + nomina.hs_tri
         End If
-        PonCel li, C_CONC7, nomina.viaticos
-        PonCel li, C_CONC8, nomina.pvac
-        ingresos = nomina.sueldo + nomina.hs_nor + nomina.hs_dbl + nomina.hs_tri + _
-                   nomina.aguin + nomina.ptu + nomina.viaticos + nomina.pvac
+        PonCel liLocal, C_CONC7, nomina.viaticos
+        PonCel liLocal, C_CONC8, nomina.pvac
+        ' IMPORTANTE: formula original sin cambios (incluye campos
+        ' historicos aun cuando no sean visibles en este tipo).
+        ingresosLocal = nomina.sueldo + nomina.hs_nor + nomina.hs_dbl + _
+                        nomina.hs_tri + nomina.aguin + nomina.ptu + _
+                        nomina.viaticos + nomina.pvac
     End If
 
-    PonCel li, C_OTRAS, nomina.otras
-    PonCel li, C_EXENTA, nomina.exentos
-    ingresos = ingresos + nomina.otras + nomina.exentos
-    PonCel li, C_TOTING, ingresos
+    PonCel liLocal, C_OTRAS, nomina.otras
+    PonCel liLocal, C_EXENTA, nomina.exentos
+    ingresosLocal = ingresosLocal + nomina.otras
 
-    PonCel li, C_ISPT, nomina.ispt
-    PonCel li, C_SUBEMP, nomina.crdsal
-    PonCel li, C_IMSS, nomina.imss
-    PonCel li, C_PRESTAMOS, nomina.prestamos
-    PonCel li, C_FONACOT, nomina.fonacot
-    PonCel li, C_PENSION, nomina.telefono
-    PonCel li, C_INFONAVIT, nomina.otraded
+    ' En LIQ/FIN nuevo, exenta es PARTE del ingreso ya capturado.
+    ' En normales y legacy conservar el comportamiento previo.
+    If Not EsSeparacionNueva() Then
+        ingresosLocal = ingresosLocal + nomina.exentos
+    End If
+    PonCel liLocal, C_TOTING, ingresosLocal
 
-    deducciones = nomina.crdsal + nomina.ispt + nomina.imss + nomina.prestamos + nomina.fonacot + nomina.telefono + nomina.otraded
-    PonCel li, C_TOTDED, deducciones
+    PonCel liLocal, C_ISPT, nomina.ispt
+    PonCel liLocal, C_SUBEMP, nomina.crdsal
+    PonCel liLocal, C_IMSS, nomina.imss
+    PonCel liLocal, C_PRESTAMOS, nomina.prestamos
+    PonCel liLocal, C_FONACOT, nomina.fonacot
+    PonCel liLocal, C_PENSION, nomina.telefono
+    PonCel liLocal, C_INFONAVIT, nomina.otraded
 
-    neto = ingresos - deducciones
-    PonCel li, C_NETO, neto
+    deduccionesLocal = nomina.crdsal + nomina.ispt + nomina.imss + _
+                       nomina.prestamos + nomina.fonacot + _
+                       nomina.telefono + nomina.otraded
+    PonCel liLocal, C_TOTDED, deduccionesLocal
 
-    ' ---- No visibles ----
-    ConNom1.TextMatrix(li, C_FLAG_ISR) = 0
-    ConNom1.TextMatrix(li, C_FLAG_IMSS) = 0
-    ConNom1.TextMatrix(li, C_FLAG_ESP) = 0
-    If N_ormal = 1 Then ConNom1.TextMatrix(li, C_FLAG_ESP) = "1"
+    netoLocal = ingresosLocal - deduccionesLocal
+    PonCel liLocal, C_NETO, netoLocal
 
-    ' Consultar información bancaria sin modificar menús de obras
+    ' Mantener globales actualizadas como hacia el carganom original.
+    ingresos = ingresosLocal
+    deducciones = deduccionesLocal
+    neto = netoLocal
+
+    ConNom1.TextMatrix(liLocal, C_FLAG_ISR) = "0"
+    ConNom1.TextMatrix(liLocal, C_FLAG_IMSS) = "0"
+    If N_ormal = 1 Then
+        ConNom1.TextMatrix(liLocal, C_FLAG_ESP) = "1"
+    Else
+        ConNom1.TextMatrix(liLocal, C_FLAG_ESP) = "0"
+    End If
+
+    ' El numero de empleado corresponde al numero del registro NOM.
     If regtro > 0 And regtro <= LOF(12) / Len(Clbnx) Then
         Get #12, regtro, Clbnx
-        ConNom1.TextMatrix(li, C_BANAMEX) = " " & Clbnx.Q1
+        ConNom1.TextMatrix(liLocal, C_BANAMEX) = " " & Clbnx.Q1
     Else
-        ConNom1.TextMatrix(li, C_BANAMEX) = ""
+        ConNom1.TextMatrix(liLocal, C_BANAMEX) = ""
     End If
 End Sub
 
-
 Sub define()
+    ' FORMVIEWER - los indices siempre proceden de modColumnas.
     ConNom1.Cols = C_TOTCOLS
-
     ConNom1.Font = "Arial"
     ConNom1.Font.Size = 8
     ConNom1.Font.Bold = True
-
     ConNom1.Row = 0
 
     Encab C_NUM, "No.", 600
@@ -993,14 +1037,41 @@ Sub define()
     Encab C_SUELDO, "Sueldo", 1200
 
     If g_TipoNominaActiva = tnLiquidacionFiniquito Then
-        Encab C_LQ_SDOVAC, "Sdo.Vac.", 1200
-        Encab C_LQ_PRIMAVAC, "P.Vacac.", 1200
-        Encab C_LQ_AGUI, "Aguinaldo", 1200
-        Encab C_LQ_ANTIG, "P.Antig.", 1200
-        Encab C_LQ_COMPENS, "Compens.", 1200
-        Encab C_LQ_INDEMN, "Indemn.", 1200
-        Encab C_LQ_BONO, "BONO", 1200
+        If Not EsSeparacionNueva() Then
+            ' LEGACY: conservar exactamente los textos y anchos anteriores.
+            Encab C_LQ_SDOVAC, "Sdo.Vac.", 1200
+            Encab C_LQ_PRIMAVAC, "P.Vacac.", 1200
+            Encab C_LQ_AGUI, "Aguinaldo", 1200
+            Encab C_LQ_ANTIG, "P.Antig.", 1200
+            Encab C_LQ_COMPENS, "Compens.", 1200
+            Encab C_LQ_INDEMN, "Indemn.", 1200
+            Encab C_LQ_BONO, "BONO", 1200
+        Else
+            ' Nuevo: solo los conceptos definidos para FINI o LIQ.
+            If C_LQ_SDOVAC >= 0 Then
+                Encab C_LQ_SDOVAC, "Sdo.Vacaciones", 1450
+            End If
+            If C_LQ_AGUI >= 0 Then
+                Encab C_LQ_AGUI, "Aguinaldo", 1200
+            End If
+            If C_LQ_ANTIG >= 0 Then
+                Encab C_LQ_ANTIG, "Prima Antiguedad", 1450
+            End If
+            If C_LQ_COMPENS >= 0 Then
+                Encab C_LQ_COMPENS, "Compensaciones", 1450
+            End If
+            If C_LQ_INDEMN >= 0 Then
+                Encab C_LQ_INDEMN, "Indemnizacion", 1450
+            End If
+            If C_LQ_BONO >= 0 Then
+                Encab C_LQ_BONO, "Bono", 1200
+            End If
+            If C_LQ_PRIMAVAC >= 0 Then
+                Encab C_LQ_PRIMAVAC, "Prima Vacacional", 1450
+            End If
+        End If
     Else
+        ' MANTENER las columnas de normales, aguinaldo, PTU y bono.
         Encab C_CONC4, "hs.Norm.", 1200
 
         If g_TipoNominaActiva = tnAguinaldo Or N_ormal <> 0 Then
@@ -1022,7 +1093,6 @@ Sub define()
         Else
             Encab C_CONC7, "O.F.", 1200
         End If
-
         Encab C_CONC8, "P.Vacac.", 1200
     End If
 
@@ -1039,18 +1109,15 @@ Sub define()
     Encab C_TOTDED, "Tot.Deduc", 1200
     Encab C_NETO, "Neto", 1200
 
-    ConNom1.Col = C_FLAG_ISR
     ConNom1.ColWidth(C_FLAG_ISR) = 0
-    ConNom1.Col = C_FLAG_IMSS
     ConNom1.ColWidth(C_FLAG_IMSS) = 0
-    ConNom1.Col = C_FLAG_ESP
     ConNom1.ColWidth(C_FLAG_ESP) = 0
-
     Encab C_BANAMEX, "Banamex", 2400
 End Sub
 
 
 Sub verifica(yavas)
+    ' FORMVIEWER: no contar la marca 20261010 como un pago.
     If nomina.dias <> 0 Then yavas = 1
     If nomina.hs_nor <> 0 Then yavas = 1
     If nomina.hs_dbl <> 0 Then yavas = 1
@@ -1070,7 +1137,13 @@ Sub verifica(yavas)
     If nomina.telefono <> 0 Then yavas = 1
     If nomina.otraded <> 0 Then yavas = 1
     If nomina.hsnor <> 0 Then yavas = 1
-    If nomina.hstri <> 0 Then yavas = 1
+
+    If nomina.hstri <> 0 Then
+        If Not (EsSeparacionNueva() And _
+                nomina.hstri = CCur(MARCA_SEPARACION_2026)) Then
+            yavas = 1
+        End If
+    End If
 End Sub
 Sub eliminacion()
 
@@ -1089,7 +1162,7 @@ Sub eliminacion()
             ' Evitar una seleccion invalida al quitar la fila
             ConNom1.Row = 0
             ConNom1.RowSel = 0
-            ConNom1.Col = 0
+            ConNom1.col = 0
             ConNom1.ColSel = 0
 
             ConNom1.RemoveItem re
@@ -1246,12 +1319,12 @@ Private Sub CmdCopySel_Click()
         rEnd = ConNom1.Row
     End If
 
-    If ConNom1.Col < ConNom1.ColSel Then
-        cStart = ConNom1.Col
+    If ConNom1.col < ConNom1.ColSel Then
+        cStart = ConNom1.col
         cEnd = ConNom1.ColSel
     Else
         cStart = ConNom1.ColSel
-        cEnd = ConNom1.Col
+        cEnd = ConNom1.col
     End If
 
     ' Nunca copiar la fila de totales si se seleccionó junto con ella
@@ -1682,7 +1755,7 @@ Private Sub OrdenarConNom1(ByVal columna As Long, ByVal tipoOrden As Integer)
     If limite <= FILA_INICIO_DATOS Then Exit Sub
 
     filaActual = ConNom1.Row
-    colActual = ConNom1.Col
+    colActual = ConNom1.col
 
     'Guardar cantidad original de filas
     filasOriginales = ConNom1.Rows
@@ -1703,7 +1776,7 @@ Private Sub OrdenarConNom1(ByVal columna As Long, ByVal tipoOrden As Integer)
     ConNom1.Row = FILA_INICIO_DATOS
     ConNom1.RowSel = limite
 
-    ConNom1.Col = columna
+    ConNom1.col = columna
     ConNom1.ColSel = columna
 
     ConNom1.Sort = tipoOrden
@@ -1725,9 +1798,9 @@ Private Sub OrdenarConNom1(ByVal columna As Long, ByVal tipoOrden As Integer)
     End If
 
     If colActual < ConNom1.Cols Then
-        ConNom1.Col = colActual
+        ConNom1.col = colActual
     Else
-        ConNom1.Col = 0
+        ConNom1.col = 0
     End If
 
     ConNom1.Redraw = True
@@ -1755,7 +1828,7 @@ ErrorOrden:
 End Sub
 
 Private Sub Encab(ByVal c As Long, ByVal txt As String, ByVal ancho As Long)
-    ConNom1.Col = c
+    ConNom1.col = c
     ConNom1.CellAlignment = 4
     ConNom1.ColWidth(c) = ancho
     ConNom1.Text = txt

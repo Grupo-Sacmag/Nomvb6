@@ -742,8 +742,7 @@ Private Sub nomcap_Click(Index As Integer)
         Form1.Hide
     Else
         Close 2
-        MsgBox "No existe archivo de personal no es posible capturar nomina", _
-               vbCritical + vbDefaultButton1, "Nomina"
+        MsgBox "No existe archivo de personal no es posible capturar nomina", vbCritical + vbDefaultButton1, "Nomina"
     End If
 End Sub
 

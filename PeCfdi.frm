@@ -90,6 +90,8 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
+' Nueva Versión
+
 Dim temporal, Temporal1
 
 ' ============================================================
@@ -104,47 +106,47 @@ Sub Col_Def()
     PCpCfdi.FixedRows = 1
     PCpCfdi.Row = 0
 
-    PCpCfdi.col = 0
+    PCpCfdi.Col = 0
     PCpCfdi.CellAlignment = 4
     PCpCfdi.ColWidth(0) = 800
     PCpCfdi.Text = "Num"
 
-    PCpCfdi.col = 1
+    PCpCfdi.Col = 1
     PCpCfdi.CellAlignment = 4
     PCpCfdi.ColWidth(1) = 3600
     PCpCfdi.Text = "Nombre"
 
-    PCpCfdi.col = 2
+    PCpCfdi.Col = 2
     PCpCfdi.CellAlignment = 4
     PCpCfdi.ColWidth(2) = 2400
     PCpCfdi.Text = "Direccion"
 
-    PCpCfdi.col = 3
+    PCpCfdi.Col = 3
     PCpCfdi.CellAlignment = 4
     PCpCfdi.ColWidth(3) = 2400
     PCpCfdi.Text = "Colonia"
 
-    PCpCfdi.col = 4
+    PCpCfdi.Col = 4
     PCpCfdi.CellAlignment = 4
     PCpCfdi.ColWidth(4) = 2400
     PCpCfdi.Text = "Ciudad"
 
-    PCpCfdi.col = 5
+    PCpCfdi.Col = 5
     PCpCfdi.CellAlignment = 4
     PCpCfdi.ColWidth(5) = 2400
     PCpCfdi.Text = "Estado"
 
-    PCpCfdi.col = 6
+    PCpCfdi.Col = 6
     PCpCfdi.CellAlignment = 4
     PCpCfdi.ColWidth(6) = 2400
     PCpCfdi.Text = "Delegacion"
 
-    PCpCfdi.col = 7
+    PCpCfdi.Col = 7
     PCpCfdi.CellAlignment = 4
     PCpCfdi.ColWidth(7) = 800
     PCpCfdi.Text = "Codigo"
 
-    PCpCfdi.col = 8
+    PCpCfdi.Col = 8
     PCpCfdi.CellAlignment = 4
     PCpCfdi.ColWidth(8) = 2400
     PCpCfdi.Text = "Correo "
@@ -159,51 +161,19 @@ End Sub
 ' CARGA DEL FORMULARIO / SINCRONIZACION INICIAL
 ' ============================================================
 
+
 Private Sub Form_Load()
-    Dim oRS As New ADODB.Recordset
-    Dim sSQL
-    Dim abrEmpresa
 
     Col_Def
 
-    On Error GoTo Error
-
     If EsEmpresaLocal(emp) Then
-        PeCfdi.Caption = "Datos complementarios de Personal" & " - " & "Modo local (sin conexión remota)"
-        Exit Sub
+        PeCfdi.Caption = "Datos complementarios de Personal - Modo local"
+    Else
+        PeCfdi.Caption = "Datos complementarios de Personal - Presione DB para sincronizar"
     End If
 
-    abrEmpresa = ObtenerEmpresaSAT
-
-    sSQL = "SELECT idNomina, nombre, apellidoP, apellidoM, nombreDeVialidad, nombreColonia, nombreLocalidad, entidadFederativa, nombreMunicipio, cp , correoElectronico " & _
-           "FROM datosSat where empresa = '" & abrEmpresa & "'"
-
-    Set oRS = New ADODB.Recordset
-    oRS.CursorLocation = adUseClient
-    oRS.Open sSQL, con, adOpenStatic, adLockBatchOptimistic, adCmdText
-
-    oRS.MoveFirst
-
-    ConfigurarGridDatosSat oRS
-    CargarDatosSatEnGrid oRS
-
-    oRS.MarshalOptions = adMarshalModifiedOnly
-
-    Set oRS.ActiveConnection = Nothing
-    oRS.Close
-    Set oRS = Nothing
-
-    GuardarDatosSatEnArchivoLocal
-
-    PeCfdi.Caption = "Datos complementarios de Personal" & " - " & "Estas conectado"
-
-    Close 1, 2
-
-    Exit Sub
-
-Error:
-    MsgBox ("Ocurrió un error:" + Err.Description)
 End Sub
+
 
 Private Function ObtenerEmpresaSAT()
     Dim abrEmpresa
@@ -223,59 +193,59 @@ Private Sub ConfigurarGridDatosSat(ByVal oRS As ADODB.Recordset)
     dat.Rows = oRS.RecordCount + 1
     dat.Cols = oRS.Fields.Count
     dat.Row = 0
-    dat.col = 0
+    dat.Col = 0
 
-    dat.col = 0
+    dat.Col = 0
     dat.CellAlignment = 4
     dat.ColWidth(0) = 2800
     dat.Text = "ID NÓMINA"
 
-    dat.col = 1
+    dat.Col = 1
     dat.CellAlignment = 4
     dat.ColWidth(1) = 2800
     dat.Text = "NOMBRE"
 
-    dat.col = 2
+    dat.Col = 2
     dat.CellAlignment = 4
     dat.ColWidth(2) = 2800
     dat.Text = "APELLIDO P"
 
-    dat.col = 3
+    dat.Col = 3
     dat.CellAlignment = 4
     dat.ColWidth(3) = 2800
     dat.Text = "APELLIDO M"
 
-    dat.col = 4
+    dat.Col = 4
     dat.CellAlignment = 4
     dat.ColWidth(4) = 2800
     dat.Text = "DIRECCIÓN"
 
-    dat.col = 5
+    dat.Col = 5
     dat.CellAlignment = 4
     dat.ColWidth(5) = 2800
     dat.Text = "COLONIA"
 
-    dat.col = 6
+    dat.Col = 6
     dat.CellAlignment = 4
     dat.ColWidth(6) = 2800
     dat.Text = "CIUDAD"
 
-    dat.col = 7
+    dat.Col = 7
     dat.CellAlignment = 4
     dat.ColWidth(7) = 2800
     dat.Text = "ESTADO"
 
-    dat.col = 8
+    dat.Col = 8
     dat.CellAlignment = 4
     dat.ColWidth(8) = 2800
     dat.Text = "DELEGACIÓN"
 
-    dat.col = 9
+    dat.Col = 9
     dat.CellAlignment = 4
     dat.ColWidth(9) = 2800
     dat.Text = "CÓDIGO POSTAL"
 
-    dat.col = 10
+    dat.Col = 10
     dat.CellAlignment = 4
     dat.ColWidth(10) = 2800
     dat.Text = "CORREO"
@@ -342,7 +312,7 @@ Private Sub ArCfAbr_Click()
         Get 2, i, personal
         Get 1, i, Empleado_1
 
-        If IsNumeric(Empleado_1.Cpostal) Then
+        If Trim$(personal.nom) <> "" Then
             nombre = (Trim(personal.nom) + " " + Trim(personal.ape1) + " " + Trim(personal.ape2))
             Cadena1 = Format(i, "####0") & Chr(9) & nombre & Chr(9) & Empleado_1.Direccion _
                       & Chr(9) & Empleado_1.Colonia & Chr(9) & Empleado_1.Ciudad _
@@ -352,6 +322,8 @@ Private Sub ArCfAbr_Click()
             PCpCfdi.AddItem Cadena1
         End If
     Next i
+    
+    Close #1, #2
 End Sub
 
 Private Sub ArCfGuarda_Click()
@@ -389,69 +361,625 @@ End Sub
 ' CONSULTA REMOTA
 ' ============================================================
 
+
+
 Private Sub DB_Click()
+
+    Dim oRS As ADODB.Recordset
+    Dim sSQL As String
+    Dim abrEmpresa As String
+
+    Dim carpeta As String
+    Dim rutaPersonal As String
+    Dim rutaCFDI As String
+    Dim rutaTemporal As String
+    Dim rutaRespaldo As String
+    Dim rutaAnterior As String
+    Dim sello As String
+    Dim sufijo As String
+
+    Dim totalPersonal As Long
+    Dim totalSQL As Long
+    Dim registrosGuardados As Long
+    Dim sinDatosSQL As Long
+
+    Dim id As Long
+    Dim idTexto As String
+    Dim i As Long
+    Dim consecutivo As Long
+
+    Dim vistos() As Boolean
+    Dim tamRegistro As Long
+    Dim tamPersonal As Long
+    Dim tamNecesario As Long
+
+    Dim existeCFDI As Boolean
+    Dim archivoMovido As Boolean
+    Dim archivoInstalado As Boolean
+    Dim personalAbierto As Boolean
+    Dim temporalAbierto As Boolean
+
+    Dim hPersonal As Integer
+    Dim hTemporal As Integer
+    Dim hExtension As Integer
+
+    Dim cero As Byte
+    Dim numeroError As Long
+    Dim descripcionError As String
+    Dim errorRestauracion As String
+
+    Dim nombreCompleto As String
+    Dim cadenaGrid As String
+
+    On Error GoTo ErrorDB
+
+    '========================================================
+    '1. VALIDAR EMPRESA
+    '========================================================
+
     If EsEmpresaLocal(emp) Then
-        MsgBox "Esta empresa trabaja de forma local, no hay sincronización con el SAT remoto.", vbInformation
+        MsgBox "Esta empresa trabaja en modo local." & vbCrLf & _
+               "No se modificaron los archivos CFDI.", _
+               vbInformation, "Sincronizacion"
         Exit Sub
     End If
 
-    On Error GoTo ErrHandler
+    abrEmpresa = Trim$(ObtenerEmpresaSAT())
 
-    Dim oRS As ADODB.Recordset
-    Dim con As ADODB.Connection
-    Dim sSQL As String
-    Dim i As Integer
-    Dim j As Integer
-    Dim strconnect As String
+    If abrEmpresa = "" Then
+        MsgBox "No fue posible identificar la empresa.", _
+               vbExclamation, "Sincronizacion"
+        Exit Sub
+    End If
+
+    '========================================================
+    '2. VERIFICAR CONEXION SQL
+    '========================================================
+
+    If con Is Nothing Then
+        MsgBox "La conexion SQL no esta inicializada.", _
+               vbCritical, "Sincronizacion"
+        Exit Sub
+    End If
+
+    If con.State <> adStateOpen Then
+        MsgBox "No hay conexion con SQL Server." & vbCrLf & _
+               "No se modificaron los archivos locales.", _
+               vbExclamation, "Sincronizacion"
+        Exit Sub
+    End If
+
+    '========================================================
+    '3. IDENTIFICAR ARCHIVOS LOCALES
+    '========================================================
+
+    carpeta = CurDir$
+
+    If Right$(carpeta, 1) <> "\" Then
+        carpeta = carpeta & "\"
+    End If
+
+    rutaPersonal = carpeta & "Personal.dno"
+    rutaCFDI = carpeta & "Perscfdi.dno"
+
+    'Personal.dno debe existir. Nunca se crea aqui.
+    If Dir$(rutaPersonal) = "" Then
+        Err.Raise vbObjectError + 1001, , _
+                  "No existe Personal.dno en: " & carpeta
+    End If
+
+    tamPersonal = Len(personal)
+    tamRegistro = Len(Empleado_1)
+
+    If tamPersonal <= 0 Or tamRegistro <= 0 Then
+        Err.Raise vbObjectError + 1002, , _
+                  "La estructura de los archivos no es valida."
+    End If
+
+    If (FileLen(rutaPersonal) Mod tamPersonal) <> 0 Then
+        Err.Raise vbObjectError + 1003, , _
+                  "Personal.dno tiene un tamaño incompatible."
+    End If
+
+    hPersonal = FreeFile
+
+    Open rutaPersonal For Random Access Read As #hPersonal _
+         Len = tamPersonal
+
+    personalAbierto = True
+
+    totalPersonal = LOF(hPersonal) \ tamPersonal
+
+    If totalPersonal <= 0 Then
+        Err.Raise vbObjectError + 1004, , _
+                  "Personal.dno no contiene empleados."
+    End If
+
+    ReDim vistos(1 To totalPersonal)
+
+    '========================================================
+    '4. CONSULTAR SQL SERVER - SOLO LECTURA
+    '========================================================
+
+    sSQL = "SELECT idNomina, nombre, apellidoP, apellidoM, " & _
+           "nombreDeVialidad, nombreColonia, nombreLocalidad, " & _
+           "entidadFederativa, nombreMunicipio, cp, correoElectronico " & _
+           "FROM datosSat WHERE empresa = '" & _
+           Replace(abrEmpresa, "'", "''") & "' " & _
+           "ORDER BY idNomina"
 
     Set oRS = New ADODB.Recordset
-    Set con = New ADODB.Connection
 
-    strconnect = "Provider=SQLOLEDB;Data Source=SQL6012.site4now.net;Initial Catalog=db_a4091b_sacmag"
-    con.Open strconnect, "db_a4091b_sacmag_admin", "Sacmag2020"
+    oRS.CursorLocation = adUseClient
 
-    If IsNull(emp) Or Trim(emp) = "" Then
-        MsgBox "No se especificó la empresa.", vbExclamation, "Aviso"
-        GoTo CleanUp
-    End If
-
-    sSQL = "EXEC sp_ObtenerDatosSatPorEmpresa '" & Replace(Trim(emp), "'", "''") & "'"
-
-    oRS.Open sSQL, con, adOpenStatic, adLockReadOnly
+    oRS.Open sSQL, con, adOpenStatic, adLockReadOnly, adCmdText
 
     If oRS.EOF Then
-        MsgBox "No se encontraron datos.", vbInformation, "Consulta"
-        GoTo CleanUp
+        MsgBox "SQL Server no devolvio empleados para " & _
+               abrEmpresa & "." & vbCrLf & _
+               "No se modificaron los archivos.", _
+               vbInformation, "Sincronizacion"
+
+        GoTo Salida
     End If
 
-    PCpCfdi.Rows = 1
-    PCpCfdi.Cols = oRS.Fields.Count
+    '========================================================
+    '5. VALIDAR TODOS LOS EMPLEADOS ANTES DE ESCRIBIR
+    '========================================================
 
-    i = 1
+    totalSQL = 0
+
+    oRS.MoveFirst
+
     Do While Not oRS.EOF
-        PCpCfdi.Rows = PCpCfdi.Rows + 1
 
-        For j = 0 To oRS.Fields.Count - 1
-            PCpCfdi.TextMatrix(i, j) = oRS.Fields(j).Value & ""
-        Next j
+        idTexto = CampoSQLCFDI(oRS.Fields("idNomina").Value)
+
+        'Aceptar solamente numeros enteros positivos.
+        If idTexto = "" Or idTexto Like "*[!0-9]*" Then
+            Err.Raise vbObjectError + 1005, , _
+                      "La BD contiene un idNomina invalido: " & _
+                      idTexto
+        End If
+
+        id = CLng(idTexto)
+
+        If id < 1 Or id > totalPersonal Then
+            Err.Raise vbObjectError + 1006, , _
+                      "El empleado SQL con ID " & id & _
+                      " no existe en Personal.dno."
+        End If
+
+        If vistos(id) Then
+            Err.Raise vbObjectError + 1007, , _
+                      "SQL devolvio dos veces el empleado " & id
+        End If
+
+        vistos(id) = True
+
+        'Leer la persona en la posicion indicada.
+        Get #hPersonal, id, personal
+
+        If Trim$(personal.nom) = "" Then
+            Err.Raise vbObjectError + 1008, , _
+                      "El registro local " & id & _
+                      " no contiene nombre."
+        End If
+
+        '----------------------------------------------------
+        'VALIDAR NOMBRE
+        '----------------------------------------------------
+
+        If NombreComparableCFDI(Trim$(personal.nom)) <> _
+           NombreComparableCFDI(CampoSQLCFDI(oRS.Fields("nombre").Value)) Then
+
+            Err.Raise vbObjectError + 1009, , _
+                      "No coincide el nombre del empleado " & id & "." & _
+                      vbCrLf & _
+                      "Local: " & Trim$(personal.nom) & vbCrLf & _
+                      "SQL: " & CampoSQLCFDI(oRS.Fields("nombre").Value)
+        End If
+
+        '----------------------------------------------------
+        'VALIDAR APELLIDOS PATERNO Y MATERNO
+        '----------------------------------------------------
+
+        If NombreComparableCFDI(Trim$(personal.ape1)) <> _
+           NombreComparableCFDI(CampoSQLCFDI(oRS.Fields("apellidoP").Value)) Or _
+           NombreComparableCFDI(Trim$(personal.ape2)) <> _
+           NombreComparableCFDI(CampoSQLCFDI(oRS.Fields("apellidoM").Value)) Then
+
+            Err.Raise vbObjectError + 1010, , _
+                      "No coinciden los apellidos del empleado " & id & "." & _
+                      vbCrLf & _
+                      "Local: " & Trim$(personal.ape1) & " " & _
+                      Trim$(personal.ape2) & vbCrLf & _
+                      "SQL: " & _
+                      CampoSQLCFDI(oRS.Fields("apellidoP").Value) & " " & _
+                      CampoSQLCFDI(oRS.Fields("apellidoM").Value)
+        End If
+
+        totalSQL = totalSQL + 1
 
         oRS.MoveNext
-        i = i + 1
     Loop
 
-CleanUp:
-    If Not oRS Is Nothing Then If oRS.State = 1 Then oRS.Close
-    If Not con Is Nothing Then If con.State = 1 Then con.Close
+    '========================================================
+    '6. CONTAR EMPLEADOS LOCALES NO DEVUELTOS POR SQL
+    '========================================================
+
+    sinDatosSQL = 0
+
+    For i = 1 To totalPersonal
+
+        Get #hPersonal, i, personal
+
+        If Trim$(personal.nom) <> "" Then
+            If Not vistos(i) Then
+                sinDatosSQL = sinDatosSQL + 1
+            End If
+        End If
+
+    Next i
+
+    '========================================================
+    '7. VALIDAR Perscfdi.dno
+    '========================================================
+
+    existeCFDI = (Dir$(rutaCFDI) <> "")
+
+    If existeCFDI Then
+
+        If (FileLen(rutaCFDI) Mod tamRegistro) <> 0 Then
+
+            Err.Raise vbObjectError + 1011, , _
+                      "Perscfdi.dno tiene un tamaño incompatible " & _
+                      "con la estructura Empleado_1."
+        End If
+
+    End If
+
+    '========================================================
+    '8. GENERAR NOMBRES UNICOS PARA RESPALDO Y TEMPORAL
+    '========================================================
+
+    sello = Format$(Now, "yyyymmdd_hhnnss")
+    consecutivo = 0
+
+    Do
+
+        If consecutivo = 0 Then
+            sufijo = ""
+        Else
+            sufijo = "_" & CStr(consecutivo)
+        End If
+
+        rutaRespaldo = carpeta & "Perscfdi_" & sello & sufijo & ".bak"
+        rutaTemporal = carpeta & "Perscfdi_" & sello & sufijo & ".tmp"
+        rutaAnterior = carpeta & "Perscfdi_" & sello & sufijo & ".old"
+
+        If Dir$(rutaRespaldo) = "" And _
+           Dir$(rutaTemporal) = "" And _
+           Dir$(rutaAnterior) = "" Then
+            Exit Do
+        End If
+
+        consecutivo = consecutivo + 1
+
+    Loop
+
+    '========================================================
+    '9. RESPALDAR Y PREPARAR COPIA TEMPORAL
+    '========================================================
+
+    If existeCFDI Then
+
+        'Copia intacta del archivo original.
+        FileCopy rutaCFDI, rutaRespaldo
+
+        'Copia de trabajo que sera modificada.
+        FileCopy rutaCFDI, rutaTemporal
+
+    Else
+
+        'Solo se permite crear Perscfdi.dno.
+        'Personal.dno nunca se crea ni se modifica.
+
+        hTemporal = FreeFile
+
+        Open rutaTemporal For Binary As #hTemporal
+        Close #hTemporal
+
+    End If
+
+    '========================================================
+    '10. ASEGURAR CAPACIDAD PARA TODOS LOS IDS
+    '========================================================
+
+    tamNecesario = totalPersonal * tamRegistro
+
+    If FileLen(rutaTemporal) < tamNecesario Then
+
+        hExtension = FreeFile
+
+        Open rutaTemporal For Binary As #hExtension
+
+        cero = 0
+
+        'Ampliar la copia temporal sin modificar
+        'el Perscfdi.dno original.
+        Put #hExtension, tamNecesario, cero
+
+        Close #hExtension
+
+    End If
+
+    '========================================================
+    '11. GUARDAR DATOS SQL EN LA COPIA TEMPORAL
+    '========================================================
+
+    hTemporal = FreeFile
+
+    Open rutaTemporal For Random Access Read Write As #hTemporal _
+         Len = tamRegistro
+
+    temporalAbierto = True
+
+    registrosGuardados = 0
+
+    oRS.MoveFirst
+
+    Do While Not oRS.EOF
+
+        id = CLng(oRS.Fields("idNomina").Value)
+
+        'Leer el registro antes de modificarlo.
+        'Asi se conservan los demas campos del tipo.
+        Get #hTemporal, id, Empleado_1
+
+        Empleado_1.Direccion = UCase$(CampoSQLCFDI(oRS.Fields("nombreDeVialidad").Value))
+
+        Empleado_1.Colonia = UCase$(CampoSQLCFDI(oRS.Fields("nombreColonia").Value))
+
+        Empleado_1.Ciudad = UCase$(CampoSQLCFDI(oRS.Fields("nombreLocalidad").Value))
+
+        Empleado_1.Estado = UCase$(CampoSQLCFDI(oRS.Fields("entidadFederativa").Value))
+
+        Empleado_1.Delegacion = UCase$(CampoSQLCFDI(oRS.Fields("nombreMunicipio").Value))
+
+        Empleado_1.Cpostal = UCase$(CampoSQLCFDI(oRS.Fields("cp").Value))
+
+        Empleado_1.correo = UCase$(CampoSQLCFDI(oRS.Fields("correoElectronico").Value))
+
+        'Guardar exactamente en la posicion del empleado.
+        Put #hTemporal, id, Empleado_1
+
+        registrosGuardados = registrosGuardados + 1
+
+        oRS.MoveNext
+    Loop
+
+    '========================================================
+    '12. VERIFICAR TODOS LOS REGISTROS ESCRITOS
+    '========================================================
+
+    oRS.MoveFirst
+
+    Do While Not oRS.EOF
+
+        id = CLng(oRS.Fields("idNomina").Value)
+
+        'Volver a leer lo escrito.
+        Get #hTemporal, id, Empleado_1
+
+        If Not VerificarRegistroCFDI(oRS) Then
+
+            Err.Raise vbObjectError + 1012, , _
+                      "La verificacion fallo para el empleado " & _
+                      id & "." & vbCrLf & _
+                      "Los datos almacenados no coinciden con SQL."
+        End If
+
+        oRS.MoveNext
+    Loop
+
+    '========================================================
+    '13. CERRAR LOS ARCHIVOS ANTES DE REEMPLAZAR
+    '========================================================
+
+    Close #hTemporal
+    temporalAbierto = False
+
+    Close #hPersonal
+    personalAbierto = False
+
+    '========================================================
+    '14. REEMPLAZAR EL ARCHIVO ORIGINAL
+    '========================================================
+
+    If existeCFDI Then
+
+        'Retirar el archivo original sin destruirlo.
+        Name rutaCFDI As rutaAnterior
+        archivoMovido = True
+
+    End If
+
+    'Instalar la copia verificada.
+    Name rutaTemporal As rutaCFDI
+    archivoInstalado = True
+
+    'Eliminar la copia retirada.
+    'El respaldo .bak se conserva.
+    If archivoMovido Then
+
+        On Error Resume Next
+        Kill rutaAnterior
+        On Error GoTo ErrorDB
+
+    End If
+
+    '========================================================
+    '15. MOSTRAR LOS DATOS SIN REABRIR ARCHIVOS .dno
+    '========================================================
+
+    On Error GoTo ErrorPantalla
+
+    Col_Def
+    PCpCfdi.Rows = 1
+
+    oRS.MoveFirst
+
+    Do While Not oRS.EOF
+
+        id = CLng(oRS.Fields("idNomina").Value)
+
+        nombreCompleto = _
+            CampoSQLCFDI(oRS.Fields("nombre").Value) & " " & _
+            CampoSQLCFDI(oRS.Fields("apellidoP").Value) & " " & _
+            CampoSQLCFDI(oRS.Fields("apellidoM").Value)
+
+        cadenaGrid = CStr(id) & vbTab & _
+                     Trim$(nombreCompleto) & vbTab & _
+                     UCase$(CampoSQLCFDI(oRS.Fields("nombreDeVialidad").Value)) & vbTab & _
+                     UCase$(CampoSQLCFDI(oRS.Fields("nombreColonia").Value)) & vbTab & _
+                     UCase$(CampoSQLCFDI(oRS.Fields("nombreLocalidad").Value)) & vbTab & _
+                     UCase$(CampoSQLCFDI(oRS.Fields("entidadFederativa").Value)) & vbTab & _
+                     UCase$(CampoSQLCFDI(oRS.Fields("nombreMunicipio").Value)) & vbTab & _
+                     UCase$(CampoSQLCFDI(oRS.Fields("cp").Value)) & vbTab & _
+                     UCase$(CampoSQLCFDI(oRS.Fields("correoElectronico").Value))
+
+        PCpCfdi.AddItem cadenaGrid
+
+        oRS.MoveNext
+    Loop
+
+    PeCfdi.Caption = _
+        "Datos complementarios de Personal - Sincronizado"
+
+    MsgBox "Sincronizacion completada correctamente." & _
+           vbCrLf & vbCrLf & _
+           "Empresa: " & abrEmpresa & vbCrLf & _
+           "Registros recibidos de SQL: " & totalSQL & vbCrLf & _
+           "Registros guardados y verificados: " & registrosGuardados & vbCrLf & _
+           "Registros en Personal.dno: " & totalPersonal & vbCrLf & _
+           "Personal local sin datos en la consulta SQL: " & sinDatosSQL & _
+           vbCrLf & vbCrLf & _
+           "Perscfdi.dno actualizado correctamente.", _
+           vbInformation, "Sincronizacion CFDI"
+
+    GoTo Salida
+
+'============================================================
+'ERROR AL MOSTRAR LA INFORMACION
+'EL ARCHIVO YA FUE GUARDADO CORRECTAMENTE
+'============================================================
+
+ErrorPantalla:
+
+    numeroError = Err.Number
+    descripcionError = Err.Description
+
+    MsgBox "Los datos fueron guardados y verificados en Perscfdi.dno." & _
+           vbCrLf & _
+           "Sin embargo, ocurrio un error al mostrarlos." & _
+           vbCrLf & _
+           "Error " & numeroError & ": " & descripcionError, _
+           vbExclamation, "Sincronizacion CFDI"
+
+    GoTo Salida
+
+'============================================================
+'MANEJO DE ERRORES
+'============================================================
+
+ErrorDB:
+
+    numeroError = Err.Number
+    descripcionError = Err.Description
+
+    On Error Resume Next
+
+    If temporalAbierto Then
+        Close #hTemporal
+        temporalAbierto = False
+    End If
+
+    If personalAbierto Then
+        Close #hPersonal
+        personalAbierto = False
+    End If
+
+    'Si se retiro el original, intentar restaurarlo.
+    If archivoMovido And Not archivoInstalado Then
+
+        If Dir$(rutaCFDI) = "" And Dir$(rutaAnterior) <> "" Then
+
+            Err.Clear
+
+            Name rutaAnterior As rutaCFDI
+
+            If Err.Number <> 0 Then
+                errorRestauracion = Err.Description
+            End If
+
+        End If
+
+    End If
+
+    'Descartar solamente la copia de trabajo.
+    If Not archivoInstalado Then
+
+        If rutaTemporal <> "" Then
+            If Dir$(rutaTemporal) <> "" Then
+                Kill rutaTemporal
+            End If
+        End If
+
+    End If
+
+    If errorRestauracion <> "" Then
+
+        MsgBox "Error durante la sincronizacion." & vbCrLf & _
+               "Error " & numeroError & ": " & descripcionError & _
+               vbCrLf & vbCrLf & _
+               "No fue posible restaurar automaticamente el original." & _
+               vbCrLf & errorRestauracion & vbCrLf & _
+               "Revise el respaldo y los archivos antes de continuar.", _
+               vbCritical, "Sincronizacion CFDI"
+
+    Else
+
+        MsgBox "No fue posible completar la sincronizacion." & _
+               vbCrLf & _
+               "Error " & numeroError & ": " & descripcionError & _
+               vbCrLf & vbCrLf & _
+               "El archivo original no fue sustituido.", _
+               vbCritical, "Sincronizacion CFDI"
+
+    End If
+
+'============================================================
+'SALIDA Y LIBERACION DE RECURSOS
+'============================================================
+
+Salida:
+
+    On Error Resume Next
+
+    If temporalAbierto Then Close #hTemporal
+    If personalAbierto Then Close #hPersonal
+
+    If Not oRS Is Nothing Then
+        If oRS.State = adStateOpen Then oRS.Close
+    End If
 
     Set oRS = Nothing
-    Set con = Nothing
 
-    Exit Sub
+    On Error GoTo 0
 
-ErrHandler:
-    MsgBox "Error " & Err.Number & ": " & Err.Description, vbCritical, "Error"
-    Resume CleanUp
 End Sub
+
 
 ' ============================================================
 ' COPIAR / PEGAR / INSERTAR / ELIMINAR
@@ -465,7 +993,7 @@ Private Sub EdCfCopia_Click()
     difer = PCpCfdi.RowSel - PCpCfdi.Row
 
     For i = PCpCfdi.Row To PCpCfdi.RowSel
-        For f = PCpCfdi.col To PCpCfdi.ColSel
+        For f = PCpCfdi.Col To PCpCfdi.ColSel
             Temporal1 = Temporal1 + PCpCfdi.TextMatrix(i, f)
 
             If f < PCpCfdi.ColSel Then
@@ -503,7 +1031,7 @@ Private Sub EdCfPegar_Click()
     Temporal1 = ""
     temporal = Clipboard.GetText(vbCFText)
 
-    RetornoCarro = PCpCfdi.col
+    RetornoCarro = PCpCfdi.Col
     InicioCopia = PCpCfdi.Row
     DeAqui = InicioCopia
     InIPGr = InicioCopia
@@ -517,13 +1045,13 @@ Private Sub EdCfPegar_Click()
             Select Case Mid(temporal, i, 1)
                 Case Chr(9)
                     LTXT.Text = Mid(temporal, DeAqui, (i - DeAqui))
-                    Temporal1 = Temporal1 + PCpCfdi.TextMatrix(PCpCfdi.Row, PCpCfdi.col) & Chr(9)
+                    Temporal1 = Temporal1 + PCpCfdi.TextMatrix(PCpCfdi.Row, PCpCfdi.Col) & Chr(9)
                     PCpCfdi.Text = Mid(temporal, DeAqui, (i - DeAqui))
-                    PCpCfdi.col = PCpCfdi.col + 1
+                    PCpCfdi.Col = PCpCfdi.Col + 1
                     DeAqui = i + 1
 
                 Case Chr(13)
-                    Temporal1 = Temporal1 + PCpCfdi.TextMatrix(PCpCfdi.Row, PCpCfdi.col) & Chr(13)
+                    Temporal1 = Temporal1 + PCpCfdi.TextMatrix(PCpCfdi.Row, PCpCfdi.Col) & Chr(13)
                     LTXT.Text = Mid(temporal, DeAqui, (i - DeAqui))
                     PCpCfdi.Text = Mid(temporal, DeAqui, (i - DeAqui))
 
@@ -535,7 +1063,7 @@ Private Sub EdCfPegar_Click()
 
                 Case Chr(10)
                     Temporal1 = Temporal1 & Chr(10)
-                    PCpCfdi.col = RetornoCarro
+                    PCpCfdi.Col = RetornoCarro
                     DeAqui = i + 1
 
                 Case Else
@@ -543,7 +1071,7 @@ Private Sub EdCfPegar_Click()
             End Select
         Next i
 
-        PCpCfdi.col = RetornoCarro
+        PCpCfdi.Col = RetornoCarro
     End If
 
     Clipboard.Clear
@@ -556,7 +1084,7 @@ Private Sub EdCfSelT_Click()
     Clipboard.Clear
 
     PCpCfdi.Row = 1
-    PCpCfdi.col = 0
+    PCpCfdi.Col = 0
 
     For limite = 1 To PCpCfdi.Rows - 1
         renglon = limite
@@ -587,7 +1115,7 @@ Private Sub pcpcfdi_KeyDown(KeyCode As Integer, Shift As Integer)
     Select Case KeyCode
         Case vbKeyDelete
             For q = PCpCfdi.Row To PCpCfdi.RowSel
-                For W = PCpCfdi.col To PCpCfdi.ColSel
+                For W = PCpCfdi.Col To PCpCfdi.ColSel
                     PCpCfdi.TextMatrix(q, W) = ""
                 Next W
             Next q
@@ -611,5 +1139,66 @@ End Sub
 Private Sub pcpcfdi_LeaveCell()
     PCpCfdi.CellBackColor = vbWhite
 End Sub
+
+
+
+Private Function CampoSQLCFDI(ByVal valor As Variant) As String
+
+    If IsNull(valor) Or IsEmpty(valor) Then
+        CampoSQLCFDI = ""
+    Else
+        CampoSQLCFDI = Trim$(CStr(valor))
+    End If
+
+End Function
+
+Private Function NombreComparableCFDI(ByVal texto As String) As String
+
+    texto = UCase$(Trim$(texto))
+
+    texto = Replace(texto, "Á", "A")
+    texto = Replace(texto, "É", "E")
+    texto = Replace(texto, "Í", "I")
+    texto = Replace(texto, "Ó", "O")
+    texto = Replace(texto, "Ú", "U")
+
+    Do While InStr(texto, "  ") > 0
+        texto = Replace(texto, "  ", " ")
+    Loop
+
+    NombreComparableCFDI = texto
+
+End Function
+
+Private Function VerificarRegistroCFDI( _
+    ByVal oRS As ADODB.Recordset) As Boolean
+
+    VerificarRegistroCFDI = False
+
+    If Trim$(Empleado_1.Direccion) <> _
+       UCase$(CampoSQLCFDI(oRS.Fields("nombreDeVialidad").Value)) Then Exit Function
+
+    If Trim$(Empleado_1.Colonia) <> _
+       UCase$(CampoSQLCFDI(oRS.Fields("nombreColonia").Value)) Then Exit Function
+
+    If Trim$(Empleado_1.Ciudad) <> _
+       UCase$(CampoSQLCFDI(oRS.Fields("nombreLocalidad").Value)) Then Exit Function
+
+    If Trim$(Empleado_1.Estado) <> _
+       UCase$(CampoSQLCFDI(oRS.Fields("entidadFederativa").Value)) Then Exit Function
+
+    If Trim$(Empleado_1.Delegacion) <> _
+       UCase$(CampoSQLCFDI(oRS.Fields("nombreMunicipio").Value)) Then Exit Function
+
+    If Trim$(Empleado_1.Cpostal) <> _
+       UCase$(CampoSQLCFDI(oRS.Fields("cp").Value)) Then Exit Function
+
+    If Trim$(Empleado_1.correo) <> _
+       UCase$(CampoSQLCFDI(oRS.Fields("correoElectronico").Value)) Then Exit Function
+
+    VerificarRegistroCFDI = True
+
+End Function
+
 
 
