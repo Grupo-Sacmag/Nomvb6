@@ -473,7 +473,7 @@ Public Sub IniciarNuevo()
     ModoEdicion = True          'En captura nueva no hay que habilitar edición.
 
     AbrirArchivosPersistentes
-    limpiarCampos
+    LimpiarCampos
 
     Text16.Text = (largoPersonal + 1)
 
@@ -703,8 +703,43 @@ End Sub
 ' EVENTOS DE BOTONES
 ' ============================================================
 
+
 Private Sub cedulaFiscal_Click()
-    FormCedulaFiscal.Show 1
+
+    Dim sID As String
+    Dim idEmpleado As Long
+
+    sID = Trim$(Me.Text16.Text)
+
+    If sID = "" Or sID Like "*[!0-9]*" Then
+        MsgBox "Seleccione un empleado con ID valido.", _
+               vbExclamation, "Cedula Fiscal"
+        Exit Sub
+    End If
+
+    If Len(sID) > 5 Then
+        MsgBox "ID fuera de rango.", _
+               vbExclamation, "Cedula Fiscal"
+        Exit Sub
+    End If
+
+    idEmpleado = CLng(sID)
+
+    If idEmpleado < 1 Or idEmpleado > 32767 Then
+        MsgBox "ID fuera de rango (1 a 32767).", _
+               vbExclamation, "Cedula Fiscal"
+        Exit Sub
+    End If
+
+    Load FormCedulaFiscal
+
+    If Not FormCedulaFiscal.PrepararEmpleado(idEmpleado) Then
+        Unload FormCedulaFiscal
+        Exit Sub
+    End If
+
+    FormCedulaFiscal.Show vbModal, Me
+
 End Sub
 
 Private Sub Command1_Click()
@@ -772,7 +807,7 @@ Public Sub cargarEmpleado(id As Integer)
     Text14.Text = maestro.por_1                        'Porcentaje.
 End Sub
 
-Private Sub limpiarCampos()
+Private Sub LimpiarCampos()
     Text1.Text = Empty
     Text2.Text = Empty
     Text3.Text = Empty
@@ -1160,7 +1195,7 @@ Private Function SoloCaracteres(ByVal txt As String, ByVal patron As String) As 
 
     SoloCaracteres = True
     For i = 1 To Len(txt)
-        If Not (Mid$(txt, i, 1) Like patron) Then
+        If Not (mID$(txt, i, 1) Like patron) Then
             SoloCaracteres = False
             Exit Function
         End If

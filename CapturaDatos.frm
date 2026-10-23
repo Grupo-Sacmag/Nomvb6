@@ -70,6 +70,13 @@ Private Sub Form_Load()
      Next W
     
 End Sub
+
+Private Sub Form_Activate()
+    If mSincronizacionInicial Then Exit Sub
+    mSincronizacionInicial = True
+    DB_Click
+End Sub
+
 Private Sub Examinar_Click(Index As Integer)
    Select Case Index
       Case 0

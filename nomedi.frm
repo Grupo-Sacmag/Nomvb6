@@ -717,123 +717,38 @@ End Sub
 ' ============================================================
 
 Private Sub Form_Load()
-Dim oRS As New ADODB.Recordset
-Dim sSQL As String
-Dim abrEmpresa As String
-On Error Resume Next
-
     Dim empFile As String
-    Dim empRecord As Integer
+    Dim empRecord As Long
     Dim fNum As Integer
+    Dim detalleError As String
+
+    On Error GoTo ErrorCarga
+
     empFile = "empresa.dno"
-    If Dir(empFile) <> "" Then
+    If Dir$(empFile) <> "" Then
         fNum = FreeFile
-        Open empFile For Random As #fNum Len = Len(empresa)
-        empRecord = LOF(fNum) / Len(empresa)
-        If empRecord > 0 Then
-            Get #fNum, empRecord, empresa
-        End If
+        Open empFile For Random Access Read As #fNum Len = Len(empresa)
+        empRecord = LOF(fNum) \ Len(empresa)
+        If empRecord > 0 Then Get #fNum, empRecord, empresa
         Close #fNum
+        fNum = 0
     End If
 
+    'NO consultar ni escribir SQL en Form4.
+    'Los datos llegaron previamente a los .dno mediante PeCfdi.
     z2$ = "#,###,##0.0000"
-
-    If Not EsEmpresaLocal(emp) Then
-
-        abrEmpresa = Left(Trim(emp), 4)
-
-        Select Case UCase(abrEmpresa)
-            Case "SACM"
-                abrEmpresa = "SACMAG"
-            Case "COOR"
-                abrEmpresa = "CORDINA"
-            Case "EPES"
-                abrEmpresa = "EPESA"
-            Case "SUPE"
-                abrEmpresa = "SUPERVISA"
-            Rem Case "SUPT"
-                Rem abrEmpresa = "SUPTER"
-            Case "CONS"
-                abrEmpresa = "CONSULTE"
-        End Select
-
-        sSQL = "SELECT idNomina, rfc, curp, nombre, apellidoP, apellidoM " & "FROM datosSat where empresa = '" & abrEmpresa & "'"
-
-        Set oRS = New ADODB.Recordset
-        oRS.CursorLocation = adUseClient
-        oRS.Open sSQL, con, adOpenStatic, adLockBatchOptimistic, adCmdText
-        oRS.MoveFirst
-
-        dat.Rows = oRS.RecordCount + 1
-        dat.Cols = oRS.Fields.Count
-        dat.Row = 0: dat.col = 0
-        dat.col = 0: dat.CellAlignment = 4: dat.ColWidth(0) = 2800: dat.Text = "ID NÓMINA"
-        dat.col = 1: dat.CellAlignment = 4: dat.ColWidth(1) = 2800: dat.Text = "RFC"
-        dat.col = 2: dat.CellAlignment = 4: dat.ColWidth(2) = 2800: dat.Text = "CURP"
-        dat.col = 3: dat.CellAlignment = 4: dat.ColWidth(3) = 2800: dat.Text = "NOMBRE"
-        dat.col = 4: dat.CellAlignment = 4: dat.ColWidth(4) = 2800: dat.Text = "APELLIDO P"
-        dat.col = 5: dat.CellAlignment = 4: dat.ColWidth(5) = 2800: dat.Text = "APELLIDO M"
-
-        vardatarows = oRS.GetRows()
-
-        For i = 1 To dat.Rows - 1
-            For h = 0 To dat.Cols - 1
-                If (IsNull(vardatarows(h, i - 1))) Then
-                    dat.TextMatrix(i, h) = "N/A"
-                Else
-                    dat.TextMatrix(i, h) = vardatarows(h, i - 1)
-                End If
-            Next h
-        Next i
-
-        oRS.MarshalOptions = adMarshalModifiedOnly
-        Set oRS.ActiveConnection = Nothing
-        oRS.Close
-        Set oRS = Nothing
-
-        Close 2
-        Open "personal.dno" For Random As 2 Len = Len(personal)
-        Dm = LOF(2) / Len(personal)
-        Close 3
-        Open "PerOtre.dno" For Random As 3 Len = Len(Otros_Rgtros)
-        dmper = LOF(3) / Len(Otros_Rgtros)
-        Close 4
-        Rem Open "Bnxcla.dno" For Random As 4 Len = Len(Clbnx)
-        Close 15
-        Open "deon.dno" For Random As 15 Len = Len(DEON)
-        largoDeon = LOF(15) / Len(DEON)
-
-        For i = 1 To dat.Rows - 1
-            idNomina = dat.TextMatrix(i, 0)
-            Get 2, CInt(idNomina), personal
-            Get 3, CInt(idNomina), Otros_Rgtros
-            personal.RFC = UCase(Trim(dat.TextMatrix(i, 1)))
-            Otros_Rgtros.curp = UCase(Trim(dat.TextMatrix(i, 2)))
-            personal.nom = UCase(Trim(dat.TextMatrix(i, 3)))
-            personal.ape1 = UCase(Trim(dat.TextMatrix(i, 4)))
-            personal.ape2 = UCase(Trim(dat.TextMatrix(i, 5)))
-            Put 2, idNomina, personal
-            Put 3, idNomina, Otros_Rgtros
-        Next i
-
-        Close 2, 3, 4, 15
-
-        If Dm <> 0 Then
-            Form4.Caption = "Edicipon de personal" & " - " & "Estas conectado... "
-        End If
-
-    Else
-        Form4.Caption = "Edicipon de personal" & " - " & "Modo local (sin conexión remota)"
-    End If
-
-        z2$ = "#,###,##0.0000"
     ModoEdicion = False
-
     CargarGrid
-
     ActualizarBotones
+    Exit Sub
 
-Exit Sub
+ErrorCarga:
+    detalleError = Err.Description
+    On Error Resume Next
+    If fNum > 0 Then Close #fNum
+    On Error GoTo 0
+    MsgBox "No fue posible abrir los registros locales: " & _
+           detalleError, vbExclamation, "Edicion de personal"
 End Sub
 
 
@@ -871,12 +786,12 @@ Private Sub list1_KeyPress(KeyAscii As Integer)
 End Sub
 
 Private Sub Form_Resize()
-On Error GoTo errorManejador
+On Error GoTo ErrorManejador
     ListPer.Width = ScaleWidth - 200
     ListPer.Height = Form4.Height * 0.85
 Exit Sub
 
-errorManejador:
+ErrorManejador:
 
 End Sub
 
@@ -961,246 +876,16 @@ End Sub
 ' ============================================================
 
 Public Sub actualizarSaldos()
-    If EsEmpresaLocal(emp) Then
-        MsgBox "Esta empresa no sincroniza saldos con la BD remota.", vbInformation
-        Exit Sub
-    End If
-    On Error GoTo ErrorSalarios
-    
-    Dim i As Integer
-    Dim sueldoBruto As Currency
-    Dim instruccionSQL As String
-    Dim numeroEmpleado As Integer
-    Dim abrEmpresa As String
-    
-    ' Abreviatura de la empresa
-    abrEmpresa = Left(Trim(emp), 4)
-  
-    ' Mapeo de abreviaturas a nombres de tabla
-    Select Case UCase(abrEmpresa)
-        Case "SACM"
-            abrEmpresa = "SACMAG"
-        Case "CORD"
-            abrEmpresa = "CORDINA"
-        Rem Case "SUPT"
-            Rem abrEmpresa = "SUPTER"
-    End Select
-
-    ' Recorrer las filas de ListPer
-    For i = 1 To ListPer.Rows - 1
-        ' Calcular el sueldo bruto
-        sueldoBruto = ListPer.TextMatrix(i, 7) * 30
-        numeroEmpleado = ListPer.TextMatrix(i, 0)
-        
-        ' Verificar si el sueldo bruto es distinto de cero
-        If sueldoBruto <> 0 Then
-            instruccionSQL = "UPDATE " & abrEmpresa & " SET sueldonomina = '" & sueldoBruto & "' WHERE id = " & numeroEmpleado
-            
-            ' Abrir y ejecutar la instrucción SQL
-            con.BeginTrans  ' Comenzar una transacción (si es necesario)
-            con.Execute instruccionSQL  ' Ejecutar la instrucción SQL directamente
-        
-            con.CommitTrans  ' Confirmar la transacción (si es necesario)
-        End If
-    Next i
-
-    ' Mostrar mensaje de éxito
-    MsgBox "Los sueldos fueron actualizados con éxito", vbInformation
-
-    Exit Sub
-
-ErrorSalarios:
-    ' Manejo de errores
-    MsgBox "Error " & Err.Number & ": " & Err.Description, vbExclamation
-    con.RollbackTrans  ' Revertir la transacción en caso de error
-    Resume Next
+    'Operacion SQL deshabilitada: la BD es fuente de SOLO LECTURA.
+    MsgBox "La actualizacion de saldos en SQL esta deshabilitada." & _
+           vbCrLf & "La informacion principal permanece en archivos .dno.", _
+           vbInformation, "Solo lectura SQL"
 End Sub
 
 
 Private Sub cargarEmpleadosSinFiltro()
-Dim oRS As New ADODB.Recordset
-    Dim sSQL As String
-    Dim abrEmpresa As String
-    On Error Resume Next
-
-    Dim empFile As String
-    Dim empRecord As Integer
-    Dim fNum As Integer
-    empFile = "empresa.dno"
-    If Dir(empFile) <> "" Then
-        fNum = FreeFile
-        Open empFile For Random As #fNum Len = Len(empresa)
-        empRecord = LOF(fNum) / Len(empresa)
-        If empRecord > 0 Then
-            Get #fNum, empRecord, empresa
-        End If
-        Close #fNum
-    End If
-
-    z2$ = "#,###,##0.0000"
-
-    If Not EsEmpresaLocal(emp) Then
-
-        abrEmpresa = Left(Trim(emp), 4)
-
-        Select Case UCase(abrEmpresa)
-            Case "SACM"
-                abrEmpresa = "SACMAG"
-            Case "GEOA"
-                abrEmpresa = "GEOAMBIENTE"
-            Case "COOR"
-                abrEmpresa = "CORDINA"
-            Case "EPES"
-                abrEmpresa = "EPESA"
-            Rem Case "SUPT"
-                Rem abrEmpresa = "SUPTER"
-            Case "CONS"
-                abrEmpresa = "CONSULTE"
-        End Select
-
-        sSQL = "SELECT idNomina, rfc, curp, nombre, apellidoP, apellidoM " & "FROM datosSat where empresa = '" & abrEmpresa & "'"
-        Set oRS = New ADODB.Recordset
-        oRS.CursorLocation = adUseClient
-        oRS.Open sSQL, con, adOpenStatic, adLockBatchOptimistic, adCmdText
-        oRS.MoveFirst
-
-        dat.Rows = oRS.RecordCount + 1
-        dat.Cols = oRS.Fields.Count
-        dat.Row = 0: dat.col = 0
-        dat.col = 0: dat.CellAlignment = 4: dat.ColWidth(0) = 2800: dat.Text = "ID NÓMINA"
-        dat.col = 1: dat.CellAlignment = 4: dat.ColWidth(1) = 2800: dat.Text = "RFC"
-        dat.col = 2: dat.CellAlignment = 4: dat.ColWidth(2) = 2800: dat.Text = "CURP"
-        dat.col = 3: dat.CellAlignment = 4: dat.ColWidth(3) = 2800: dat.Text = "NOMBRE"
-        dat.col = 4: dat.CellAlignment = 4: dat.ColWidth(4) = 2800: dat.Text = "APELLIDO P"
-        dat.col = 5: dat.CellAlignment = 4: dat.ColWidth(5) = 2800: dat.Text = "APELLIDO M"
-
-        vardatarows = oRS.GetRows()
-        For i = 1 To dat.Rows - 1
-            For h = 0 To dat.Cols - 1
-                If (IsNull(vardatarows(h, i - 1))) Then
-                    dat.TextMatrix(i, h) = "N/A"
-                Else
-                    dat.TextMatrix(i, h) = vardatarows(h, i - 1)
-                End If
-            Next h
-        Next i
-
-        oRS.MarshalOptions = adMarshalModifiedOnly
-        Set oRS.ActiveConnection = Nothing
-        oRS.Close
-        Set oRS = Nothing
-
-        Close 2
-        Open "personal.dno" For Random As 2 Len = Len(personal)
-        Dm = LOF(2) / Len(personal)
-        Close 3
-        Open "PerOtre.dno" For Random As 3 Len = Len(Otros_Rgtros)
-        dmper = LOF(3) / Len(Otros_Rgtros)
-        Close 4
-        Open "Bnxcla.dno" For Random As 4 Len = Len(Clbnx)
-        Close 15
-        Open "deon.dno" For Random As 15 Len = Len(DEON)
-        largoDeon = LOF(15) / Len(DEON)
-
-        For i = 1 To dat.Rows - 1
-            idNomina = dat.TextMatrix(i, 0)
-            Get 2, CInt(idNomina), personal
-            Get 3, CInt(idNomina), Otros_Rgtros
-            personal.RFC = UCase(Trim(dat.TextMatrix(i, 1)))
-            Otros_Rgtros.curp = UCase(Trim(dat.TextMatrix(i, 2)))
-            personal.nom = UCase(Trim(dat.TextMatrix(i, 3)))
-            personal.ape1 = UCase(Trim(dat.TextMatrix(i, 4)))
-            personal.ape2 = UCase(Trim(dat.TextMatrix(i, 5)))
-            Put 2, idNomina, personal
-            Put 3, idNomina, Otros_Rgtros
-        Next i
-
-        Close 2, 3, 4, 15
-
-        If Dm <> 0 Then
-            Form4.Caption = "Edicipon de personal" & " - " & "Estas conectado... "
-        End If
-
-    Else
-        Form4.Caption = "Edicipon de personal" & " - " & "Modo local (sin conexión remota)"
-    End If
-
-    Open "personal.dno" For Random As 2 Len = Len(personal)
-    Dm = LOF(2) / Len(personal)
-    Open "PerOtre.dno" For Random As 3 Len = Len(Otros_Rgtros)
-    dmper = LOF(3) / Len(Otros_Rgtros)
-    Open "Bnxcla.dno" For Random As 4 Len = Len(Clbnx)
-    Open "deon.dno" For Random As 15 Len = Len(DEON)
-    largoDeon = LOF(15) / Len(DEON)
-
-    If dmper < Dm Then
-        If dmper < 1 Then dmper = 1
-        For r = (dmper + 1) To Dm: Get 3, r, Otros_Rgtros
-            Otros_Rgtros.curp = "": Otros_Rgtros.otra = ""
-            Otros_Rgtros.yotra = "": Otros_Rgtros.yporsi = ""
-            Put 3, r, Otros_Rgtros
-        Next r
-    End If
-
-    ListPer.Cols = 13: ListPer.Rows = 1: ListPer.Row = 0
-    ListPer.col = 0: ListPer.CellAlignment = 4: ListPer.ColWidth(0) = 400: ListPer.Text = "#"
-    ListPer.col = 1: ListPer.CellAlignment = 4: ListPer.ColWidth(1) = 3200: ListPer.Text = "Nombre"
-    ListPer.col = 2: ListPer.CellAlignment = 4: ListPer.ColWidth(2) = 2200: ListPer.Text = "RFC"
-    ListPer.col = 3: ListPer.CellAlignment = 4: ListPer.ColWidth(3) = 2200: ListPer.Text = "CURP"
-    ListPer.col = 4: ListPer.CellAlignment = 4: ListPer.ColWidth(4) = 1600: ListPer.Text = "IMSS"
-    ListPer.col = 5: ListPer.CellAlignment = 4: ListPer.ColWidth(5) = 1200: ListPer.Text = "Fcha.Alta"
-    ListPer.col = 6: ListPer.CellAlignment = 4: ListPer.ColWidth(6) = 1200: ListPer.Text = "Fcha.Baja"
-    ListPer.col = 7: ListPer.CellAlignment = 4: ListPer.ColWidth(7) = 1200: ListPer.Text = "Salario dia"
-    ListPer.col = 8: ListPer.CellAlignment = 4: ListPer.ColWidth(8) = 1200: ListPer.Text = "O.F. dia"
-    ListPer.col = 9: ListPer.CellAlignment = 4: ListPer.ColWidth(9) = 1200: ListPer.Text = "Otros diario"
-    ListPer.col = 10: ListPer.CellAlignment = 4: ListPer.ColWidth(10) = 1200: ListPer.Text = "Integrado"
-    ListPer.col = 11: ListPer.CellAlignment = 4: ListPer.ColWidth(11) = 2200: ListPer.Text = "Tarjeta Bnx"
-    ListPer.col = 12: ListPer.CellAlignment = 4: ListPer.ColWidth(12) = 2200: ListPer.Text = "Sueldo DEON"
-
-    If Dm > 0 Then
-        For r = 1 To Dm: Get 2, r, personal: Get 3, r, Otros_Rgtros: Get 4, r, Clbnx: Get 15, r, DEON
-             apelativo1$ = "": abaja = Val(Mid(personal.fab, 7, 4))
-                apelativo1$ = RTrim$(personal.ape1) + " " + RTrim$(personal.ape2) + " " + RTrim$(personal.nom)
-                apelativo$ = Left(apelativo1$, 59) + String$(60 - Len(Left(apelativo1$, 59)), " ")
-
-                Dim lAntig2 As Integer, dFacto2 As Double, cSdi2 As Currency
-                lAntig2 = CalcularAntiguedad(personal.fal)
-                dFacto2 = 0
-                factor lAntig2, dFacto2
-                cSdi2 = (personal.ingr + personal.viat + personal.otras) * dFacto2
-                If empresa.sm > 0 Then
-                    If cSdi2 > (empresa.sm * 25) Then cSdi2 = (empresa.sm * 25)
-                End If
-
-                If personal.integrado <> cSdi2 Then
-                    personal.integrado = cSdi2
-                    Put 2, r, personal
-                End If
-
-                ListPer.AddItem Format(r, "####0") _
-                    & Chr(9) & apelativo$ _
-                    & Chr(9) & RTrim(personal.RFC) _
-                    & Chr(9) & RTrim(Otros_Rgtros.curp) _
-                    & Chr(9) & (" " + Replace(RTrim(personal.imss), "-", "")) _
-                    & Chr(9) & RTrim(personal.fal) _
-                    & Chr(9) & RTrim(personal.fab) _
-                    & Chr(9) & Format(personal.ingr, z2) _
-                    & Chr(9) & Format(personal.viat, z2) _
-                    & Chr(9) & Format(personal.otras, z2) _
-                    & Chr(9) & Format(personal.integrado, z2) _
-                    & Chr(9) & Format(Clbnx.Q1, "<") _
-                    & Chr(9) & Format(DEON.sueldoDeon, z2)
-        Next r
-        Close 2, 3
-    Else
-        MsgBox "No existe personal para la edicion "
-        Close 2, 3
-        Load Form1
-        Form1.Show
-    End If
-Exit Sub
-
-
+    'Mostrar la informacion local SIN importar ni sobreescribir desde SQL.
+    CargarGrid
 End Sub
 
 
@@ -1375,17 +1060,24 @@ Private Sub CargarGrid()
         For r = 1 To Dm: Get 2, r, personal: Get 3, r, Otros_Rgtros: Get 4, r, Clbnx: Get 15, r, DEON
              apelativo1$ = "": abaja = Val(Mid(personal.fab, 7, 4))
              If (abaja > 0) And (abaja < empresa.ao - 1) Then GoTo Sig_te
-             If (personal.ape1 >= "A") Or (personal.ape2 >= "A") Then
+             If Len(Trim$(Replace(personal.nom, vbNullChar, ""))) > 0 Or _
+                Len(Trim$(Replace(personal.ape1, vbNullChar, ""))) > 0 Or _
+                Len(Trim$(Replace(personal.ape2, vbNullChar, ""))) > 0 Then
                 apelativo1$ = RTrim$(personal.ape1) + " " + RTrim$(personal.ape2) + " " + RTrim$(personal.nom)
                 apelativo$ = Left(apelativo1$, 59) + String$(60 - Len(Left(apelativo1$, 59)), " ")
 
                 Dim lAntig As Integer, dFacto As Double, cSdi As Currency
-                lAntig = CalcularAntiguedad(personal.fal)
-                dFacto = 0
-                factor lAntig, dFacto
-                cSdi = (personal.ingr + personal.viat + personal.otras) * dFacto
-                If empresa.sm > 0 Then
-                    If cSdi > (empresa.sm * 25) Then cSdi = (empresa.sm * 25)
+                'Un empleado recien importado no trae fecha de alta
+                'de nomina; no intentar calcular antiguedad en ese caso.
+                cSdi = personal.integrado
+                If IsDate(Trim$(Replace(personal.fal, vbNullChar, ""))) Then
+                    lAntig = CalcularAntiguedad(personal.fal)
+                    dFacto = 0
+                    factor lAntig, dFacto
+                    cSdi = (personal.ingr + personal.viat + personal.otras) * dFacto
+                    If empresa.sm > 0 Then
+                        If cSdi > (empresa.sm * 25) Then cSdi = (empresa.sm * 25)
+                    End If
                 End If
 
                 If personal.integrado <> cSdi Then
@@ -1419,5 +1111,7 @@ Sig_te:
 
 End Sub
 ' comentario
+
+
 
 

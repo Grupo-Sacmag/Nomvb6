@@ -573,262 +573,325 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
-' ============================================================
-' BOTONES PRINCIPALES
-' ============================================================
+Option Explicit
 
+'============================================================
+' FORM CEDULA FISCAL - CONSULTA SEGURA
+'
+' Los .dno son la fuente principal.
+' SQL se consulta SOLO para campos SAT sin equivalencia .dno.
+' NUNCA ejecuta INSERT, UPDATE ni DELETE en SQL.
+' Esta version es SOLO CONSULTA: la edicion local se agregara
+' una vez definida la persistencia de los campos SAT restantes.
+'============================================================
+
+Private mID As Long
+Private mEmpresa As String
+Private mPreparado As Boolean
+
+'============================================================
+' INICIALIZACION
+'============================================================
+Private Sub Form_Load()
+    mPreparado = False
+    BloquearCedula
+    Command1.Visible = False     'Antes insertaba en SQL: deshabilitado
+    Command3.Visible = False     'Antes actualizaba SQL: deshabilitado
+    Command2.Caption = "Cerrar"
+    Command2.Visible = True
+End Sub
+
+'Form2 debe llamar a esta funcion pasando el ID seleccionado.
+Public Function PrepararEmpleado(ByVal idEmpleado As Long) As Boolean
+    On Error GoTo ErrorPreparar
+
+    PrepararEmpleado = False
+    mPreparado = False
+
+    If idEmpleado < 1 Or idEmpleado > 32767 Then
+        Err.Raise vbObjectError + 301, , "ID de empleado fuera de rango."
+    End If
+
+    mID = idEmpleado
+    mEmpresa = Trim$(ObtenerEmpresaSAT())
+    If mEmpresa = "" Then
+        Err.Raise vbObjectError + 302, , "No se pudo determinar la empresa actual."
+    End If
+
+    LimpiarCampos
+    Text1.Text = CStr(mID)
+    Text29.Text = mEmpresa
+
+    'Primero leer exclusivamente los datos locales del ID correcto.
+    CargarDatosLocales mID
+
+    'Solo enriquecer campos SAT que NO tienen mapeo local conocido.
+    'El fallo de SQL nunca elimina los datos ya cargados desde .dno.
+    ConsultarCamposSATAdicionales
+
+    BloquearCedula
+    mPreparado = True
+    PrepararEmpleado = True
+    Exit Function
+
+ErrorPreparar:
+    Debug.Print "Cedula fiscal - ID " & CStr(idEmpleado) & ": " & Err.Description
+    mPreparado = False
+    LimpiarCampos
+    Text1.Text = vbNullString
+    Text29.Text = vbNullString
+    BloquearCedula
+    MsgBox "No fue posible cargar la cedula del empleado " & _
+           CStr(idEmpleado) & "." & vbCrLf & Err.Description, _
+           vbExclamation, "Cedula Fiscal"
+End Function
+
+'============================================================
+' BOTONES
+'============================================================
 Private Sub Command1_Click()
-    insertarEmpleado
+    'Prohibir operaciones de escritura desde esta version.
+    'No hay equivalencia local confirmada para todos los campos SAT.
+    MsgBox "La edicion de esta cedula aun no esta habilitada.", _
+           vbExclamation, "Cedula Fiscal"
 End Sub
 
 Private Sub Command2_Click()
-    limpiarCampos
+    Unload Me
 End Sub
 
 Private Sub Command3_Click()
-    actualizarEmpleado
+    MsgBox "La edicion de esta cedula aun no esta habilitada.", _
+           vbExclamation, "Cedula Fiscal"
 End Sub
 
-' ============================================================
-' CARGA / BUSQUEDA
-' ============================================================
-
-Private Sub Form_Load()
-    Text1.Text = Form2.Text16.Text
-    Text1_KeyPress 13
-End Sub
-
+'Ya no se permite consultar otros IDs escribiendo en Text1.
 Private Sub Text1_KeyPress(KeyAscii As Integer)
-    If KeyAscii = 13 Then
-        limpiarCampos
-        consultarCIF
-    End If
+    If KeyAscii = vbKeyReturn Then KeyAscii = 0
 End Sub
 
-' ============================================================
-' VALIDACION VISUAL
-' ============================================================
+'============================================================
+' DATOS LOCALES: SIEMPRE PREVALECEN
+'============================================================
+Private Sub CargarDatosLocales(ByVal id As Long)
+    Dim h As Integer
+    Dim ruta As String
+    Dim cantidad As Long
+    Dim ancho As Long
+    Dim descripcion As String
 
-Private Sub reviarEmpleado()
-    If Text1.Text = "" Or Text2.Text = "" Or Text3.Text = "" Or Text4.Text = "" Or _
-       Text5.Text = "" Or Text6.Text = "" Or Text7.Text = "" Or Text8.Text = "" Or _
-       Text9.Text = "" Or Text10.Text = "" Or Text11.Text = "" Or Text12.Text = "" Or _
-       Text13.Text = "" Or Text14.Text = "" Or Text15.Text = "" Or Text16.Text = "" Or _
-       Text17.Text = "" Or Text18.Text = "" Or Text19.Text = "" Or Text21.Text = "" Or _
-       Text22.Text = "" Or Text23.Text = "" Or Text24.Text = "" Or Text25.Text = "" Or _
-       Text26.Text = "" Or Text27.Text = "" Or Text28.Text = "" Or Text29.Text = "" Or _
-       Text34.Text = "" Then
+    On Error GoTo ErrorLocal
 
-        MsgBox ("Campos Obligatorios")
-        colorearCamposVacios
-    Else
-        MsgBox "La cédula de indentificación fiscal para " & Text1.Text & " se guardo con éxito!"
+    '---- 1. Personal.dno: identidad principal ----
+    ruta = "personal.dno"
+    If Dir$(ruta) = "" Then
+        Err.Raise vbObjectError + 310, , "No existe personal.dno."
     End If
-End Sub
 
-Private Sub colorearCamposVacios()
-    Dim Control As Control
+    ancho = Len(personal)
+    If ancho <= 0 Then Err.Raise vbObjectError + 311, , "Estructura personal no valida."
+    If (FileLen(ruta) Mod ancho) <> 0 Then
+        Err.Raise vbObjectError + 311, , "personal.dno tiene un tamano incompatible."
+    End If
 
-    For Each Control In Me.Controls
-        If TypeOf Control Is TextBox Then
-            If Control.Text = "" Then
-                Control.BackColor = RGB(255, 0, 0)
-            End If
+    h = FreeFile
+    Open ruta For Random Access Read As #h Len = ancho
+    cantidad = LOF(h) \ ancho
+
+    If id > cantidad Then
+        Err.Raise vbObjectError + 312, , _
+                  "El ID " & CStr(id) & " no existe en personal.dno."
+    End If
+
+    Get #h, id, personal
+    Close #h
+    h = 0
+
+    If CampoArchivo(personal.nom) = "" Then
+        Err.Raise vbObjectError + 313, , _
+                  "El registro " & CStr(id) & " no tiene nombre local."
+    End If
+
+    Text2.Text = CampoArchivo(personal.RFC)
+    Text4.Text = CampoArchivo(personal.nom)
+    Text5.Text = CampoArchivo(personal.ape1)
+    Text6.Text = CampoArchivo(personal.ape2)
+
+    '---- 2. PerOtre.dno: CURP ----
+    ruta = "PerOtre.dno"
+    If Dir$(ruta) <> "" Then
+        ancho = Len(Otros_Rgtros)
+        If ancho <= 0 Then Err.Raise vbObjectError + 314, , "Estructura PerOtre no valida."
+        If (FileLen(ruta) Mod ancho) <> 0 Then
+            Err.Raise vbObjectError + 314, , "PerOtre.dno tiene un tamano incompatible."
         End If
-    Next Control
-End Sub
 
-' ============================================================
-' LIMPIEZA
-' ============================================================
+        h = FreeFile
+        Open ruta For Random Access Read As #h Len = ancho
+        cantidad = LOF(h) \ ancho
 
-Private Sub limpiarCampos()
-    Text2.Text = Empty
-    Text3.Text = Empty
-    Text4.Text = Empty
-    Text5.Text = Empty
-    Text6.Text = Empty
-    Text7.Text = Empty
-    Text8.Text = Empty
-    Text9.Text = Empty
-    Text10.Text = Empty
-    Text11.Text = Empty
-    Text12.Text = Empty
-    Text13.Text = Empty
-    Text14.Text = Empty
-    Text15.Text = Empty
-    Text16.Text = Empty
-    Text17.Text = Empty
-    Text18.Text = Empty
-    Text19.Text = Empty
-    Text20.Text = Empty
-    Text21.Text = Empty
-    Text22.Text = Empty
-    Text23.Text = Empty
-    Text24.Text = Empty
-    Text25.Text = Empty
-    Text26.Text = Empty
-    Text27.Text = Empty
-    Text28.Text = Empty
-    Text29.Text = Empty
-    Text34.Text = Empty
-End Sub
+        If id <= cantidad Then
+            Get #h, id, Otros_Rgtros
+            Text3.Text = CampoArchivo(Otros_Rgtros.curp)
+        End If
 
-' ============================================================
-' INSERTAR / CONSULTAR / ACTUALIZAR
-' ============================================================
-
-Private Sub insertarEmpleado()
-    Dim oRS As New ADODB.Recordset
-    Dim sSQL As String
-
-    sSQL = "insert into datosSat values (" & Text1.Text & ",'" & Text2.Text & "','" & _
-           Text3.Text & "','" & Text4.Text & "','" & _
-           Text5.Text & "','" & Text6.Text & "','" & _
-           Text7.Text & "','" & Text8.Text & "','" & _
-           Text9.Text & "','" & Text10.Text & "','" & _
-           Text11.Text & "','" & Text12.Text & "','" & _
-           Text13.Text & "','" & Text14.Text & "','" & _
-           Text15.Text & "','" & Text16.Text & "','" & _
-           Text17.Text & "','" & Text18.Text & "','" & _
-           Text19.Text & "','" & Text20.Text & "','" & _
-           Text21.Text & "','" & Text22.Text & "','" & _
-           Text23.Text & "','" & Text24.Text & "','" & _
-           Text25.Text & "','" & Text26.Text & "','" & _
-           Text27.Text & "','" & Text28.Text & "','" & _
-           Text29.Text & "', null , null , null , null , null )"
-
-    oRS.CursorLocation = adUseClient
-    oRS.Open sSQL, con, adOpenStatic, adLockBatchOptimistic, adCmdText
-
-    Set oRS.ActiveConnection = Nothing
-    Set oRS = Nothing
-
-    MsgBox "Se añadio con éxito"
-
-    limpiarCampos
-End Sub
-
-Private Sub consultarCIF()
-    On Error GoTo manejador
-
-    Dim id As Integer
-    Dim abrEmpresa As String
-    Dim oRS As New ADODB.Recordset
-    Dim sSQL As String
-
-    id = Text1.Text
-    abrEmpresa = ObtenerEmpresaSAT
-
-    Text29.Text = abrEmpresa
-
-    sSQL = "SELECT * FROM datosSat WHERE idNomina = '" & id & "' AND empresa = '" & abrEmpresa & "'"
-
-    Set oRS = New ADODB.Recordset
-    oRS.CursorLocation = adUseClient
-    oRS.Open sSQL, con, adOpenStatic, adLockBatchOptimistic, adCmdText
-
-    oRS.MarshalOptions = adMarshalModifiedOnly
-
-    If Not oRS.EOF Then
-        LlenarCamposDesdeRecordset oRS
-    Else
-        MsgBox "No se encontraron registros con ese ID"
+        Close #h
+        h = 0
     End If
 
-    Set oRS.ActiveConnection = Nothing
-    oRS.Close
-    Set oRS = Nothing
+    '---- 3. Perscfdi.dno: direccion y contacto ----
+    ruta = "Perscfdi.dno"
+    If Dir$(ruta) <> "" Then
+        ancho = Len(Empleado_1)
+        If ancho <= 0 Then Err.Raise vbObjectError + 315, , "Estructura Perscfdi no valida."
+        If (FileLen(ruta) Mod ancho) <> 0 Then
+            Err.Raise vbObjectError + 315, , "Perscfdi.dno tiene un tamano incompatible."
+        End If
+
+        h = FreeFile
+        Open ruta For Random Access Read As #h Len = ancho
+        cantidad = LOF(h) \ ancho
+
+        'IMPORTANTE: no llamar Get si el ID supera la cantidad.
+        'Asi no se arrastran datos del empleado anterior.
+        If id <= cantidad Then
+            Get #h, id, Empleado_1
+
+            Text11.Text = CampoArchivo(Empleado_1.Cpostal)
+            Text13.Text = CampoArchivo(Empleado_1.Direccion)
+            Text16.Text = CampoArchivo(Empleado_1.Colonia)
+            Text17.Text = CampoArchivo(Empleado_1.Ciudad)
+            Text18.Text = CampoArchivo(Empleado_1.Delegacion)
+            Text19.Text = CampoArchivo(Empleado_1.Estado)
+            Text22.Text = CampoArchivo(Empleado_1.correo)
+        End If
+
+        Close #h
+        h = 0
+    End If
 
     Exit Sub
 
-manejador:
-    Resume Next
+ErrorLocal:
+    descripcion = Err.Description
+    On Error Resume Next
+    If h > 0 Then Close #h
+    On Error GoTo 0
+    Err.Raise vbObjectError + 319, "CargarDatosLocales", descripcion
 End Sub
 
-Private Sub actualizarEmpleado()
-    Dim idNomina As String
-    Dim oRS As New ADODB.Recordset
+'============================================================
+' CAMPOS SAT SIN ALMACENAMIENTO LOCAL CONFIRMADO
+'============================================================
+Private Sub ConsultarCamposSATAdicionales()
+    Dim rs As ADODB.Recordset
     Dim sSQL As String
 
-    idNomina = Text1.Text
+    On Error GoTo ErrorConsulta
 
-    sSQL = "UPDATE datosSat SET " & "rfc = '" & Text2.Text & "', " & "curp = '" & Text3.Text & "', " & "nombre = '" & Text4.Text & "', " & "apellidoP = '" & Text5.Text & "', " & _
-        "apellidoM = '" & Text6.Text & "', " & "fInicioOper = '" & Text7.Text & "', " & "estatusPadron = '" & Text8.Text & "', " & "fechaUltCamEstado = '" & Text9.Text & "', " & _
-        "nombreComercial = '" & Text10.Text & "', " & "cp = '" & Text11.Text & "', " & "tipoVialidad = '" & Text12.Text & "', " & "nombreDeVialidad = '" & Text13.Text & "', " & _
-        "numeroExterior = '" & Text14.Text & "', " & "numeroInterior = '" & Text15.Text & "', " & "nombreColonia = '" & Text16.Text & "', " & "nombreLocalidad = '" & Text17.Text & "', " & _
-        "nombreMunicipio = '" & Text18.Text & "', " & "entidadFederativa = '" & Text19.Text & "', " & "entreCalle = '" & Text20.Text & "', " & "yCalle = '" & Text21.Text & "', " & _
-        "correoElectronico = '" & Text22.Text & "', " & "ladaTel = '" & Text23.Text & "', " & "numeroTel = '" & Text24.Text & "', " & "estadoDomicilio = '" & Text25.Text & "', " & _
-        "estadoContDomicilio = '" & Text26.Text & "', " & "actividadEconomica = '" & Text27.Text & "', " & "regimen = '" & Text28.Text & "', " & "empresa = '" & Text29.Text & "' " & _
-        "WHERE idNomina = '" & idNomina & "'"
+    If EsEmpresaLocal(emp) Then Exit Sub
+    If con Is Nothing Then Exit Sub
+    If con.State <> adStateOpen Then Exit Sub
 
-    oRS.CursorLocation = adUseClient
-    oRS.Open sSQL, con, adOpenStatic, adLockBatchOptimistic, adCmdText
+    'La identidad, direccion, CP y correo NO se copian de SQL
+    'porque YA proceden de los .dno.
+    sSQL = "SELECT * FROM datosSat WHERE idNomina = " & _
+           CStr(mID) & " AND empresa = '" & _
+           Replace(mEmpresa, "'", "''") & "'"
 
-    Set oRS.ActiveConnection = Nothing
-    Set oRS = Nothing
+    Set rs = New ADODB.Recordset
+    rs.CursorLocation = adUseClient
+    rs.Open sSQL, con, adOpenStatic, adLockReadOnly, adCmdText
 
-    MsgBox "Los campos han sido actualizados!!!"
+    If rs.EOF Then GoTo Salida
 
-    limpiarCampos
+    'Si hay varias filas para el mismo ID/empresa, no escoger una
+    'aleatoriamente; solo se mostraran los valores locales.
+    rs.MoveNext
+    If Not rs.EOF Then
+        Debug.Print "Cedula fiscal: SQL duplicado en empresa=" & _
+                    mEmpresa & ", ID=" & CStr(mID)
+        GoTo Salida
+    End If
+
+    rs.MoveFirst
+
+    Text7.Text = CampoSQL(rs, "fInicioOper")
+    Text8.Text = CampoSQL(rs, "estatusPadron")
+    Text9.Text = CampoSQL(rs, "fechaUltCamEstado")
+    Text10.Text = CampoSQL(rs, "nombreComercial")
+    Text12.Text = CampoSQL(rs, "tipoVialidad")
+    Text14.Text = CampoSQL(rs, "numeroExterior")
+    Text15.Text = CampoSQL(rs, "numeroInterior")
+    Text20.Text = CampoSQL(rs, "entreCalle")
+    Text21.Text = CampoSQL(rs, "yCalle")
+    Text23.Text = CampoSQL(rs, "ladaTel")
+    Text24.Text = CampoSQL(rs, "numeroTel")
+    Text25.Text = CampoSQL(rs, "estadoDomicilio")
+    Text26.Text = CampoSQL(rs, "estadoContDomicilio")
+    Text27.Text = CampoSQL(rs, "actividadEconomica")
+    Text28.Text = CampoSQL(rs, "regimen")
+
+Salida:
+    On Error Resume Next
+    If Not rs Is Nothing Then
+        If rs.State = adStateOpen Then rs.Close
+    End If
+    Set rs = Nothing
+    Exit Sub
+
+ErrorConsulta:
+    Debug.Print "Cedula fiscal: campos SAT no disponibles. " & Err.Description
+    Resume Salida
 End Sub
 
-' ============================================================
-' APOYO
-' ============================================================
-
-Private Function ObtenerEmpresaSAT() As String
-    Dim abrEmpresa As String
-
-    abrEmpresa = Left(Trim(emp), 4)
-
-    Select Case UCase(abrEmpresa)
-        Case "SACM"
-            abrEmpresa = "SACMAG"
-        Case "COOR"
-            abrEmpresa = "CORDINA"
-        Case "EPES"
-            abrEmpresa = "EPESA"
-        Case "SUPE"
-            abrEmpresa = "SUPERVISA"
-        Case "CONS"
-            abrEmpresa = "CONSULTE"
-        Case "SUPT"
-            abrEmpresa = "SUPTER"
-    End Select
-
-    ObtenerEmpresaSAT = abrEmpresa
+Private Function CampoSQL(ByVal rs As ADODB.Recordset, _
+                          ByVal nombreCampo As String) As String
+    Dim v As Variant
+    v = rs.Fields(nombreCampo).Value
+    If IsNull(v) Or IsEmpty(v) Then
+        CampoSQL = vbNullString
+    Else
+        CampoSQL = Trim$(CStr(v))
+    End If
 End Function
 
-Private Sub LlenarCamposDesdeRecordset(ByVal oRS As ADODB.Recordset)
-    Text2.Text = oRS.Fields("rfc").Value
-    Text3.Text = oRS.Fields("curp").Value
-    Text4.Text = oRS.Fields("nombre").Value
-    Text5.Text = oRS.Fields("apellidoP").Value
-    Text6.Text = oRS.Fields("apellidoM").Value
-    Text7.Text = oRS.Fields("fInicioOper").Value
-    Text8.Text = oRS.Fields("estatusPadron").Value
-    Text9.Text = oRS.Fields("fechaUltCamEstado").Value
-    Text10.Text = oRS.Fields("nombreComercial").Value
-    Text11.Text = oRS.Fields("cp").Value
-    Text12.Text = oRS.Fields("tipoVialidad").Value
-    Text13.Text = oRS.Fields("nombreDeVialidad").Value
-    Text14.Text = oRS.Fields("numeroExterior").Value
-    Text15.Text = oRS.Fields("numeroInterior").Value
-    Text16.Text = oRS.Fields("nombreColonia").Value
-    Text17.Text = oRS.Fields("nombreLocalidad").Value
-    Text18.Text = oRS.Fields("nombreMunicipio").Value
-    Text19.Text = oRS.Fields("entidadFederativa").Value
-    Text20.Text = oRS.Fields("entreCalle").Value
-    Text21.Text = oRS.Fields("yCalle").Value
-    Text22.Text = oRS.Fields("correoElectronico").Value
-    Text23.Text = oRS.Fields("ladaTel").Value
-    Text24.Text = oRS.Fields("numeroTel").Value
-    Text25.Text = oRS.Fields("estadoDomicilio").Value
-    Text26.Text = oRS.Fields("estadoContDomicilio").Value
-    Text27.Text = oRS.Fields("actividadEconomica").Value
-    Text28.Text = oRS.Fields("regimen").Value
-    Text29.Text = oRS.Fields("empresa").Value
+Private Function CampoArchivo(ByVal valor As String) As String
+    CampoArchivo = Trim$(Replace(valor, vbNullChar, ""))
+End Function
+
+'============================================================
+' VISUALIZACION
+'============================================================
+Private Sub LimpiarCampos()
+    Dim i As Long
+    For i = 1 To 29
+        Me.Controls("Text" & CStr(i)).Text = vbNullString
+    Next i
+    Text34.Text = vbNullString
 End Sub
 
+Private Sub BloquearCedula()
+    Dim i As Long
+    For i = 1 To 29
+        Me.Controls("Text" & CStr(i)).Locked = True
+    Next i
+    Text34.Locked = True
+End Sub
+
+'Se conserva el mapeo de empresas usado en PeCfdi.
+Private Function ObtenerEmpresaSAT() As String
+    Dim abrEmpresa As String
+    abrEmpresa = UCase$(Left$(Trim$(emp), 4))
+    Select Case abrEmpresa
+        Case "SACM": abrEmpresa = "SACMAG"
+        Case "SUPT": abrEmpresa = "SUPTER"
+        Case "COOR": abrEmpresa = "CORDINA"
+        Case "EPES": abrEmpresa = "EPESA"
+        Case "SUPE": abrEmpresa = "SUPERVISA"
+        Case "CONS": abrEmpresa = "CONSULTE"
+        Case "GEOA": abrEmpresa = "GEOAMBIENTE"
+    End Select
+    ObtenerEmpresaSAT = abrEmpresa
+End Function
 
