@@ -509,11 +509,9 @@ Public Sub LoadPayroll(ByVal fName As String)
 
     Open Arch1 For Random As #14 Len = Len(nom_com)
 
-    Open rutaBase & "bnxcla.dno" For Random As #12 _
-        Len = Len(Clbnx)
+    Open rutaBase & "bnxcla.dno" For Random As #12 Len = Len(Clbnx)
 
-    Open rutaBase & "maestro.dno" For Random As #8 _
-        Len = Len(maestro)
+    Open rutaBase & "maestro.dno" For Random As #8 Len = Len(maestro)
 
     totalCmp = LOF(14) / Len(nom_com)
     totalBnx = LOF(12) / Len(Clbnx)

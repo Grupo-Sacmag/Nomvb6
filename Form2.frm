@@ -450,13 +450,22 @@ Dim empleadoDuplicado As Boolean
 Dim algunCampoVacioGlobal As Boolean
 Dim ModoEdicion As Boolean
 Private EsNuevo As Boolean
+Private Const PAT_LETRAS As String = "[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]"
+Private Const PAT_ALFANUM As String = "[A-Za-z0-9Ññ&]"
 
 ' ============================================================
 ' CARGA / MODOS DE TRABAJO
 ' ============================================================
 
 Public Sub Form_Load()
-
+    Text1.MaxLength = 10
+    Text2.MaxLength = 10
+    Text3.MaxLength = 13
+    Text4.MaxLength = 18
+    Text8.MaxLength = 11
+    Text5.MaxLength = Len(personal.nom)
+    Text6.MaxLength = Len(personal.ape1)
+    Text7.MaxLength = Len(personal.ape2)
 End Sub
 
 Public Sub IniciarNuevo()
@@ -564,7 +573,7 @@ Private Sub BloquearCampos(ByVal bloquear As Boolean)
     Dim i As Integer
 
     For i = 1 To 15
-        Me.Controls("Text" & i).locked = bloquear
+        Me.Controls("Text" & i).Locked = bloquear
     Next i
 
     'Text16 (ID) se deja libre: con Enter sirve para navegar a otro empleado.
@@ -579,8 +588,7 @@ Private Sub BtnHabilitarEdicion_Click()
 End Sub
 
 Private Sub BtnCancelarCambios_Click()
-    If MsgBox("Se descartarán los cambios hechos desde que habilitaste edición. ¿Continuar?", _
-              vbYesNo + vbExclamation) = vbYes Then
+    If MsgBox("Se descartarán los cambios hechos desde que habilitaste edición. ¿Continuar?", vbYesNo + vbExclamation) = vbYes Then
 
         RestaurarArchivos
         AbrirArchivosPersistentes
@@ -601,11 +609,15 @@ End Sub
 
 Private Sub Text1_KeyPress(KeyAscii As Integer)
     If KeyAscii = 13 Then
+        KeyAscii = 0
         Text3.SetFocus
+        Exit Sub
     End If
+    FiltrarTecla KeyAscii, "FECHA"
 End Sub
 
 Private Sub Text2_KeyPress(KeyAscii As Integer)
+    If KeyAscii <> 13 Then FiltrarTecla KeyAscii, "FECHA"
     If EsNuevo Then Exit Sub
 
     If KeyAscii = 13 And Text2.Text <> "" Then
@@ -613,16 +625,40 @@ Private Sub Text2_KeyPress(KeyAscii As Integer)
     End If
 End Sub
 
+Private Sub Text3_KeyPress(KeyAscii As Integer)
+    FiltrarTecla KeyAscii, "ALFANUM"
+End Sub
+
 Private Sub Text3_Change()
-    Dim texto As String
+    If Not EsNuevo Then Exit Sub
 
-    texto = Text3.Text
-
-    If Len(texto) > 3 Then
-        Text4.Text = Left(texto, Len(texto) - 3)
-    Else
-        Text4.Text = ""
+    If Len(Text3.Text) = 13 And Len(Text4.Text) <= 10 Then
+        Text4.Text = Left$(Text3.Text, 10)
     End If
+End Sub
+
+Private Sub Text4_KeyPress(KeyAscii As Integer)
+    FiltrarTecla KeyAscii, "ALFANUM"
+End Sub
+
+Private Sub Text5_KeyPress(KeyAscii As Integer)
+    FiltrarTecla KeyAscii, "LETRAS"
+End Sub
+
+Private Sub Text6_KeyPress(KeyAscii As Integer)
+    FiltrarTecla KeyAscii, "LETRAS"
+End Sub
+
+Private Sub Text7_KeyPress(KeyAscii As Integer)
+    FiltrarTecla KeyAscii, "LETRAS"
+End Sub
+
+Private Sub Text8_KeyPress(KeyAscii As Integer)
+    FiltrarTecla KeyAscii, "NUM"
+End Sub
+
+Private Sub Text9_KeyPress(KeyAscii As Integer)
+    FiltrarTecla KeyAscii, "DEC", Text9.Text
 End Sub
 
 Private Sub Text9_Change()
@@ -635,9 +671,26 @@ Private Sub Text10_Change()
     calcularImpuestoMensual
 End Sub
 
+Private Sub Text10_KeyPress(KeyAscii As Integer)
+    FiltrarTecla KeyAscii, "DEC", Text10.Text
+End Sub
+
+Private Sub Text11_KeyPress(KeyAscii As Integer)
+    FiltrarTecla KeyAscii, "DEC", Text11.Text
+End Sub
+
+
 Private Sub Text11_Change()
     calcularSalarioDiario
     calcularImpuestoMensual
+End Sub
+
+Private Sub Text13_KeyPress(KeyAscii As Integer)
+    FiltrarTecla KeyAscii, "NUM"
+End Sub
+
+Private Sub Text14_KeyPress(KeyAscii As Integer)
+    FiltrarTecla KeyAscii, "DEC", Text14.Text
 End Sub
 
 Private Sub Text16_KeyPress(KeyAscii As Integer)
@@ -675,8 +728,8 @@ Private Sub Command1_Click()
 
     If camposValidos And noDuplicado And sinCamposVacios Then
         guardarRegistro
-    Else
-        MsgBox "Hay errores en los campos o el empleado ya existe. No se puede guardar."
+    ElseIf Not sinCamposVacios Then
+        MsgBox "Faltan campos por llenar (marcados en rojo).", vbExclamation
     End If
 End Sub
 
@@ -847,23 +900,35 @@ SiguienteIteracion:
 End Sub
 
 Private Sub ValidarCampos()
-    Dim fechaValida As Boolean
-    Dim fechaOpcionalValida As Boolean
-    Dim rfcValido As Boolean
-    Dim curpValido As Boolean
+    Dim errores As String
 
-    fechaValida = IsValidDate(Text1.Text)
+    If Not IsValidDate(Text1.Text) Then errores = errores & "- Fecha de alta no válida (dd/mm/aaaa)." & vbCrLf
 
-    If Trim(Text2.Text) = "" Then
-        fechaOpcionalValida = True
-    Else
-        fechaOpcionalValida = IsValidDate(Text2.Text)
+    If Trim(Text2.Text) <> "" Then
+        If Not IsValidDate(Text2.Text) Then errores = errores & "- Fecha de baja no válida (dd/mm/aaaa)." & vbCrLf
     End If
 
-    rfcValido = (Len(Text3.Text) = 13)
-    curpValido = IsValidCURP(Text4.Text)
+    If Len(Trim(Text3.Text)) <> 13 Or Not SoloCaracteres(Trim(Text3.Text), PAT_ALFANUM) Then
+        errores = errores & "- RFC no válido (13 caracteres, solo letras y números)." & vbCrLf
+    End If
 
-    camposValidosGlobal = fechaValida And fechaOpcionalValida And rfcValido And curpValido
+    If Not IsValidCURP(Text4.Text) Then errores = errores & "- CURP no válida (18 caracteres)." & vbCrLf
+
+    If Not SoloCaracteres(Text5.Text, PAT_LETRAS) Then errores = errores & "- El nombre solo puede llevar letras." & vbCrLf
+    If Not SoloCaracteres(Text6.Text, PAT_LETRAS) Then errores = errores & "- El apellido paterno solo puede llevar letras." & vbCrLf
+    If Not SoloCaracteres(Text7.Text, PAT_LETRAS) Then errores = errores & "- El apellido materno solo puede llevar letras." & vbCrLf
+
+    If Not SoloCaracteres(Text8.Text, "[0-9]") Then errores = errores & "- El número de seguro social solo puede llevar dígitos." & vbCrLf
+
+    If Not IsNumeric(Text9.Text) Then errores = errores & "- Ingreso diario normal no es un número." & vbCrLf
+    If Not IsNumeric(Text10.Text) Then errores = errores & "- O.F. diarios no es un número." & vbCrLf
+    If Not IsNumeric(Text11.Text) Then errores = errores & "- Otros ingresos no es un número." & vbCrLf
+
+    camposValidosGlobal = (errores = "")
+
+    If errores <> "" Then
+        MsgBox "Corrige lo siguiente:" & vbCrLf & vbCrLf & errores, vbExclamation
+    End If
 End Sub
 
 Private Sub verificarEmpleadoDuplicado()
@@ -886,27 +951,17 @@ Private Sub verificarEmpleadoDuplicado()
 End Sub
 
 Private Function IsValidDate(ByVal fecha As String) As Boolean
-    Dim testDate As Date
-
-    IsValidDate = False
-
-    On Error Resume Next
-    testDate = DateValue(fecha)
-    On Error GoTo 0
-
-    If Err.Number = 0 Then
-        IsValidDate = True
-    End If
+    fecha = Trim$(fecha)
+    IsValidDate = (Len(fecha) = 10) And IsDate(fecha)
 End Function
 
 Private Function IsValidCURP(ByVal curp As String) As Boolean
     Dim regex As Object
 
     Set regex = CreateObject("VBScript.RegExp")
+    regex.Pattern = "^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[A-Z0-9][0-9]$"
 
-    regex.Pattern = "^[A-Z]{4}[0-9]{6}[HM][A-Z]{5}[0-9]{2}$"
-
-    IsValidCURP = regex.Test(curp)
+    IsValidCURP = regex.Test(UCase$(Trim$(curp)))
 End Function
 
 ' ============================================================
@@ -1081,17 +1136,10 @@ Private Sub EliminarNumeroTarjeta()
 
     Get #4, idNomina, Clbnx
 
-    respuesta = MsgBox( _
-        "¿Se eliminará el número de tarjeta: " & Clbnx.Q1 & _
-        "?" & vbCrLf & vbCrLf & _
-        "¿Deseas continuar?", _
-        vbOKCancel + vbQuestion)
+    respuesta = MsgBox("¿Se eliminará el número de tarjeta: " & Clbnx.Q1 & "?" & vbCrLf & vbCrLf & "¿Deseas continuar?", vbOKCancel + vbQuestion)
 
     If respuesta = vbOK Then
-        respuestaDos = MsgBox( _
-            "Esta acción es irreversible. " & _
-            "Asegúrate de tener una copia del número de tarjeta.", _
-            vbOKCancel + vbExclamation)
+        respuestaDos = MsgBox("Esta acción es irreversible. " & "Asegúrate de tener una copia del número de tarjeta.", vbOKCancel + vbExclamation)
 
         If respuestaDos = vbOK Then
             Clbnx.Q1 = "0"
@@ -1107,4 +1155,43 @@ Private Sub EliminarNumeroTarjeta()
     Close #4
 End Sub
 
+Private Function SoloCaracteres(ByVal txt As String, ByVal patron As String) As Boolean
+    Dim i As Integer
 
+    SoloCaracteres = True
+    For i = 1 To Len(txt)
+        If Not (Mid$(txt, i, 1) Like patron) Then
+            SoloCaracteres = False
+            Exit Function
+        End If
+    Next i
+End Function
+
+Private Sub FiltrarTecla(ByRef KeyAscii As Integer, ByVal tipo As String, Optional ByVal textoActual As String = "")
+    Dim c As String
+
+    If KeyAscii < 32 Then Exit Sub          'Backspace y teclas de control.
+
+    c = Chr$(KeyAscii)
+
+    Select Case tipo
+        Case "LETRAS"
+            If Not (c Like PAT_LETRAS) Then KeyAscii = 0
+        Case "ALFANUM"
+            If Not (c Like PAT_ALFANUM) Then KeyAscii = 0
+        Case "NUM"
+            If Not (c Like "[0-9]") Then KeyAscii = 0
+        Case "DEC"
+            If c = "." Then
+                If InStr(textoActual, ".") > 0 Then KeyAscii = 0
+            ElseIf Not (c Like "[0-9]") Then
+                KeyAscii = 0
+            End If
+        Case "FECHA"
+            If Not (c Like "[0-9/]") Then KeyAscii = 0
+    End Select
+
+    If KeyAscii <> 0 And (tipo = "LETRAS" Or tipo = "ALFANUM") Then
+        KeyAscii = Asc(UCase$(Chr$(KeyAscii)))
+    End If
+End Sub

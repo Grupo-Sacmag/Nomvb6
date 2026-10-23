@@ -470,10 +470,7 @@ Sub empresarial()
         emp = empresa.name
 
         Label1.Caption = "Empresa : " & empresa.name
-        Label2.Caption = _
-            "Año : " & Str$(empresa.ao) & Chr(13) & _
-            " Salario Minimo $" & Str$(empresa.psub) & Chr(13) & _
-            "UMA x dia :$ " & Format(empresa.sm, z1$)
+        Label2.Caption = "Año : " & Str$(empresa.ao) & Chr(13) & " Salario Minimo $" & Str$(empresa.psub) & Chr(13) & "UMA x dia :$ " & Format(empresa.sm, z1$)
 
         Close #1
     Else
@@ -506,9 +503,7 @@ Private Sub ConectarBaseDatos()
 
     strconnect = "Provider=SQLOLEDB;Data Source=SQL6012.site4now.net;Initial Catalog=db_a4091b_sacmag"
 
-    con.Open strconnect, _
-             "db_a4091b_sacmag_admin", _
-             "Sacmag2020"
+    con.Open strconnect, "db_a4091b_sacmag_admin", "Sacmag2020"
 
     'Si falla SQL, simplemente continuar.
     Err.Clear
