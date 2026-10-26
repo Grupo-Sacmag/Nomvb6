@@ -464,18 +464,18 @@ Private Sub EdCfPegar_Click()
         DeAqui = 1
 
         For i = 1 To Len(temporal)
-            Select Case Mid(temporal, i, 1)
+            Select Case mID$(temporal, i, 1)
                 Case Chr(9)
-                    LTXT.Text = Mid(temporal, DeAqui, (i - DeAqui))
+                    LTXT.Text = mID$(temporal, DeAqui, (i - DeAqui))
                     Temporal1 = Temporal1 + PCpCfdi.TextMatrix(PCpCfdi.Row, PCpCfdi.col) & Chr(9)
-                    PCpCfdi.Text = Mid(temporal, DeAqui, (i - DeAqui))
+                    PCpCfdi.Text = mID$(temporal, DeAqui, (i - DeAqui))
                     PCpCfdi.col = PCpCfdi.col + 1
                     DeAqui = i + 1
 
                 Case Chr(13)
                     Temporal1 = Temporal1 + PCpCfdi.TextMatrix(PCpCfdi.Row, PCpCfdi.col) & Chr(13)
-                    LTXT.Text = Mid(temporal, DeAqui, (i - DeAqui))
-                    PCpCfdi.Text = Mid(temporal, DeAqui, (i - DeAqui))
+                    LTXT.Text = mID$(temporal, DeAqui, (i - DeAqui))
+                    PCpCfdi.Text = mID$(temporal, DeAqui, (i - DeAqui))
 
                     If (PCpCfdi.Rows - 1) <= PCpCfdi.Row Then PCpCfdi.Rows = PCpCfdi.Rows + 1
 

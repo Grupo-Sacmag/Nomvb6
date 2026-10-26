@@ -1057,9 +1057,9 @@ Private Sub nomcap_ini_Click(Index As Integer)
         ' NOMINA NORMAL
 
         If Option3.Value = True Then
-            Arch = UCase$(Mid$(Combo1.Text, 1, 3)) & "1" & LTrim$(Str$(empresa.ao)) & ".NOM"
+            Arch = UCase$(mID$(Combo1.Text, 1, 3)) & "1" & LTrim$(Str$(empresa.ao)) & ".NOM"
         ElseIf Option4.Value = True Then
-            Arch = UCase$(Mid$(Combo1.Text, 1, 3)) & "2" & LTrim$(Str$(empresa.ao)) & ".NOM"
+            Arch = UCase$(mID$(Combo1.Text, 1, 3)) & "2" & LTrim$(Str$(empresa.ao)) & ".NOM"
         Else
             MsgBox "Seleccione Primera o Segunda quincena.", vbExclamation, "Nomina"
             Exit Sub
@@ -1288,10 +1288,10 @@ End Sub
 Sub depura()
    caso = ""
     For t = 1 To Len(Entrada)
-        If (Mid(Entrada, t, 1) >= Chr(48) And Mid(Entrada, t, 1) <= Chr(57)) And (t < 4) Then
+        If (mID(Entrada, t, 1) >= Chr(48) And mID(Entrada, t, 1) <= Chr(57)) And (t < 4) Then
             Rem nada
         Else
-            caso = caso + Mid(Entrada, t, 1)
+            caso = caso + mID(Entrada, t, 1)
         End If
     Next
    Entrada = RTrim(caso)
@@ -1358,7 +1358,7 @@ Private Sub CapArch_Click(Index As Integer)
     
     If Slinimpte = 0 Then GoTo terminuevo
         Slincam = Slinimpte - Int(Slinimpte)
-        slinca$ = Mid(Str(Slincam), 3, 2)
+        slinca$ = mID(Str(Slincam), 3, 2)
         Slinimpte = Int(Slinimpte)
         slinimp$ = String(16 - Len(LTrim(Str(Slinimpte))), "0") + LTrim(Str(Slinimpte))
         If Len(slinca$) < 2 Then
@@ -1428,7 +1428,7 @@ Private Sub CapArch_Click(Index As Integer)
             If lincam = 0 Then
                 linca$ = "00"
             Else
-                linca$ = Mid(Str(lincam), 3, 2)
+                linca$ = mID(Str(lincam), 3, 2)
             End If
         If Len(linca$) < 2 Then linca$ = linca$ + "0"
             Impte_Tr = linimpte
@@ -1436,7 +1436,7 @@ Private Sub CapArch_Click(Index As Integer)
             linimp$ = String(16 - Len(LTrim(Str(linimpte))), "0") + LTrim(Str(linimpte))
             plastico = ""
         For i = 1 To Len(Clbnx.Q1)
-            If Mid(Clbnx.Q1, i, 1) = "-" Then
+            If mID(Clbnx.Q1, i, 1) = "-" Then
                 plastico = "01"
                 punto = i - 1
                 Exit For
@@ -1450,13 +1450,13 @@ Private Sub CapArch_Click(Index As Integer)
     Else
         numsuc = Left(Clbnx.Q1, punto)
         numsuc = String(13 - Len(LTrim(numsuc)), "0") + numsuc
-        claveban = Mid(Clbnx.Q1, (punto + 2))
+        claveban = mID(Clbnx.Q1, (punto + 2))
         claveban = String(7 - Len(Trim(claveban)), "0") + claveban
     End If
     
     LINARCH$ = "30001" + linimp$ + linca$ + plastico + claveban + String(30, " ") + referencia$
     nomban$ = Trim(personal.nom) & Chr(9) & Trim(personal.ape1) & Chr(9) & Trim(personal.ape2)
-    nomban$ = Mid$(nomban$, 1, 55)
+    nomban$ = mID$(nomban$, 1, 55)
     
     If Len(nomban$) < 55 Then
         nomban$ = nomban$ + String(55 - Len(nomban$), " ")
@@ -1477,7 +1477,7 @@ Private Sub CapArch_Click(Index As Integer)
             Format(Impte_Tr, "#,##0.00") & Chr(9) & _
             Format(rgtro, "####0") & Chr(9) & _
             " " & Chr(9) & _
-            Mid(Label7.Caption, 1, 7) & Chr(9) & _
+            mID(Label7.Caption, 1, 7) & Chr(9) & _
             "Mismo dia" & Chr(9) & _
             Format(Siguiente, "####0")
            
@@ -1492,7 +1492,7 @@ nuevo:
     
     If Slincam <= 0 Then slinca$ = "00"
     
-    sabon$ = Mid(Str(Sabono), 2)
+    sabon$ = mID(Str(Sabono), 2)
     psabon$ = String(6 - Len(sabon$), "0") + sabon$
     Slinimpte = Int(Slinimpte)
     slinimp$ = String(16 - Len(LTrim(Str(Slinimpte))), "0") + LTrim(Str(Slinimpte))
@@ -1701,7 +1701,7 @@ Private Sub cheobra_Click(Index As Integer)
     On Error GoTo ErrHandler
      CommonDialog1.FileName = "CATAUX*.*"
      CommonDialog1.ShowOpen
-     Direc_torio = Mid(CommonDialog1.FileName, 1, Len(CommonDialog1.FileName) - Len(CommonDialog1.FileTitle))
+     Direc_torio = mID(CommonDialog1.FileName, 1, Len(CommonDialog1.FileName) - Len(CommonDialog1.FileTitle))
      Open "C:\GconTA\perma.dno" For Random As #7 Len = Len(basico)
      fin_basico = LOF(7) / Len(basico)
      basico.datoarch = Direc_torio
@@ -1885,13 +1885,13 @@ Private Sub funcionPegar_Click()
         DeAqui = 1
 
         For i = 1 To Len(temporal)
-            Select Case Mid(temporal, i, 1)
+            Select Case mID(temporal, i, 1)
                 Case Chr(13)
                     ' Verificar si el texto es un número antes de asignarlo
-                    If IsNumeric(Mid(temporal, DeAqui, (i - DeAqui))) Then
+                    If IsNumeric(mID(temporal, DeAqui, (i - DeAqui))) Then
                         Temporal1 = Temporal1 + ConNom1.TextMatrix(ConNom1.Row, ConNom1.col) & Chr(13)
-                        ConNom1.Text = Mid(temporal, DeAqui, (i - DeAqui))
-                        Text2.Text = Mid(temporal, DeAqui, (i - DeAqui))
+                        ConNom1.Text = mID(temporal, DeAqui, (i - DeAqui))
+                        Text2.Text = mID(temporal, DeAqui, (i - DeAqui))
                         Text2_KeyPress (13)
                         ConNom1.Row = ConNom1.Row + 1
                         
@@ -1941,7 +1941,7 @@ Dim oConn As New ADODB.Connection
 ErrHandler:
 End Sub
 
-Private Sub Llenar_FlexGrid(cn As Connection, Rs As Recordset)
+Private Sub Llenar_FlexGrid(cn As Connection, rs As Recordset)
   
 On Error GoTo ErrSub
   
@@ -1949,11 +1949,11 @@ On Error GoTo ErrSub
     ' Deshabilita el repintado del Flexgrid
     ConNom1.Redraw = False
     ' Mueve el recordset al primer registro
-    Rs.MoveFirst
+    rs.MoveFirst
     ' Agrega las filas necesarias en el FlexGRid
-    ConNom1.Rows = Rs.RecordCount + 1
+    ConNom1.Rows = rs.RecordCount + 1
     ' Agrega las columnas necesarias
-    ConNom1.Cols = Rs.Fields.Count
+    ConNom1.Cols = rs.Fields.Count
       
     Dim c As Integer
     ' Selecciona
@@ -1966,15 +1966,15 @@ On Error GoTo ErrSub
     'Devuelve o establece el contenido de las celdas en _
      una región de FlexGrid seleccionada. No está disponible en tiempo de diseño. _
      ( Esta linea de código es la que carga los registros )
-    ConNom1.Clip = Rs.GetString(adClipString, -1, Chr(9), Chr(13), vbNullString)
+    ConNom1.Clip = rs.GetString(adClipString, -1, Chr(9), Chr(13), vbNullString)
     ConNom1.Row = 1
       
     ' habilita nuevamente el Redraw en el control
     ConNom1.Redraw = True
       
     ' Cierra y elimina las referencias ( recordset y la conexión )
-    Rs.Close
-    Set Rs = Nothing
+    rs.Close
+    Set rs = Nothing
     cn.Close
     Set cn = Nothing
   
@@ -2016,8 +2016,8 @@ Sub Mnunomobr_Click(Index As Integer)
             impr_nomina requisito
          Case 4 To 46
                        
-            requisito = Val(Mid(Mnunomobr.Item(Index).Caption, 1, 5))
-            Entrada = Mid(Mnunomobr.Item(Index).Caption, 7)
+            requisito = Val(mID(Mnunomobr.Item(Index).Caption, 1, 5))
+            Entrada = mID(Mnunomobr.Item(Index).Caption, 7)
             If RTrim(Entrada) = "Capturar" Then
                     
                     comp_ti = InputBox("Teclee el nombre de la obra " + Str(requisito), "Impresion nomina obra")
@@ -2131,7 +2131,7 @@ Sub locobra()
     For i = 4 To cuentaobra
         If i > 46 Then maestro.O_1 = 9000
         If maestro.O_1 > 0 Then
-            If maestro.O_1 = Val(Mid$(Mnunomobr(i).Caption, 1, 5)) Then ya = 1
+            If maestro.O_1 = Val(mID$(Mnunomobr(i).Caption, 1, 5)) Then ya = 1
             Exit Sub
         Else
             maestro.O_1 = 9000
@@ -2406,7 +2406,7 @@ On Error GoTo manejadorError:
                Case 20
                     Printer.CurrentY = 4750 + aumento(g)
                     Printer.CurrentX = 10
-                    Printer.Print LTrim$(Mid$(Label7.Caption, 1, 20));
+                    Printer.Print LTrim$(mID$(Label7.Caption, 1, 20));
                     Printer.CurrentX = 5500
                     Printer.Print dia_pago; " de "; RTrim$(mm(meselegido)); " de "; empresa.ao;
                     Printer.CurrentX = 5650
@@ -2710,7 +2710,7 @@ Sub lin_nom()
     sec(9) = 20
         
     Printer.CurrentX = (120 * 7) + Aumento1
-    Printer.Print RTrim$(Mid$(ConNom1.TextMatrix(li, 1), 1, 27));
+    Printer.Print RTrim$(mID$(ConNom1.TextMatrix(li, 1), 1, 27));
         
     conta3 = conta3 + 1
     conta = conta + 1
@@ -3162,7 +3162,7 @@ Sub checar()
                   End If
               Else
                   ' Nomina ordinaria: mantener la actualizacion del SDI original.
-                  aoingr = Val(Mid$(personal.fal, 7, 4))
+                  aoingr = Val(mID$(personal.fal, 7, 4))
                   If aoingr < 1900 Then
                       antig = 1
                   Else
@@ -3380,13 +3380,13 @@ Sub sumah(si_impto1 As Integer, si_imss1 As Integer)
                 calculoRetencion sum(1), impto, 1, regtro
             End If
         Else
-            aoalta = Val(Mid(personal.fal, 7, 4))
+            aoalta = Val(mID(personal.fal, 7, 4))
             If (aoalta = empresa.ao) And (Tot_dias < 330) Then
                 impto = 0
                 calculoRetencion sum(1), impto, 1, regtro
             Else
                 rgtro = ConNom1.TextMatrix(li, C_NUM)
-                aoalta = Val(Mid(personal.fal, 7, 4))
+                aoalta = Val(mID(personal.fal, 7, 4))
                 If (aoalta = empresa.ao) And (Tot_dias < 330) Then
                     impto = 0
                     calculoRetencion sum(1), impto, 1, regtro
@@ -3530,7 +3530,7 @@ Sub inte_grar()
 
     ' REVISION 2026: ninguna nomina especial actualiza personal.dno.
     If g_TipoNominaActiva <> tnOrdinaria Or N_ormal <> 0 Then Exit Sub
-     aoingr = Val(Mid$(personal.fal, 7, 4))
+     aoingr = Val(mID$(personal.fal, 7, 4))
      If aoingr < 1900 Then
         Select Case aoingr
            Case Is > 50
@@ -3777,7 +3777,7 @@ Sub genenom(gg)
         calculoRetencion sum(1), impto, 1, regtro
     Else
         rgtro = ConNom1.TextMatrix(li, C_NUM)
-        aoalta = Val(Mid(personal.fal, 7, 4))
+        aoalta = Val(mID(personal.fal, 7, 4))
         If (aoalta = empresa.ao) And (Tot_dias < 330) Then
             impto = 0
             calculoRetencion sum(1), impto, 1, regtro
@@ -4279,17 +4279,17 @@ Private Sub generarNominas()
         ' Si es Primera quincena
         If Option3 = True Then
             QUIN = 1
-            Arch$ = UCase(Mid$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".NOM"
-            Arch1 = UCase(Mid$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".cmp"
+            Arch$ = UCase(mID$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".NOM"
+            Arch1 = UCase(mID$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".cmp"
             ReferOper.Mes = (Combo1.ListIndex + 1)
             ReferOper.dia = 15
         Else
         ' si es Segunda Quincena
             QUIN = 2
-            Arch$ = UCase(Mid$(Combo1.Text, 1, 3)) + "2" + LTrim$(Str$(empresa.ao)) + ".NOM"
-            Arch1 = UCase(Mid$(Combo1.Text, 1, 3)) + "2" + LTrim$(Str$(empresa.ao)) + ".cmp"
-            ArchAnterior = UCase(Mid$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".NOM"
-            Arch1Anterior = UCase(Mid$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".cmp"
+            Arch$ = UCase(mID$(Combo1.Text, 1, 3)) + "2" + LTrim$(Str$(empresa.ao)) + ".NOM"
+            Arch1 = UCase(mID$(Combo1.Text, 1, 3)) + "2" + LTrim$(Str$(empresa.ao)) + ".cmp"
+            ArchAnterior = UCase(mID$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".NOM"
+            Arch1Anterior = UCase(mID$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".cmp"
             ReferOper.Mes = (Combo1.ListIndex + 1)
             ReferOper.dia = dd(ReferOper.Mes)
             
@@ -4357,9 +4357,9 @@ Private Sub generarNominas()
             
             verifica yavas
             
-            aobaja = Val(Mid$(personal.fab, 7, 4))
-            mesbaja = Val(Mid$(personal.fab, 4, 2))
-            diabaja = Val(Mid$(personal.fab, 1, 2))
+            aobaja = Val(mID$(personal.fab, 7, 4))
+            mesbaja = Val(mID$(personal.fab, 4, 2))
+            diabaja = Val(mID$(personal.fab, 1, 2))
             
             verifica yavas
                 
@@ -4422,9 +4422,9 @@ sigueLE:
                 
                     
                 Get #8, r, maestro
-                aobaja = Val(Mid$(personal.fab, 7, 4))
-                mesbaja = Val(Mid$(personal.fab, 4, 2))
-                diabaja = Val(Mid$(personal.fab, 1, 2))
+                aobaja = Val(mID$(personal.fab, 7, 4))
+                mesbaja = Val(mID$(personal.fab, 4, 2))
+                diabaja = Val(mID$(personal.fab, 1, 2))
                 diat = 0
                 If Option2 = True Then ' Especial
                     If ((aobaja > 0) And (aobaja < (empresa.ao) - 1) And (yavas = 0)) Then
@@ -4440,7 +4440,7 @@ sigueLE:
                     If ((mesbaja > 0) And (mesbaja < meselegido)) And (aobaja = (empresa.ao)) Then GoTo sigueLE
                 End If
                 
-                If Mid$(personal.nom, 1, 3) <= "   " Then GoTo SIGUE
+                If mID$(personal.nom, 1, 3) <= "   " Then GoTo SIGUE
                 
                 If (Option3 = True) Then diat = 15 ' Primera
                 
@@ -4480,17 +4480,17 @@ Private Sub generarNominaGeneral()
         ' Si es Primera quincena
         If Option3 = True Then
             QUIN = 1
-            Arch$ = UCase(Mid$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".NOM"
-            Arch1 = UCase(Mid$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".cmp"
+            Arch$ = UCase(mID$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".NOM"
+            Arch1 = UCase(mID$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".cmp"
             ReferOper.Mes = (Combo1.ListIndex + 1)
             ReferOper.dia = 15
         Else
         ' si es Segunda Quincena
             QUIN = 2
-            Arch$ = UCase(Mid$(Combo1.Text, 1, 3)) + "2" + LTrim$(Str$(empresa.ao)) + ".NOM"
-            Arch1 = UCase(Mid$(Combo1.Text, 1, 3)) + "2" + LTrim$(Str$(empresa.ao)) + ".cmp"
-            ArchAnterior = UCase(Mid$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".NOM"
-            Arch1Anterior = UCase(Mid$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".cmp"
+            Arch$ = UCase(mID$(Combo1.Text, 1, 3)) + "2" + LTrim$(Str$(empresa.ao)) + ".NOM"
+            Arch1 = UCase(mID$(Combo1.Text, 1, 3)) + "2" + LTrim$(Str$(empresa.ao)) + ".cmp"
+            ArchAnterior = UCase(mID$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".NOM"
+            Arch1Anterior = UCase(mID$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".cmp"
             ReferOper.Mes = (Combo1.ListIndex + 1)
             ReferOper.dia = dd(ReferOper.Mes)
        End If
@@ -4549,9 +4549,9 @@ Private Sub generarNominaGeneral()
             
             verifica yavas
             
-            aobaja = Val(Mid$(personal.fab, 7, 4))
-            mesbaja = Val(Mid$(personal.fab, 4, 2))
-            diabaja = Val(Mid$(personal.fab, 1, 2))
+            aobaja = Val(mID$(personal.fab, 7, 4))
+            mesbaja = Val(mID$(personal.fab, 4, 2))
+            diabaja = Val(mID$(personal.fab, 1, 2))
             
             verifica yavas
                 
@@ -4604,9 +4604,9 @@ sigueLE:
                 rgtro = r
                 regtro = r
                 Get #8, r, maestro
-                aobaja = Val(Mid$(personal.fab, 7, 4))
-                mesbaja = Val(Mid$(personal.fab, 4, 2))
-                diabaja = Val(Mid$(personal.fab, 1, 2))
+                aobaja = Val(mID$(personal.fab, 7, 4))
+                mesbaja = Val(mID$(personal.fab, 4, 2))
+                diabaja = Val(mID$(personal.fab, 1, 2))
                 diat = 0
                 If Option2 = True Then
                     If ((aobaja > 0) And (aobaja < (empresa.ao) - 1) And (yavas = 0)) Then
@@ -5028,7 +5028,7 @@ Private Function SoloDigitos(ByVal texto As String) As String
     resultado = ""
 
     For i = 1 To Len(texto)
-        caracter = Mid$(texto, i, 1)
+        caracter = mID$(texto, i, 1)
 
         If caracter >= "0" And caracter <= "9" Then
             resultado = resultado & caracter
@@ -5455,7 +5455,7 @@ Private Sub sumahSeparacionNueva(ByVal bloquearISR As Integer, ByVal bloquearIMS
             If cal_anual = 0 Then
                 calculoRetencion gravado, impto, 1, regtro
             Else
-                aoalta = Val(Mid$(personal.fal, 7, 4))
+                aoalta = Val(mID$(personal.fal, 7, 4))
                 If aoalta = empresa.ao And Tot_dias < 330 Then
                     calculoRetencion gravado, impto, 1, regtro
                 Else

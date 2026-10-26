@@ -704,6 +704,7 @@ End Sub
 ' ============================================================
 
 
+
 Private Sub cedulaFiscal_Click()
 
     Dim sID As String
@@ -741,6 +742,7 @@ Private Sub cedulaFiscal_Click()
     FormCedulaFiscal.Show vbModal, Me
 
 End Sub
+
 
 Private Sub Command1_Click()
     Dim sinCamposVacios As Boolean

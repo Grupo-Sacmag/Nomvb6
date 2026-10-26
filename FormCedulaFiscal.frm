@@ -596,7 +596,9 @@ Private Sub Form_Load()
     mPreparado = False
     BloquearCedula
     Command1.Visible = False     'Antes insertaba en SQL: deshabilitado
+    Command1.Enabled = False
     Command3.Visible = False     'Antes actualizaba SQL: deshabilitado
+    Command3.Enabled = False
     Command2.Caption = "Cerrar"
     Command2.Visible = True
 End Sub
@@ -816,6 +818,14 @@ Private Sub ConsultarCamposSATAdicionales()
 
     rs.MoveFirst
 
+    'Evitar mezclar campos SAT de una persona diferente.
+    'Si hay discrepancias de identidad, no usar SQL.
+    If Not IdentidadCompatibleConSQL(rs) Then
+        Debug.Print "Cedula: identidad SQL distinta. Empresa=" & _
+                    mEmpresa & "; ID=" & CStr(mID)
+        GoTo Salida
+    End If
+
     Text7.Text = CampoSQL(rs, "fInicioOper")
     Text8.Text = CampoSQL(rs, "estatusPadron")
     Text9.Text = CampoSQL(rs, "fechaUltCamEstado")
@@ -844,6 +854,69 @@ ErrorConsulta:
     Debug.Print "Cedula fiscal: campos SAT no disponibles. " & Err.Description
     Resume Salida
 End Sub
+
+
+'Valida la identidad ANTES de leer campos SAT auxiliares.
+'El ID y la empresa deben corresponder al empleado local.
+Private Function IdentidadCompatibleConSQL( _
+    ByVal rs As ADODB.Recordset) As Boolean
+
+    Dim coincidencia As Boolean
+    IdentidadCompatibleConSQL = False
+
+    If IdentidadEnConflicto(Text4.Text, CampoSQL(rs, "nombre")) Then Exit Function
+    If IdentidadEnConflicto(Text5.Text, CampoSQL(rs, "apellidoP")) Then Exit Function
+    If IdentidadEnConflicto(Text6.Text, CampoSQL(rs, "apellidoM")) Then Exit Function
+    If IdentidadEnConflicto(Text2.Text, CampoSQL(rs, "rfc")) Then Exit Function
+    If IdentidadEnConflicto(Text3.Text, CampoSQL(rs, "curp")) Then Exit Function
+
+    'Exigir al menos una coincidencia para no asociar registros
+    'en los que SQL no dispone de informacion de identidad.
+    coincidencia = ParCoincide(Text4.Text, CampoSQL(rs, "nombre")) Or _
+                   ParCoincide(Text5.Text, CampoSQL(rs, "apellidoP")) Or _
+                   ParCoincide(Text6.Text, CampoSQL(rs, "apellidoM")) Or _
+                   ParCoincide(Text2.Text, CampoSQL(rs, "rfc")) Or _
+                   ParCoincide(Text3.Text, CampoSQL(rs, "curp"))
+
+    IdentidadCompatibleConSQL = coincidencia
+End Function
+
+Private Function IdentidadEnConflicto( _
+    ByVal valorLocal As String, ByVal valorSQL As String) As Boolean
+
+    valorLocal = NormalizarIdentidad(valorLocal)
+    valorSQL = NormalizarIdentidad(valorSQL)
+
+    If Len(valorLocal) > 0 And Len(valorSQL) > 0 Then
+        IdentidadEnConflicto = (valorLocal <> valorSQL)
+    End If
+End Function
+
+Private Function ParCoincide( _
+    ByVal valorLocal As String, ByVal valorSQL As String) As Boolean
+
+    valorLocal = NormalizarIdentidad(valorLocal)
+    valorSQL = NormalizarIdentidad(valorSQL)
+
+    If Len(valorLocal) > 0 And Len(valorSQL) > 0 Then
+        ParCoincide = (valorLocal = valorSQL)
+    End If
+End Function
+
+Private Function NormalizarIdentidad(ByVal s As String) As String
+    s = UCase$(Trim$(Replace(s, vbNullChar, "")))
+    s = Replace(s, "?", "A")
+    s = Replace(s, "?", "E")
+    s = Replace(s, "?", "I")
+    s = Replace(s, "?", "O")
+    s = Replace(s, "?", "U")
+    s = Replace(s, "?", "U")
+    Do While InStr(s, "  ") > 0
+        s = Replace(s, "  ", " ")
+    Loop
+    If s = "N/A" Then s = ""
+    NormalizarIdentidad = s
+End Function
 
 Private Function CampoSQL(ByVal rs As ADODB.Recordset, _
                           ByVal nombreCampo As String) As String
