@@ -219,8 +219,13 @@ Public Function Exportar_Excel(sOutputPath As String, FlexGrid As Object) As Boo
     Set o_Libro = o_Excel.Workbooks.Add
     Set o_Hoja = o_Libro.Worksheets.Add
       
-    ' -- Bucle para Exportar los datos
+        ' -- Bucle para Exportar los datos
     With FlexGrid
+        For columna = 0 To .Cols - 1
+            If EsColTexto(columna) Then
+                o_Hoja.Columns(columna + 1).NumberFormat = "@"
+            End If
+        Next
         For fila = 1 To .Rows - 1
             For columna = 0 To .Cols - 1
                 o_Hoja.Cells(fila, columna + 1).Value = .TextMatrix(fila, columna)
@@ -307,7 +312,11 @@ Private Sub Form_Load()
     
     Folio = InputBox("Dame el numero de Folio Anterior", "CFDI NOMINA", EmpCFDI.Folio)
     serie = InputBox("Dame la serie", "CFDI NOMINA", EmpCFDI.serie)
-    ConNomina = InputBox("Numero de nomina consecutivo ", "CFDI NOMINA", (EmpCFDI.consecutivo + 1))
+    ConNomina = InputBox("Numero de nomina consecutivo ", "CFDI NOMINA", (EmpCFDI.Consecutivo + 1))
+    
+    Reg_Patr = InputBox("Registro Patronal Imss ", "CFDI NOMINA", EmpCFDI.RegPatr)
+    Debug.Print "RegPatr en archivo: [" & EmpCFDI.RegPatr & "]"
+    Debug.Print "RegPatr capturado:  [" & Reg_Patr & "]"
     
 ERRORDEPAGO:
     Met_pago = InputBox("Metodo de Pago (utiliza la clave numerica)" & Chr(13) & "01" & Chr(9) & "EFECTIVO" & Chr(13) & "02" & Chr(9) & "CHEQUE NOMINATIVO" & Chr(13) & "03" & Chr(9) & "TRANSFERENCIA ELECTRONICA" & Chr(13) & "28" & Chr(9) & "TARJETA DE DEBITO", "CFDI NOMINA", "28")
@@ -341,7 +350,7 @@ DENUEVO:
             GoTo DENUEVO
     End Select
         
-    EmpCFDI.Folio = Folio: EmpCFDI.consecutivo = ConNomina: EmpCFDI.serie = serie:  EmpCFDI.RegPatr = Reg_Patr: EmpCFDI.RiesgoImss = RiesgoImss
+    EmpCFDI.Folio = Folio: EmpCFDI.Consecutivo = ConNomina: EmpCFDI.serie = serie:  EmpCFDI.RegPatr = Reg_Patr: EmpCFDI.RiesgoImss = RiesgoImss
 
     Put 10, 1, EmpCFDI
     Dim x8 As Long
@@ -503,15 +512,15 @@ End Function
     Next i
 End Sub
 
-Private Sub Llenar_FlexGrid(cn As Connection, Rs As Recordset)
+Private Sub Llenar_FlexGrid(cn As Connection, rs As Recordset)
     On Error GoTo ErrSub
     Screen.MousePointer = vbHourglass
     ' Deshabilita el repintado del Flexgrid
     ' Mueve el recordset al primer registro
-    Rs.MoveFirst
+    rs.MoveFirst
     ' Agrega las filas necesarias en el FlexGRid
-    Sua.Rows = Rs.RecordCount + 1
-    Sua.Cols = Rs.Fields.Count
+    Sua.Rows = rs.RecordCount + 1
+    Sua.Cols = rs.Fields.Count
     'Selecciona
     Sua.Row = 1
     Sua.col = 0
@@ -520,10 +529,10 @@ Private Sub Llenar_FlexGrid(cn As Connection, Rs As Recordset)
     'Devuelve o establece el contenido de las celdas en _
      una región de FlexGrid seleccionada. No está disponible en tiempo de diseño. _
      ( Esta linea de código es la que carga los registros )
-    Sua.Clip = Rs.GetString(adClipString, -1, Chr(9), Chr(13), vbNullString)
+    Sua.Clip = rs.GetString(adClipString, -1, Chr(9), Chr(13), vbNullString)
     Sua.Row = 1
     ' Cierra y elimina las referencias ( recordset y la conexión )
-    Rs.Close
+    rs.Close
     'Set Rs = Nothing
     cn.Close
     'Set cn = Nothing
@@ -564,7 +573,7 @@ Private Sub NCfEdCop_Click()
 
     For i = r1 To r2
         For f = C1 To C2
-            Temporal1 = Temporal1 & NOMCF.TextMatrix(i, f)
+            Temporal1 = Temporal1 & TxtCelda(f, NOMCF.TextMatrix(i, f))
             If f < C2 Then Temporal1 = Temporal1 & vbTab
         Next f
         Temporal1 = Temporal1 & vbCrLf
@@ -590,7 +599,7 @@ Private Sub NCFEDPRIM_Click()
 
     For i = 1 To NOMCF.Rows - 1
         For f = 0 To 97
-            Temporal1 = Temporal1 & NOMCF.TextMatrix(i, f)
+            Temporal1 = Temporal1 & TxtCelda(f, NOMCF.TextMatrix(i, f))
             If f < 97 Then Temporal1 = Temporal1 & vbTab
         Next f
         Temporal1 = Temporal1 & vbCrLf
@@ -821,6 +830,10 @@ End If
     '37 38 NUMCTAPAG
         'NOMCF2.NOMCF.TextMatrix(I7, 37) = CStr(GridOrigen.TextMatrix(I7, 24))
         NOMCF2.NOMCF.TextMatrix(I7, 37) = Right(Trim(GridOrigen.TextMatrix(I7, 24)), 4)
+        
+        NOMCF2.NOMCF.TextMatrix(I7, 38) = Reg_Patr
+        Debug.Print "Celda 38 en grid:   [" & NOMCF2.NOMCF.TextMatrix(I7, 38) & "]"
+        
     '38 39 REGISTROPATRONAL
         NOMCF2.NOMCF.TextMatrix(I7, 38) = Reg_Patr
     '39 40 NUMEMPLEADO
@@ -836,13 +849,13 @@ End If
         DDINI = Left(MiFecha, 2)
              If DDINI < 16 Then
                   DDINI = 1
-                  MiFecha1 = "01" + Mid(MiFecha, 3)
+                  MiFecha1 = "01" + mID(MiFecha, 3)
                   Else
                   DDINI = 16
-                  MiFecha1 = "16" + Mid(MiFecha, 3)
+                  MiFecha1 = "16" + mID(MiFecha, 3)
              End If
-        VMiFecha = Mid(Trim(MiFecha), 7, 4) + "-" + Mid(Trim(MiFecha), 4, 2) + "-" + Mid(Trim(MiFecha), 1, 2)
-        VMiFecha1 = Mid(Trim(MiFecha1), 7, 4) + "-" + Mid(Trim(MiFecha1), 4, 2) + "-" + Mid(Trim(MiFecha1), 1, 2)
+        VMiFecha = mID(Trim(MiFecha), 7, 4) + "-" + mID(Trim(MiFecha), 4, 2) + "-" + mID(Trim(MiFecha), 1, 2)
+        VMiFecha1 = mID(Trim(MiFecha1), 7, 4) + "-" + mID(Trim(MiFecha1), 4, 2) + "-" + mID(Trim(MiFecha1), 1, 2)
         
     '43 44 FECHAPAGO
         NOMCF2.NOMCF.TextMatrix(I7, 43) = VMiFecha
@@ -864,7 +877,7 @@ End If
     '49 50 BANCO
         NOMCF2.NOMCF.TextMatrix(I7, 49) = "002"
     '50 51 FECHAINICIORELLABORAL
-        VFal = Mid(Trim(personal.fal), 7, 4) + "-" + Mid(Trim(personal.fal), 4, 2) + "-" + Mid(Trim(personal.fal), 1, 2)
+        VFal = mID(Trim(personal.fal), 7, 4) + "-" + mID(Trim(personal.fal), 4, 2) + "-" + mID(Trim(personal.fal), 1, 2)
         NOMCF2.NOMCF.TextMatrix(I7, 50) = VFal
     '51 52 ANTIGUEDAD
         NOMCF2.NOMCF.TextMatrix(I7, 51) = Year(MiFecha) - Year(MiFechaAlta)
@@ -1685,13 +1698,13 @@ Private Sub MdAbr_1SeparacionNueva()
         DDINI = Left(MiFecha, 2)
              If DDINI < 16 Then
                   DDINI = 1
-                  MiFecha1 = "01" + Mid(MiFecha, 3)
+                  MiFecha1 = "01" + mID(MiFecha, 3)
                   Else
                   DDINI = 16
-                  MiFecha1 = "16" + Mid(MiFecha, 3)
+                  MiFecha1 = "16" + mID(MiFecha, 3)
              End If
-        VMiFecha = Mid(Trim(MiFecha), 7, 4) + "-" + Mid(Trim(MiFecha), 4, 2) + "-" + Mid(Trim(MiFecha), 1, 2)
-        VMiFecha1 = Mid(Trim(MiFecha1), 7, 4) + "-" + Mid(Trim(MiFecha1), 4, 2) + "-" + Mid(Trim(MiFecha1), 1, 2)
+        VMiFecha = mID(Trim(MiFecha), 7, 4) + "-" + mID(Trim(MiFecha), 4, 2) + "-" + mID(Trim(MiFecha), 1, 2)
+        VMiFecha1 = mID(Trim(MiFecha1), 7, 4) + "-" + mID(Trim(MiFecha1), 4, 2) + "-" + mID(Trim(MiFecha1), 1, 2)
         
     '43 44 FECHAPAGO
         NOMCF2.NOMCF.TextMatrix(I7, 43) = VMiFecha
@@ -1709,7 +1722,7 @@ Private Sub MdAbr_1SeparacionNueva()
     '49 50 BANCO
         NOMCF2.NOMCF.TextMatrix(I7, 49) = "002"
     '50 51 FECHAINICIORELLABORAL
-        VFal = Mid(Trim(personal.fal), 7, 4) + "-" + Mid(Trim(personal.fal), 4, 2) + "-" + Mid(Trim(personal.fal), 1, 2)
+        VFal = mID(Trim(personal.fal), 7, 4) + "-" + mID(Trim(personal.fal), 4, 2) + "-" + mID(Trim(personal.fal), 1, 2)
         NOMCF2.NOMCF.TextMatrix(I7, 50) = VFal
     '51 52 ANTIGUEDAD
         NOMCF2.NOMCF.TextMatrix(I7, 51) = Year(MiFecha) - Year(MiFechaAlta)
@@ -1906,4 +1919,23 @@ Private Function CopiarAlPortapapeles(ByVal texto As String) As Boolean
     Next intentos
 
     MsgBox "No se pudo acceder al portapapeles. Intenta de nuevo.", vbExclamation
+End Function
+
+' Columnas de la plantilla 1 que deben conservarse como TEXTO (ceros a la izquierda)
+Private Function EsColTexto(ByVal c As Long) As Boolean
+    Select Case c
+        Case 8, 37, 38, 42, 48, 49
+            ' 8=CP, 37=NUMCTAPAG, 38=REGISTROPATRONAL,
+            ' 42=NUMSEGURIDADSOCIAL, 48=CLABE, 49=BANCO
+            EsColTexto = True
+    End Select
+End Function
+
+' Antepone apostrofo para que Excel lo trate como texto al pegar
+Private Function TxtCelda(ByVal c As Long, ByVal v As String) As String
+    If EsColTexto(c) And Len(v) > 0 Then
+        TxtCelda = "'" & v
+    Else
+        TxtCelda = v
+    End If
 End Function
