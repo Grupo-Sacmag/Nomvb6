@@ -9,7 +9,7 @@ Public g_FechaPagoCFDI2026 As String
 Private Function FechaCFDI_NombreArchivo(ByVal rutaNomina As String) As String
     Dim p As Long
     p = InStrRev(rutaNomina, "\")
-    FechaCFDI_NombreArchivo = Mid$(rutaNomina, p + 1)
+    FechaCFDI_NombreArchivo = mID$(rutaNomina, p + 1)
 End Function
 
 Private Function FechaCFDI_RutaFicha(ByVal rutaNomina As String) As String
@@ -63,11 +63,11 @@ Private Function FechaCFDI_InterpretarISO(ByVal texto As String) As Date
 
     texto = Trim$(texto)
     If Len(texto) <> 10 Then GoTo FechaInvalida
-    If Mid$(texto, 5, 1) <> "-" Or Mid$(texto, 8, 1) <> "-" Then GoTo FechaInvalida
-    If Not IsNumeric(Left$(texto, 4)) Or Not IsNumeric(Mid$(texto, 6, 2)) Or Not IsNumeric(Right$(texto, 2)) Then GoTo FechaInvalida
+    If mID$(texto, 5, 1) <> "-" Or mID$(texto, 8, 1) <> "-" Then GoTo FechaInvalida
+    If Not IsNumeric(Left$(texto, 4)) Or Not IsNumeric(mID$(texto, 6, 2)) Or Not IsNumeric(Right$(texto, 2)) Then GoTo FechaInvalida
 
     a = CLng(Left$(texto, 4))
-    m = CLng(Mid$(texto, 6, 2))
+    m = CLng(mID$(texto, 6, 2))
     d = CLng(Right$(texto, 2))
     If a < 1900 Or m < 1 Or m > 12 Or d < 1 Or d > 31 Then GoTo FechaInvalida
     f = DateSerial(a, m, d)

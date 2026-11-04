@@ -22,18 +22,26 @@ Begin VB.Form Form8
    ScaleHeight     =   7995
    ScaleWidth      =   15270
    WindowState     =   2  'Maximized
+   Begin VB.ComboBox cboMesNominaEspecial 
+      Height          =   360
+      Left            =   5520
+      Style           =   2  'Dropdown List
+      TabIndex        =   22
+      Top             =   720
+      Width           =   2295
+   End
    Begin VB.TextBox txtPre 
       Height          =   375
-      Left            =   3360
+      Left            =   5520
       MaxLength       =   4
       TabIndex        =   20
       Text            =   "Text5"
-      Top             =   960
-      Width           =   2415
+      Top             =   1200
+      Width           =   2295
    End
-   Begin VB.ComboBox cboEspecial 
+   Begin VB.ComboBox cboTipoNominaEspecial 
       Height          =   360
-      Left            =   5400
+      Left            =   5520
       Style           =   2  'Dropdown List
       TabIndex        =   19
       Top             =   240
@@ -51,9 +59,9 @@ Begin VB.Form Form8
          Strikethrough   =   0   'False
       EndProperty
       Height          =   360
-      Left            =   7560
+      Left            =   9720
       TabIndex        =   16
-      Top             =   1440
+      Top             =   1200
       Width           =   2295
    End
    Begin MSComctlLib.ProgressBar ProgressBar1 
@@ -93,9 +101,9 @@ Begin VB.Form Form8
          Strikethrough   =   0   'False
       EndProperty
       Height          =   360
-      Left            =   7560
+      Left            =   9720
       TabIndex        =   13
-      Top             =   960
+      Top             =   720
       Width           =   1815
    End
    Begin VB.TextBox Text2 
@@ -151,7 +159,7 @@ Begin VB.Form Form8
          Strikethrough   =   0   'False
       EndProperty
       Height          =   360
-      Left            =   5400
+      Left            =   5520
       TabIndex        =   7
       Top             =   240
       Visible         =   0   'False
@@ -170,10 +178,10 @@ Begin VB.Form Form8
       EndProperty
       Height          =   360
       ItemData        =   "capnom.frx":0442
-      Left            =   3480
+      Left            =   5520
       List            =   "capnom.frx":0444
       TabIndex        =   6
-      Top             =   960
+      Top             =   720
       Width           =   2295
    End
    Begin VB.Frame Frame2 
@@ -290,19 +298,46 @@ Begin VB.Form Form8
          Strikethrough   =   0   'False
       EndProperty
       Height          =   330
-      Left            =   9960
+      Left            =   12240
       TabIndex        =   18
-      Top             =   1440
+      Top             =   1200
       Visible         =   0   'False
       Width           =   1560
    End
-   Begin VB.Label lblNombre 
-      Caption         =   "Nombre:"
+   Begin VB.Label lblMesNomina 
+      Alignment       =   2  'Center
+      Caption         =   "Mes de la nómina a capturar:"
+      BeginProperty Font 
+         Name            =   "Arial"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   400
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
       Height          =   255
-      Left            =   3360
-      TabIndex        =   21
+      Left            =   3240
+      TabIndex        =   23
       Top             =   720
-      Width           =   975
+      Width           =   2175
+   End
+   Begin VB.Label lblNumeroNominaEspecial 
+      Caption         =   "Número de Nómina:"
+      BeginProperty Font 
+         Name            =   "Arial"
+         Size            =   8.25
+         Charset         =   0
+         Weight          =   400
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      Height          =   255
+      Left            =   3960
+      TabIndex        =   21
+      Top             =   1200
+      Width           =   1455
    End
    Begin VB.Label Label1 
       Caption         =   "Buscar:"
@@ -316,9 +351,9 @@ Begin VB.Form Form8
          Strikethrough   =   0   'False
       EndProperty
       Height          =   255
-      Left            =   6720
+      Left            =   8880
       TabIndex        =   17
-      Top             =   1560
+      Top             =   1320
       Width           =   735
    End
    Begin VB.Label Label9 
@@ -341,9 +376,9 @@ Begin VB.Form Form8
          Strikethrough   =   0   'False
       EndProperty
       Height          =   255
-      Left            =   6000
+      Left            =   8160
       TabIndex        =   12
-      Top             =   1080
+      Top             =   840
       Width           =   1455
    End
    Begin VB.Label Label7 
@@ -364,7 +399,7 @@ Begin VB.Form Form8
       Top             =   1920
       Width           =   9375
    End
-   Begin VB.Label Label5 
+   Begin VB.Label lblTipoNominaEspecial 
       Alignment       =   2  'Center
       Caption         =   "Tipo de la nomina especial:"
       BeginProperty Font 
@@ -940,15 +975,14 @@ Private Sub Borrarblancos_Click(Index As Integer)
 
 End Sub
 
-Private Sub cboEspecial_Click()
-
+Private Sub cboTipoNominaEspecial_Click()
+    RefrescarModoNomina
     ActualizarNombreEspecial
 
-    If cboEspecial.ListIndex >= 0 Then
+    If cboTipoNominaEspecial.ListIndex >= 0 Then
         txtPre.SetFocus
         txtPre.SelStart = Len(txtPre.Text)
     End If
-
 End Sub
 
 Private Sub Form_Load()
@@ -1008,15 +1042,22 @@ Private Sub Form_Load()
         MsgBox "No existe archivo de personal no es posible capturar la nomina"
     End If
 
-    cboEspecial.Clear
-    cboEspecial.AddItem "AGUINALDO"
-    cboEspecial.AddItem "PTU"
-    cboEspecial.AddItem "BONO"
-    cboEspecial.AddItem "FINIQUITO"
-    cboEspecial.AddItem "LIQUIDACION"
+    cboTipoNominaEspecial.Clear
+    cboTipoNominaEspecial.AddItem "AGUINALDO"
+    cboTipoNominaEspecial.AddItem "PTU"
+    cboTipoNominaEspecial.AddItem "BONO"
+    cboTipoNominaEspecial.AddItem "FINIQUITO"
+    cboTipoNominaEspecial.AddItem "LIQUIDACION"
+    
+    cboMesNominaEspecial.Clear
+    For i = 1 To 12
+        cboMesNominaEspecial.AddItem RTrim$(mm(i))
+    Next i
+    cboMesNominaEspecial.ListIndex = Month(Date) - 1   ' mes actual por defecto
 
     Text1.Visible = False
-    MostrarControlesEspecial False
+    RefrescarModoNomina
+    txtPre.Text = ""
 
     GoTo sale8
 
@@ -1067,7 +1108,7 @@ Private Sub nomcap_ini_Click(Index As Integer)
     ElseIf Option2.Value = True Then
 
         ' NOMINA ESPECIAL
-        If cboEspecial.ListIndex < 0 Then
+        If cboTipoNominaEspecial.ListIndex < 0 Then
             MsgBox "Seleccione el tipo de nomina especial.", vbExclamation, "Nomina"
             Exit Sub
         End If
@@ -1107,6 +1148,20 @@ Private Sub nomcap_ini_Click(Index As Integer)
     End If
 
     fullArchPath = rutaNominas & Arch
+    
+    '=======================================================
+    ' 2.5 ARCHIVO VACIO: RESTO DE UNA CAPTURA NO GUARDADA
+    '=======================================================
+    If Len(Dir$(fullArchPath)) > 0 Then
+        If FileLen(fullArchPath) = 0 Then
+            If MsgBox("Existe un archivo vacio con este nombre:" & vbCrLf & Arch & vbCrLf & vbCrLf & "Normalmente es el resto de una captura que se cerro sin guardar." & vbCrLf & _
+                      "No contiene datos. Desea eliminarlo e iniciar la captura?", _
+                      vbYesNo + vbQuestion + vbDefaultButton2, "Archivo vacio") = vbNo Then
+                Exit Sub
+            End If
+            Kill fullArchPath
+        End If
+    End If
 
 
     '=======================================================
@@ -1172,7 +1227,22 @@ Private Sub nomcap_ini_Click(Index As Integer)
                vbCrLf & vbCrLf & "No se iniciara la captura para evitar " & "crear archivos en una ubicacion incorrecta.", vbExclamation, "Verificar directorio"
         Exit Sub
     End If
-
+    
+    ' La retencion de la 2a quincena toma como base la 1a.
+    If Option1.Value = True And Option4.Value = True Then
+        Dim primeraQna As String
+        Dim faltaPrimera As Boolean
+        primeraQna = rutaNominas & UCase$(mID$(Combo1.Text, 1, 3)) & "1" & LTrim$(Str$(empresa.ao)) & ".NOM"
+        faltaPrimera = (Len(Dir$(primeraQna)) = 0)
+        If Not faltaPrimera Then faltaPrimera = (FileLen(primeraQna) = 0)
+        If faltaPrimera Then
+            If MsgBox("No existe (o esta vacia) la nomina de la 1a quincena:" & vbCrLf & UCase$(mID$(Combo1.Text, 1, 3)) & "1" & LTrim$(Str$(empresa.ao)) & ".NOM" & vbCrLf & vbCrLf & _
+                "La retencion de la 2a quincena depende de ella. Desea continuar?", vbYesNo + vbExclamation + vbDefaultButton2, "Falta 1a quincena") = vbNo Then
+                Exit Sub
+            End If
+        End If
+    End If
+        
     '=======================================================
     ' 6. CLASIFICAR E INICIALIZAR COLUMNAS
     '=======================================================
@@ -3934,15 +4004,32 @@ Private Sub archnom_Click(Index As Integer)
     Dim renati As Long
     Dim nuevaSeparacion As Boolean
     Dim primerRegistro As nom
+    Dim rutaBak As String
+    Dim hayRespaldo As Boolean
+    Dim errNum As Long
+    Dim errDesc As String
 
     Text4.Text = ""
+
+    If Len(RutaNominaSesion) = 0 Then
+        Err.Raise vbObjectError + 2027, "archnom_Click", "No hay una captura activa que archivar."
+    End If
 
     ' Capturar el formato ANTES de inicializar registros.
     nuevaSeparacion = EsSeparacionNueva()
 
+    ' Respaldo previo, solo si ya habia datos guardados.
     Close #6
+    rutaBak = RutaNominaSesion & ".bak"
+    If Len(Dir$(RutaNominaSesion)) > 0 Then
+        If FileLen(RutaNominaSesion) > 0 Then
+            FileCopy RutaNominaSesion, rutaBak
+            hayRespaldo = True
+        End If
+    End If
+
     Dm = LOF(2) / Len(personal)
-    Open Arch$ For Random As #6 Len = Len(nomina)
+    Open RutaNominaSesion For Random As #6 Len = Len(nomina)
     nm = LOF(6) / Len(nomina)
 
     colanti = ConNom1.col
@@ -3950,11 +4037,6 @@ Private Sub archnom_Click(Index As Integer)
 
     ' 1) Inicializar TODOS los registros del archivo.
     LimpiaNomina
-
-    ' Importante: el lector examina el primer registro para
-    ' identificar archivos de Liquidacion/Finiquito nuevos.
-    ' Por eso la marca se escribe tambien para empleados
-    ' que NO participan en esta nomina.
     If nuevaSeparacion Then
         nomina.hstri = CCur(MARCA_SEPARACION_2026)
     End If
@@ -3970,7 +4052,6 @@ Private Sub archnom_Click(Index As Integer)
             Get #6, regtro, nomina
             GridANomina f
 
-            ' Reafirmar la marca SOLO en el formato nuevo.
             If nuevaSeparacion Then
                 nomina.hstri = CCur(MARCA_SEPARACION_2026)
             End If
@@ -3987,13 +4068,16 @@ Private Sub archnom_Click(Index As Integer)
         End If
     End If
 
+    ' Cerrar para que los datos queden escritos en disco.
+    Close #6
+    If hayRespaldo Then Kill rutaBak
+
     archiva_o = 0
     ConNom1.col = colanti
     ConNom1.Row = renati
     ConNom1.SetFocus
 
     ' Guardar la fecha REAL usada en la captura.
-    ' No modifica el tamaño ni el contenido de los registros .NOM.
     If nuevaSeparacion Then
         FechaCFDI_GuardarFicha RutaNominaSesion, CStr(MiFecha)
     End If
@@ -4005,10 +4089,22 @@ Private Sub archnom_Click(Index As Integer)
     Exit Sub
 
 ErrorGuardar:
+    errNum = Err.Number
+    errDesc = Err.Description
     GuardadoFallidoSesion = True
-    MsgBox "Ocurrio un error al archivar la nomina." & vbCrLf & "Error " & Err.Number & ": " & Err.Description & vbCrLf & vbCrLf & "Los archivos se conservaran para revision.", vbCritical, "Error al guardar"
+
+    On Error Resume Next
+    Close #6
+    If hayRespaldo Then
+        FileCopy rutaBak, RutaNominaSesion
+        Kill rutaBak
+    End If
+    On Error GoTo 0
+
+    MsgBox "Ocurrio un error al archivar la nomina." & vbCrLf & "Error " & errNum & ": " & errDesc & vbCrLf & vbCrLf & IIf(hayRespaldo, "Se restauro la version anterior del archivo.", "Los archivos se conservaran para revision."), vbCritical, "Error al guardar"
 
 End Sub
+
 Private Sub cap_act_Click(Index As Integer)
     sumavert
 End Sub
@@ -4037,16 +4133,9 @@ Private Sub FuncionImpuesto()
             End If
         End If
 
-        If EsSeparacionNueva() Then
-            ' 1 es bloqueo MANUAL; el importe ISR no es una bandera.
-            impto1 = Val(ConNom1.TextMatrix(li, C_FLAG_ISR))
-        Else
-            If IsNumeric(ConNom1.TextMatrix(li, C_ISPT)) Then
-                impto1 = ConNom1.TextMatrix(li, C_ISPT)
-            Else
-                impto1 = 0
-            End If
-        End If
+        ' La bandera (0 = calcular, 1 = ISR capturado a mano) vive en C_FLAG_ISR
+        ' para TODOS los tipos de nomina. El importe de C_ISPT nunca es bandera.
+        impto1 = Val(ConNom1.TextMatrix(li, C_FLAG_ISR))
 
         imss1 = 0
         If regtro > 0 Then
@@ -4142,7 +4231,7 @@ End Sub
 Private Sub caprecind_Click(Index As Integer)
     colanti = ConNom1.col
     renati = ConNom1.Row
-    archnom_Click
+    archnom_Click (1)
     If ConNom1.Text <> "" Then
         rgtro = ConNom1.Text
     Else
@@ -4281,7 +4370,7 @@ Private Sub generarNominas()
             QUIN = 1
             Arch$ = UCase(mID$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".NOM"
             Arch1 = UCase(mID$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".cmp"
-            ReferOper.Mes = (Combo1.ListIndex + 1)
+            ReferOper.mes = (Combo1.ListIndex + 1)
             ReferOper.dia = 15
         Else
         ' si es Segunda Quincena
@@ -4290,13 +4379,15 @@ Private Sub generarNominas()
             Arch1 = UCase(mID$(Combo1.Text, 1, 3)) + "2" + LTrim$(Str$(empresa.ao)) + ".cmp"
             ArchAnterior = UCase(mID$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".NOM"
             Arch1Anterior = UCase(mID$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".cmp"
-            ReferOper.Mes = (Combo1.ListIndex + 1)
-            ReferOper.dia = dd(ReferOper.Mes)
+            ReferOper.mes = (Combo1.ListIndex + 1)
+            ReferOper.dia = dd(ReferOper.mes)
             
             Close 95
     
-            Open ArchAnterior For Random As 95 Len = Len(nominaAnterior)
-            largoNomina = LOF(95) / Len(nominaAnterior)
+            If Len(Dir$(ArchAnterior)) > 0 Then
+                Open ArchAnterior For Random As 95 Len = Len(nominaAnterior)
+                largoNomina = LOF(95) / Len(nominaAnterior)
+            End If
     
        End If
     Else ' Si es una nomina especial
@@ -4321,8 +4412,13 @@ Private Sub generarNominas()
     Close 12
     Close 14
 
-    Open Arch$ For Random As 6 Len = Len(nomina)
-    nm = LOF(6) / Len(nomina)
+       ' No crear el .NOM al iniciar: se crea hasta que se archiva.
+    If Len(Dir$(Arch$)) > 0 Then
+        Open Arch$ For Random As 6 Len = Len(nomina)
+        nm = LOF(6) / Len(nomina)
+    Else
+        nm = 0
+    End If
     
     Open Arch1 For Random As 14 Len = Len(nom_com)
     Open "bnxcla.dno" For Random As 12 Len = Len(Clbnx)
@@ -4482,7 +4578,7 @@ Private Sub generarNominaGeneral()
             QUIN = 1
             Arch$ = UCase(mID$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".NOM"
             Arch1 = UCase(mID$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".cmp"
-            ReferOper.Mes = (Combo1.ListIndex + 1)
+            ReferOper.mes = (Combo1.ListIndex + 1)
             ReferOper.dia = 15
         Else
         ' si es Segunda Quincena
@@ -4491,8 +4587,8 @@ Private Sub generarNominaGeneral()
             Arch1 = UCase(mID$(Combo1.Text, 1, 3)) + "2" + LTrim$(Str$(empresa.ao)) + ".cmp"
             ArchAnterior = UCase(mID$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".NOM"
             Arch1Anterior = UCase(mID$(Combo1.Text, 1, 3)) + "1" + LTrim$(Str$(empresa.ao)) + ".cmp"
-            ReferOper.Mes = (Combo1.ListIndex + 1)
-            ReferOper.dia = dd(ReferOper.Mes)
+            ReferOper.mes = (Combo1.ListIndex + 1)
+            ReferOper.dia = dd(ReferOper.mes)
        End If
     Else
            
@@ -4669,34 +4765,27 @@ Private Sub nomordeli_Click(Index As Integer)
     End If
 End Sub
 
-
 Private Sub Option1_GotFocus()
     If Option1 = True Then
         N_ormal = 0
-        Option3.SetFocus
+        If Frame2.Visible Then Option3.SetFocus
     End If
 End Sub
 
 Private Sub Option1_Click()
-
     N_ormal = 0
     Text3.Locked = False
-    Combo1.Locked = False
-    Combo1.Visible = True
-
-    MostrarControlesEspecial False
 
     txtPre.Text = ""
-    cboEspecial.ListIndex = -1
+    cboTipoNominaEspecial.ListIndex = -1
 
+    RefrescarModoNomina
 End Sub
 
 Private Sub Option2_Click()
-
 On Error GoTo ErrorManejador
 
     If Option2 = True Then
-
         Option3 = False
         Option4 = False
 
@@ -4704,27 +4793,20 @@ On Error GoTo ErrorManejador
         Text3.Locked = False
         dia_pago = 15 - 1
 
-        Combo1.Locked = True
-        Combo1.Visible = False
-
-        ' Limpiar nombre anterior.
+        ' Reinicio de captura especial
         txtPre.Text = ""
-        cboEspecial.ListIndex = -1
+        cboTipoNominaEspecial.ListIndex = -1
         Text1.Text = ""
-
         Label7.Caption = ""
+        cboMesNominaEspecial.ListIndex = Month(Date) - 1
 
-        MostrarControlesEspecial True
-
-        cboEspecial.SetFocus
-
+        RefrescarModoNomina
+        cboTipoNominaEspecial.SetFocus
     End If
 
 Exit Sub
-
 ErrorManejador:
     MsgBox Err.Number & " " & Err.Description
-
 End Sub
 
 Public Sub presionarOption2()
@@ -4732,8 +4814,6 @@ Public Sub presionarOption2()
 End Sub
 
 Private Sub Option3_Click()
-MostrarControlesEspecial False
-
     If meselegido = 0 Then meselegido = 1
 
     If Option3 = True Then
@@ -4748,8 +4828,6 @@ MostrarControlesEspecial False
 End Sub
 
 Private Sub Option4_Click()
- MostrarControlesEspecial False
-
     If meselegido = 0 Then meselegido = 1
 
     If Option4 = True Then
@@ -4773,7 +4851,7 @@ Private Sub Option4_Click()
 End Sub
 
 Public Sub presionarEnterForm8()
-    Text1_KeyPress 13
+Rem    Text1_KeyPress 13
 End Sub
 Private Sub Text2_Change()
     ConNom1.Text = Text2.Text
@@ -4989,6 +5067,16 @@ Private Sub CmdRestoreFilter_Click()
     Text4.SetFocus
 End Sub
 
+Private Sub cboMesNominaEspecial_Click()
+    If Option2.Value = True Then
+        ' Que MiFecha y meselegido sigan el mes elegido.
+        If cboMesNominaEspecial.ListIndex < Combo1.ListCount Then
+            Combo1.ListIndex = cboMesNominaEspecial.ListIndex
+        End If
+        ActualizarNombreEspecial
+    End If
+End Sub
+
 Private Sub Text4_KeyPress(KeyAscii As Integer)
     Dim i As Long
     If KeyAscii = 13 Then
@@ -5012,13 +5100,53 @@ Private Sub Encab(ByVal c As Long, ByVal txt As String, ByVal ancho As Long)
     ConNom1.Text = txt
 End Sub
 
-Private Sub MostrarControlesEspecial(ByVal v As Boolean)
+' REVISION 2026: unico lugar que decide que controles se ven.
+Private Sub ConfigurarModoNomina(ByVal especial As Boolean)
+    Dim concepto As String
+    Dim llevaMes As Boolean
+    Dim llevaExento As Boolean
 
-    cboEspecial.Visible = v
-    txtPre.Visible = v
-    lblNombre.Visible = v
+    concepto = UCase$(Trim$(cboTipoNominaEspecial.Text))
+    llevaMes = especial And ConceptoLlevaMes(concepto)
+    llevaExento = especial And (concepto = "AGUINALDO" Or concepto = "PTU")
 
+    ' --- NORMAL ---
+    Frame2.Visible = Not especial
+    Combo1.Visible = Not especial
+    Combo1.Locked = especial
+
+    ' --- ESPECIAL (siempre) ---
+    lblTipoNominaEspecial.Visible = especial
+    cboTipoNominaEspecial.Visible = especial
+    lblNumeroNominaEspecial.Visible = especial
+    txtPre.Visible = especial
+
+    ' --- Mes: Combo1 en normal; cboMesNominaEspecial en FINIQUITO/LIQUIDACION ---
+    lblMesNomina.Visible = (Not especial) Or llevaMes
+    cboMesNominaEspecial.Visible = llevaMes
+
+    ' --- Exento: solo AGUINALDO / PTU ---
+    Label8.Visible = llevaExento
+    Text3.Visible = llevaExento
 End Sub
+
+' Reaplica la visibilidad segun la opcion Normal/Especial seleccionada.
+Private Sub RefrescarModoNomina()
+    ConfigurarModoNomina (Option2.Value = True)
+End Sub
+
+' REVISION 2026: sufijo de mes (3 letras) solo para FINIQUITO y LIQUIDACION.
+' PTU, AGUINALDO y BONO conservan el nombre original (numero + concepto).
+Private Function SufijoMesEspecial(ByVal concepto As String) As String
+    Dim mes As Integer
+
+    If Not ConceptoLlevaMes(concepto) Then Exit Function
+
+    mes = cboMesNominaEspecial.ListIndex + 1
+    If mes < 1 Or mes > 12 Then mes = Month(Date)
+
+    SufijoMesEspecial = Choose(mes, "ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC")
+End Function
 
 Private Function SoloDigitos(ByVal texto As String) As String
     Dim i As Long
@@ -5038,6 +5166,14 @@ Private Function SoloDigitos(ByVal texto As String) As String
     SoloDigitos = resultado
 End Function
 
+' REVISION 2026: solo FINIQUITO y LIQUIDACION llevan sufijo de mes.
+Private Function ConceptoLlevaMes(ByVal concepto As String) As Boolean
+    Select Case UCase$(Trim$(concepto))
+        Case "FINIQUITO", "LIQUIDACION"
+            ConceptoLlevaMes = True
+    End Select
+End Function
+
 Private Sub ActualizarNombreEspecial()
 
     If ActualizandoNombre Then Exit Sub
@@ -5051,10 +5187,10 @@ Private Sub ActualizarNombreEspecial()
     Dim nombreFinal As String
 
     numero = Trim$(txtPre.Text)
-    concepto = Trim$(cboEspecial.Text)
+    concepto = Trim$(cboTipoNominaEspecial.Text)
 
     ' Construir el nombre de la nómina especial.
-    nombreFinal = numero & concepto
+    nombreFinal = numero & concepto & SufijoMesEspecial(concepto)
 
     ' Guardar únicamente el nombre.
     Text1.Text = nombreFinal
@@ -5078,13 +5214,14 @@ Private Sub txtPre_KeyPress(KeyAscii As Integer)
 
         ActualizarNombreEspecial
 
-        If cboEspecial.ListIndex < 0 Then
+        If cboTipoNominaEspecial.ListIndex < 0 Then
             MsgBox "Seleccione un tipo de nómina especial.", vbExclamation, "Nómina"
-            cboEspecial.SetFocus
+            cboTipoNominaEspecial.SetFocus
             Exit Sub
         End If
-
-        Text3.SetFocus
+        
+        If Text3.Visible Then Text3.SetFocus
+        
         Exit Sub
     End If
 
@@ -5235,9 +5372,11 @@ Private Sub BloquearSeleccionNomina(ByVal bloquear As Boolean)
     Option2.Enabled = Not bloquear
     Option3.Enabled = Not bloquear
     Option4.Enabled = Not bloquear
+    
+    cboMesNominaEspecial.Enabled = Not bloquear
 
     Combo1.Enabled = Not bloquear
-    cboEspecial.Enabled = Not bloquear
+    cboTipoNominaEspecial.Enabled = Not bloquear
     txtPre.Enabled = Not bloquear
 
 End Sub

@@ -208,7 +208,7 @@ End Type
      Impresion As Integer
  End Type
  Type refo
-      Mes As Integer
+      mes As Integer
       dia As Integer
  End Type
  
@@ -921,8 +921,8 @@ Public Function CalcularAntiguedad(ByVal fechaAlta As String) As Integer
     
     ' Parsear fecha de ingreso (dd/mm/yyyy)
     dIngr = Val(Left$(fechaAlta, 2))
-    mIngr = Val(Mid$(fechaAlta, 4, 2))
-    yIngr = Val(Mid$(fechaAlta, 7, 4))
+    mIngr = Val(mID$(fechaAlta, 4, 2))
+    yIngr = Val(mID$(fechaAlta, 7, 4))
     
     If yIngr < 1900 Then
         CalcularAntiguedad = 1
@@ -985,7 +985,7 @@ Public Function CalcularAntiguedad(ByVal fechaAlta As String) As Integer
 Error_Handler:
     ' En caso de cualquier error imprevisto, regresar calculo basico por ano
     Dim yea As Integer
-    yea = Val(Mid$(fechaAlta, 7, 4))
+    yea = Val(mID$(fechaAlta, 7, 4))
     If yea > 0 Then
         antig = yCalc - yea
         If antig < 1 Then antig = 1

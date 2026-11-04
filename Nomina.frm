@@ -324,7 +324,7 @@ Inicio:
     empresarial
 
     'Intentar conexión, pero NO impedir el arranque.
-    ConectarBaseDatos
+    AplicarPoliticaConexion
 
     File1.Pattern = "*.NOM"
     Label4.Caption = Dir1.Path
@@ -450,6 +450,7 @@ End Sub
 
 Sub empresarial()
     On Error GoTo Empre2
+    g_EmpresaCargada = False
 
     Close #1
 
@@ -466,7 +467,7 @@ Sub empresarial()
 
     If cm > 0 Then
         Get #1, cm, empresa
-
+        g_EmpresaCargada = True
         emp = empresa.name
 
         Label1.Caption = "Empresa : " & empresa.name
@@ -494,6 +495,8 @@ End Sub
 
 Private Sub ConectarBaseDatos()
     On Error Resume Next
+    
+    If Not SincronizacionRemotaPermitida() Then Exit Sub
 
     If con.State <> 0 Then
         con.Close
@@ -569,7 +572,8 @@ Private Sub ActualizarDirectorio()
 
     Close #1
     empresarial
-
+    AplicarPoliticaConexion
+    
     Exit Sub
 
 ErrorActualizar:
@@ -820,4 +824,13 @@ Private Sub Version_Click()
     Form19.Show
 End Sub
 
+Private Sub AplicarPoliticaConexion()
+    On Error Resume Next
 
+    If SincronizacionRemotaPermitida() Then
+        If con.State = 0 Then ConectarBaseDatos
+    Else
+        If con.State <> 0 Then con.Close
+        Err.Clear
+    End If
+End Sub

@@ -74,7 +74,7 @@ End Sub
 Private Sub Form_Activate()
     If mSincronizacionInicial Then Exit Sub
     mSincronizacionInicial = True
-    DB_Click
+    ' DB_Click
 End Sub
 
 Private Sub Examinar_Click(Index As Integer)

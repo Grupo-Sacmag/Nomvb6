@@ -175,7 +175,7 @@ Private Sub Form_Load()
 
     Col_Def
 
-    If EsEmpresaLocal(emp) Then
+    If Not SincronizacionRemotaPermitida() Then
         PeCfdi.Caption = "Datos complementarios de Personal - Modo local"
     Else
         PeCfdi.Caption = "Datos complementarios de Personal - Cargando archivos locales"
@@ -255,8 +255,10 @@ Private Sub CargarGridDesdeArchivos()
     Dim i As Long
     Dim nombre As String
     Dim cadena As String
+    Dim modoLocal As Boolean
 
     On Error GoTo ErrCarga
+        modoLocal = Not SincronizacionRemotaPermitida()
 
     PCpCfdi.Rows = 1
 
@@ -291,7 +293,7 @@ Private Sub CargarGridDesdeArchivos()
 
             'Un registro sin ningun dato no se muestra (salvo en modo local o si
             'OCULTAR_SIN_DATOS = False).
-            If TieneDatosCFDI() Or EsEmpresaLocal(emp) Or Not OCULTAR_SIN_DATOS Then
+            If TieneDatosCFDI() Or modoLocal Or Not OCULTAR_SIN_DATOS Then
 
                 nombre = Trim$(personal.nom) & " " & Trim$(personal.ape1) & " " & Trim$(personal.ape2)
 
@@ -374,9 +376,10 @@ Private Sub DB_Click()
 
     On Error GoTo ErrorDB
 
-    'La importacion SQL -> DNO existe solo para empresas conectadas.
-    If Not EsEmpresaLocal(emp) Then
-        ImportarPersonalDesdeSQL ObtenerEmpresaSAT(), nuevos, completados, omitidos
+    If Not SincronizacionRemotaPermitida() Then
+        PeCfdi.Caption = "Datos complementarios - Modo local"
+    Else
+        PeCfdi.Caption = "Datos complementarios - Archivos locales"
     End If
 
     'Mostrar SIEMPRE lo que quedo en archivos locales.

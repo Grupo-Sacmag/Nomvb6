@@ -166,10 +166,7 @@ End Sub
 'Devuelve la cantidad de empleados nuevos, por referencia.
 'Errores: no se publica ningun archivo nuevo salvo que todas las
 'copias temporales se hayan preparado correctamente.
-Public Sub ImportarPersonalDesdeSQL(ByVal empresaSAT As String, _
-                                   ByRef nuevos As Long, _
-                                   ByRef completados As Long, _
-                                   ByRef omitidos As Long)
+Public Sub ImportarPersonalDesdeSQL(ByVal empresaSAT As String, ByRef nuevos As Long, ByRef completados As Long, ByRef omitidos As Long)
     Dim rs As ADODB.Recordset
     Dim sql As String
     Dim veces(1 To MAX_ID_IMPORTACION) As Integer
@@ -195,7 +192,7 @@ Public Sub ImportarPersonalDesdeSQL(ByVal empresaSAT As String, _
     nuevos = 0: completados = 0: omitidos = 0
     On Error GoTo ErrorImportacion
 
-    If EsEmpresaLocal(emp) Then Exit Sub
+    If Not SincronizacionRemotaPermitida() Then Exit Sub
     If Trim$(empresaSAT) = "" Then Err.Raise vbObjectError + 2001, , "Empresa SAT no identificada."
     If con Is Nothing Then Err.Raise vbObjectError + 2002, , "No existe la conexion SQL."
     If con.State <> adStateOpen Then Err.Raise vbObjectError + 2003, , "La conexion SQL esta cerrada."

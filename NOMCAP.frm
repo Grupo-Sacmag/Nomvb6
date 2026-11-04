@@ -127,7 +127,7 @@ Const COL_2DA_RFC As Long = 98
 Const COL_2DA_BANDERA As Long = 295   ' GP
 Private Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
     
-Sub IniCols()
+Public Sub IniCols()
 On Error GoTo ErrorHandler
 
     Dim I_7 As Long
