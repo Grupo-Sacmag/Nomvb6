@@ -782,24 +782,24 @@ ErrorLocal:
     Err.Raise vbObjectError + 319, "CargarDatosLocales", descripcion
 End Sub
 
-'============================================================
-' CAMPOS SAT SIN ALMACENAMIENTO LOCAL CONFIRMADO
-'============================================================
 Private Sub ConsultarCamposSATAdicionales()
     Dim rs As ADODB.Recordset
     Dim sSQL As String
 
     On Error GoTo ErrorConsulta
 
-    If EsEmpresaLocal(emp) Then Exit Sub
+    'Solo SACMAG autorizado puede consultar SQL.
+    'La identidad y direccion que estan en .dno tienen prioridad.
+    If Not SincronizacionRemotaPermitida() Then Exit Sub
+    If StrComp(mEmpresa, "SACMAG", vbTextCompare) <> 0 Then Exit Sub
     If con Is Nothing Then Exit Sub
     If con.State <> adStateOpen Then Exit Sub
 
-    'La identidad, direccion, CP y correo NO se copian de SQL
-    'porque YA proceden de los .dno.
-    sSQL = "SELECT * FROM datosSat WHERE idNomina = " & _
-           CStr(mID) & " AND empresa = '" & _
-           Replace(mEmpresa, "'", "''") & "'"
+    'No usar SELECT *: la columna id SQL difiere entre
+    'filas repetidas, aunque todos los campos SAT sean iguales.
+    'DISTINCT actua sobre las columnas efectivamente mostradas.
+    sSQL = "SELECT DISTINCT nombre, apellidoP, apellidoM, rfc, curp, fInicioOper, estatusPadron, fechaUltCamEstado, nombreComercial, tipoVialidad, numeroExterior, numeroInterior, entreCalle, yCalle, ladaTel, " & _
+        "numeroTel, estadoDomicilio, estadoContDomicilio, actividadEconomica, regimen FROM datosSat WHERE empresa = 'SACMAG' AND idNomina = " & CStr(mID)
 
     Set rs = New ADODB.Recordset
     rs.CursorLocation = adUseClient
@@ -807,22 +807,19 @@ Private Sub ConsultarCamposSATAdicionales()
 
     If rs.EOF Then GoTo Salida
 
-    'Si hay varias filas para el mismo ID/empresa, no escoger una
-    'aleatoriamente; solo se mostraran los valores locales.
+    rs.MoveFirst
     rs.MoveNext
     If Not rs.EOF Then
-        Debug.Print "Cedula fiscal: SQL duplicado en empresa=" & _
-                    mEmpresa & ", ID=" & CStr(mID)
+        Debug.Print "Cedula ID " & CStr(mID) & ": hay registros SAT diferentes; se omiten " & "los campos SQL por seguridad."
         GoTo Salida
     End If
-
     rs.MoveFirst
 
-    'Evitar mezclar campos SAT de una persona diferente.
-    'Si hay discrepancias de identidad, no usar SQL.
+    'Los campos SQL nunca se muestran si corresponden
+    'a una identidad distinta de la persona local.
     If Not IdentidadCompatibleConSQL(rs) Then
-        Debug.Print "Cedula: identidad SQL distinta. Empresa=" & _
-                    mEmpresa & "; ID=" & CStr(mID)
+        Debug.Print "Cedula ID " & CStr(mID) & _
+            ": identidad SQL distinta a la local."
         GoTo Salida
     End If
 
@@ -848,10 +845,11 @@ Salida:
         If rs.State = adStateOpen Then rs.Close
     End If
     Set rs = Nothing
+    On Error GoTo 0
     Exit Sub
 
 ErrorConsulta:
-    Debug.Print "Cedula fiscal: campos SAT no disponibles. " & Err.Description
+    Debug.Print "Cedula ID " & CStr(mID) & ": campos SAT no disponibles: " & Err.Description
     Resume Salida
 End Sub
 
@@ -905,12 +903,12 @@ End Function
 
 Private Function NormalizarIdentidad(ByVal s As String) As String
     s = UCase$(Trim$(Replace(s, vbNullChar, "")))
-    s = Replace(s, "?", "A")
-    s = Replace(s, "?", "E")
-    s = Replace(s, "?", "I")
-    s = Replace(s, "?", "O")
-    s = Replace(s, "?", "U")
-    s = Replace(s, "?", "U")
+    s = Replace(s, ChrW$(&HC1), "A")
+    s = Replace(s, ChrW$(&HC9), "E")
+    s = Replace(s, ChrW$(&HCD), "I")
+    s = Replace(s, ChrW$(&HD3), "O")
+    s = Replace(s, ChrW$(&HDA), "U")
+    s = Replace(s, ChrW$(&HDC), "U")
     Do While InStr(s, "  ") > 0
         s = Replace(s, "  ", " ")
     Loop

@@ -12,33 +12,6 @@ Begin VB.Form Form4
    ScaleHeight     =   8640
    ScaleWidth      =   17895
    ShowInTaskbar   =   0   'False
-   Begin VB.CommandButton BtnCancelarCambios 
-      Caption         =   "Cancelar Cambios"
-      Height          =   375
-      Left            =   16200
-      TabIndex        =   7
-      Top             =   120
-      Visible         =   0   'False
-      Width           =   1575
-   End
-   Begin VB.CommandButton BtnGuardarCambios 
-      Caption         =   "Guardar Cambios"
-      Height          =   375
-      Left            =   14520
-      TabIndex        =   6
-      Top             =   120
-      Visible         =   0   'False
-      Width           =   1455
-   End
-   Begin VB.CommandButton BtnHabilitarEdicion 
-      Caption         =   "Habilitar Edicion"
-      Height          =   375
-      Left            =   12840
-      TabIndex        =   5
-      Top             =   120
-      Visible         =   0   'False
-      Width           =   1455
-   End
    Begin VB.CommandButton Command1 
       Caption         =   "Limpiar"
       Height          =   375
@@ -814,14 +787,17 @@ Private Sub listper_EnterCell()
 End Sub
 
 Private Sub listper_KeyDown(KeyCode As Integer, Shift As Integer)
-      Select Case KeyCode
-            Case vbKeyDelete
-                Tex_Edicion = ListPer.Text
-                ArchCorr
-            Case vbKeyF2
-                TexEdicion.Text = ListPer.Text
-                TexEdicion.SetFocus
-       End Select
+    Select Case KeyCode
+        Case vbKeyDelete
+            KeyCode = 0
+        Case vbKeyF2
+            KeyCode = 0
+            If Not ModoEdicion Then Exit Sub
+            If ListPer.Row < 1 Then Exit Sub
+            If ListPer.col < 2 Or ListPer.col > 9 Then Exit Sub
+            TexEdicion.Text = ListPer.Text
+            TexEdicion.SetFocus
+    End Select
 End Sub
 
 Private Sub ListPer_KeyPress(KeyAscii As Integer)
@@ -864,14 +840,10 @@ Private Sub ListPer_KeyPress(KeyAscii As Integer)
 ErrorEmpleado:
 
     MsgBox "No fue posible abrir al empleado " & CStr(idEmpleado) & "." & vbCrLf & Err.Description, vbExclamation, "Edicion de Personal"
-
 End Sub
 
-
-
 Private Sub listper_LeaveCell()
-    If ListPer.col > 1 And ListPer.Row > 0 Then
-        ListPer.Text = UCase(TexEdicion.Text)
+    If ListPer.Row > 0 Then
         ListPer.CellBackColor = vbWhite
     End If
 End Sub
@@ -888,10 +860,6 @@ End Sub
 
 Private Sub sinFiltroCarga_Click()
     cargarEmpleadosSinFiltro
-End Sub
-
-Private Sub TexEdicion_Change()
-    ListPer.Text = TexEdicion.Text
 End Sub
 
 Private Sub TexEdicion_KeyPress(KeyAscii As Integer)
@@ -991,9 +959,8 @@ End Sub
 ' ============================================================
 
 Private Sub Text1_KeyPress(KeyAscii As Integer)
+    
     ' 1. Solo se activa si la tecla presionada es Enter
-    
-    
     If KeyAscii = 13 Then
         
         Dim i As Long
@@ -1050,11 +1017,6 @@ Private Sub ActualizarBotones()
     BtnCancelarCambios.Enabled = ModoEdicion
     Form4.Caption = IIf(ModoEdicion, "Edición de personal - MODO EDICIÓN", "Edición de personal - Solo lectura")
 End Sub
-
-
-' ============================================================
-' CARGA DEL GRID DESDE ARCHIVOS LOCALES
-' ============================================================
 
 Private Sub CargarGrid()
 
@@ -1206,6 +1168,11 @@ Private Sub CargarGrid()
             Get #hDeon, id, DEON
         End If
 
+        If id = 2059 Or id = 2060 Then
+            Debug.Print "Form4 ID " & id & ": nombre=" & Len(CampoVisiblePersonal(personal.nom)) & "; RFC=" & Len(CampoVisiblePersonal(personal.RFC)) & "; CURP=" & Len(CampoVisiblePersonal(Otros_Rgtros.curp)) & _
+                "; registros Otros=" & totalOtros
+        End If
+
         'No mostrar posiciones vacias.
         If Trim$(Replace(personal.nom, vbNullChar, "")) = "" And Trim$(Replace(personal.ape1, vbNullChar, "")) = "" And Trim$(Replace(personal.ape2, vbNullChar, "")) = "" Then
 
@@ -1214,7 +1181,7 @@ Private Sub CargarGrid()
         End If
 
         'Mantener el filtro existente de bajas antiguas.
-        anioBaja = Val(mID$(personal.fab, 7, 4))
+        anioBaja = Val(mID$(CampoVisiblePersonal(personal.fab), 7, 4))
 
         If anioBaja > 0 Then
             If anioBaja < empresa.ao - 1 Then
@@ -1222,43 +1189,15 @@ Private Sub CargarGrid()
             End If
         End If
 
-        nombre = Trim$(personal.ape1) & " " & Trim$(personal.ape2) & " " & Trim$(personal.nom)
+        nombre = Trim$(CampoVisiblePersonal(personal.ape1) & " " & CampoVisiblePersonal(personal.ape2) & " " & CampoVisiblePersonal(personal.nom))
 
+        'Mostrar el valor realmente almacenado en personal.dno.
+        'Una simple consulta no debe recalcular salarios.
         cSdi = personal.integrado
 
-        'Calculo exclusivamente para visualizar.
-        'No modificar personal.dno.
-        If IsDate(Trim$(Replace( _
-            personal.fal, vbNullChar, ""))) Then
-
-            antiguedad = CalcularAntiguedad(personal.fal)
-            facto = 0
-
-            factor antiguedad, facto
-
-            cSdi = (personal.ingr + personal.viat + personal.otras) * facto
-
-            If empresa.sm > 0 Then
-                If cSdi > empresa.sm * 25 Then
-                    cSdi = empresa.sm * 25
-                End If
-            End If
-
-        End If
-
-        ListPer.AddItem _
-            Format$(id, "####0") & vbTab & _
-            nombre & vbTab & _
-            Trim$(personal.RFC) & vbTab & _
-            Trim$(Otros_Rgtros.curp) & vbTab & _
-            Replace(Trim$(personal.imss), "-", "") & vbTab & _
-            Trim$(personal.fal) & vbTab & _
-            Trim$(personal.fab) & vbTab & _
-            Format$(personal.ingr, z2) & vbTab & _
-            Format$(personal.viat, z2) & vbTab & _
-            Format$(personal.otras, z2) & vbTab & _
-            Format$(cSdi, z2) & vbTab & _
-            Trim$(Clbnx.Q1)
+        ListPer.AddItem Format$(id, "####0") & vbTab & nombre & vbTab & CampoVisiblePersonal(personal.RFC) & vbTab & CampoVisiblePersonal(Otros_Rgtros.curp) & vbTab & Replace(CampoVisiblePersonal(personal.imss), "-", "") & vbTab & _
+            CampoVisiblePersonal(personal.fal) & vbTab & CampoVisiblePersonal(personal.fab) & vbTab & Format$(personal.ingr, z2) & vbTab & Format$(personal.viat, z2) & vbTab & Format$(personal.otras, z2) & vbTab & _
+            Format$(cSdi, z2) & vbTab & CampoVisiblePersonal(Clbnx.Q1)
 
 SiguienteEmpleado:
     Next id
@@ -1275,14 +1214,13 @@ Salida:
     Exit Sub
 
 ErrorCarga:
-
     detalleError = Err.Description
-
     MsgBox "No fue posible cargar los empleados:" & vbCrLf & detalleError, vbCritical, "Edicion de Personal"
-
     Resume Salida
-
 End Sub
+Private Function CampoVisiblePersonal(ByVal valor As String) As String
+    CampoVisiblePersonal = Trim$(Replace(valor, vbNullChar, ""))
+End Function
 
 ' comentario
 

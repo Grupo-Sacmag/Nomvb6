@@ -131,6 +131,26 @@ Private Function FirmaCampo(ByVal campo As String) As String
     FirmaCampo = CStr(Len(t)) & ":" & t
 End Function
 
+
+'Normaliza los campos SQL que realmente importa Nomina.
+'No incluye la columna id, ya que idNomina determina la posicion.
+'NULL y cadena vacia se consideran equivalentes.
+Private Function FirmaFilaSQL(ByVal rs As ADODB.Recordset) As String
+    FirmaFilaSQL = _
+        FirmaCampo(UCase$(TextoSQL(rs, "rfc"))) & _
+        FirmaCampo(UCase$(TextoSQL(rs, "curp"))) & _
+        FirmaCampo(UCase$(TextoSQL(rs, "nombre"))) & _
+        FirmaCampo(UCase$(TextoSQL(rs, "apellidoP"))) & _
+        FirmaCampo(UCase$(TextoSQL(rs, "apellidoM"))) & _
+        FirmaCampo(UCase$(TextoSQL(rs, "nombreDeVialidad"))) & _
+        FirmaCampo(UCase$(TextoSQL(rs, "nombreColonia"))) & _
+        FirmaCampo(UCase$(TextoSQL(rs, "nombreLocalidad"))) & _
+        FirmaCampo(UCase$(TextoSQL(rs, "entidadFederativa"))) & _
+        FirmaCampo(UCase$(TextoSQL(rs, "nombreMunicipio"))) & _
+        FirmaCampo(UCase$(TextoSQL(rs, "cp"))) & _
+        FirmaCampo(UCase$(TextoSQL(rs, "correoElectronico")))
+End Function
+
 'Firma de los campos efectivamente administrados por este importador.
 'Permite verificar la copia temporal inmediatamente despues del Put.
 Private Function FirmaRegistroActual() As String
@@ -190,6 +210,10 @@ Public Sub ImportarPersonalDesdeSQL(ByVal empresaSAT As String, ByRef nuevos As 
     Dim sNombre As String, sApe1 As String, sApe2 As String, sRFC As String
     Dim firmasEsperadas() As String
     Dim etapaImportacion As String
+    Dim primeraFirmaSQL() As String
+    Dim conflictoSQL() As Boolean
+    Dim procesadoSQL() As Boolean
+    Dim firmaActualSQL As String
 
     nuevos = 0: completados = 0: omitidos = 0
     On Error GoTo ErrorImportacion
@@ -253,12 +277,23 @@ Public Sub ImportarPersonalDesdeSQL(ByVal empresaSAT As String, ByRef nuevos As 
     rs.Open sql, con, adOpenStatic, adLockReadOnly, adCmdText
     If rs.EOF Then GoTo Salida
 
-    'No escoger arbitrariamente uno entre dos registros del mismo ID.
+    'Duplicados equivalentes: procesar una sola vez por ID.
+    'Duplicados con informacion contradictoria: omitir ese ID.
+    ReDim primeraFirmaSQL(1 To MAX_ID_IMPORTACION)
+    ReDim conflictoSQL(1 To MAX_ID_IMPORTACION)
+    ReDim procesadoSQL(1 To MAX_ID_IMPORTACION)
+
     rs.MoveFirst
     Do While Not rs.EOF
         id = IdSeguro(rs.Fields("idNomina").Value)
         If id <> 0 Then
-            If veces(id) < 2 Then veces(id) = veces(id) + 1
+            firmaActualSQL = FirmaFilaSQL(rs)
+            If veces(id) = 0 Then
+                primeraFirmaSQL(id) = firmaActualSQL
+            ElseIf primeraFirmaSQL(id) <> firmaActualSQL Then
+                conflictoSQL(id) = True
+            End If
+            If veces(id) < 32767 Then veces(id) = veces(id) + 1
             If id > maxID Then maxID = id
         Else
             omitidos = omitidos + 1
@@ -340,10 +375,24 @@ Public Sub ImportarPersonalDesdeSQL(ByVal empresaSAT As String, ByRef nuevos As 
     Do While Not rs.EOF
         id = IdSeguro(rs.Fields("idNomina").Value)
         If id = 0 Then GoTo Siguiente
-        If veces(id) <> 1 Then
-            omitidos = omitidos + 1
-            Debug.Print "ID " & id & ": registros SQL duplicados; no se importa."
+        If conflictoSQL(id) Then
+            If Not procesadoSQL(id) Then
+                omitidos = omitidos + 1
+                Debug.Print "ID " & id & _
+                    ": duplicados SQL con datos distintos; no se importa."
+                procesadoSQL(id) = True
+            End If
             GoTo Siguiente
+        End If
+
+        'Si SQL devolvio filas equivalentes, importar solo una.
+        If procesadoSQL(id) Then GoTo Siguiente
+        procesadoSQL(id) = True
+
+        If veces(id) > 1 Then
+            Debug.Print "ID " & id & _
+                ": " & CStr(veces(id)) & _
+                " filas SQL equivalentes; se procesa una vez."
         End If
 
         Get #hPer, id, personal
@@ -665,4 +714,3 @@ ArchivoOcupado:
     Err.Raise vbObjectError + 2051, "VerificarArchivoDisponible", "No se puede sincronizar porque el archivo esta abierto, bloqueado o sin permisos de escritura:" & vbCrLf & ruta & vbCrLf & "Detalle: " & detalle
 
 End Sub
-
