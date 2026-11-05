@@ -188,11 +188,30 @@ Public Sub ImportarPersonalDesdeSQL(ByVal empresaSAT As String, ByRef nuevos As 
     Dim habiaPersona As Boolean
     Dim errorN As Long, errorTexto As String
     Dim sNombre As String, sApe1 As String, sApe2 As String, sRFC As String
+    Dim firmasEsperadas() As String
+    Dim etapaImportacion As String
 
     nuevos = 0: completados = 0: omitidos = 0
     On Error GoTo ErrorImportacion
 
-    If Not SincronizacionRemotaPermitida() Then Exit Sub
+    
+    'Validar que estamos en la carpeta aprobada.
+    If Not RutaTrabajoSegura() Then
+        Err.Raise vbObjectError + 2020, , "La ruta de trabajo no es segura."
+    End If
+    
+    'Comprobar la razon social completa.
+    If Not SincronizacionRemotaPermitida() Then
+        Err.Raise vbObjectError + 2021, , "Empresa no autorizada para sincronizar."
+    End If
+    
+    'La clave utilizada en datosSat debe ser SACMAG.
+    If StrComp(UCase$(Trim$(empresaSAT)), "SACMAG", vbBinaryCompare) <> 0 Then
+    
+        Err.Raise vbObjectError + 2022, , "Clave de empresa SQL no autorizada."
+    
+    End If
+
     If Trim$(empresaSAT) = "" Then Err.Raise vbObjectError + 2001, , "Empresa SAT no identificada."
     If con Is Nothing Then Err.Raise vbObjectError + 2002, , "No existe la conexion SQL."
     If con.State <> adStateOpen Then Err.Raise vbObjectError + 2003, , "La conexion SQL esta cerrada."
@@ -227,11 +246,8 @@ Public Sub ImportarPersonalDesdeSQL(ByVal empresaSAT As String, ByRef nuevos As 
     totalAnterior = FileLen(originales(1)) \ anchos(1)
 
     'UNICA operacion SQL: SELECT. No se escribe jamas en la BD.
-    sql = "SELECT idNomina, rfc, curp, nombre, apellidoP, apellidoM, " & _
-          "nombreDeVialidad, nombreColonia, nombreLocalidad, " & _
-          "entidadFederativa, nombreMunicipio, cp, correoElectronico " & _
-          "FROM datosSat WHERE empresa = '" & Replace(empresaSAT, "'", "''") & "' " & _
-          "ORDER BY idNomina"
+    sql = "SELECT DISTINCT idNomina, rfc, curp, nombre, apellidoP, apellidoM, nombreDeVialidad, nombreColonia, nombreLocalidad, entidadFederativa, nombreMunicipio, cp, correoElectronico FROM datosSat " & _
+      "WHERE empresa = '" & Replace(empresaSAT, "'", "''") & "' ORDER BY idNomina"
     Set rs = New ADODB.Recordset
     rs.CursorLocation = adUseClient
     rs.Open sql, con, adOpenStatic, adLockReadOnly, adCmdText
@@ -255,6 +271,21 @@ Public Sub ImportarPersonalDesdeSQL(ByVal empresaSAT As String, ByRef nuevos As 
         Err.Raise vbObjectError + 2012, , "Personal.dno supera el limite de 32767 posiciones utilizado por Form2/Form4."
     End If
     If totalAnterior > maxID Then maxID = totalAnterior
+        
+    '============================================================
+    ' DIAGNOSTICO TEMPORAL: EMPLEADOS 2059 Y 2060
+    '============================================================
+    
+    Debug.Print "========== DIAGNOSTICO SQL =========="
+    Debug.Print "ID 2059 - Coincidencias SQL: " & veces(2059)
+    Debug.Print "ID 2060 - Coincidencias SQL: " & veces(2060)
+    Debug.Print "Total anterior personal.dno: " & totalAnterior
+    Debug.Print "Posicion maxima preparada: " & maxID
+    Debug.Print "====================================="
+
+    
+    'Guardar las firmas de los registros que se modifiquen.
+    ReDim firmasEsperadas(1 To maxID)
 
     'Se prepara TODO sobre copias temporales; nunca directamente
     'sobre los archivos locales originales.
@@ -267,11 +298,26 @@ Public Sub ImportarPersonalDesdeSQL(ByVal empresaSAT As String, ByRef nuevos As 
         prefijo = carpeta & "SYNC_" & sello & "_" & CStr(i)
     Loop
 
+    
+    '============================================================
+    ' COMPROBAR ARCHIVOS ANTES DE CREAR COPIAS TEMPORALES
+    '============================================================
+    
+    For i = 1 To 6
+        If existia(i) Then
+            etapaImportacion = "Verificando disponibilidad de " & originales(i)
+            VerificarArchivoDisponible originales(i)
+        End If
+    Next i
+    
+    Debug.Print "Todos los archivos locales estan disponibles."
+
     For i = 1 To 6
         temporales(i) = prefijo & "_" & CStr(i) & ".tmp"
         respaldos(i) = prefijo & "_" & CStr(i) & ".bak"
         antiguos(i) = prefijo & "_" & CStr(i) & ".old"
         If existia(i) Then
+            etapaImportacion = "Creando copia temporal de " & originales(i)
             FileCopy originales(i), temporales(i)
         Else
             h = FreeFile
@@ -303,7 +349,36 @@ Public Sub ImportarPersonalDesdeSQL(ByVal empresaSAT As String, ByRef nuevos As 
         Get #hPer, id, personal
         Get #hOtros, id, Otros_Rgtros
         Get #hCfdi, id, Empleado_1
-
+                
+    '============================================================
+    ' DIAGNOSTICO TEMPORAL: IDs 2059 Y 2060
+    '============================================================
+    
+    If id = 2059 Or id = 2060 Then
+        Debug.Print "========== EMPLEADO " & id & " =========="
+        Debug.Print "Nombre local, longitud: " & Len(TextoLocal(personal.nom))
+        Debug.Print "Nombre SQL, longitud: " & Len(TextoSQL(rs, "nombre"))
+        Debug.Print "Apellido P SQL, longitud: " & Len(TextoSQL(rs, "apellidoP"))
+        Debug.Print "Apellido M SQL, longitud: " & Len(TextoSQL(rs, "apellidoM"))
+        Debug.Print "Direccion local, longitud: " & Len(TextoLocal(Empleado_1.Direccion))
+        Debug.Print "Direccion SQL, longitud: " & Len(TextoSQL(rs, "nombreDeVialidad"))
+        Debug.Print "Colonia SQL, longitud: " & Len(TextoSQL(rs, "nombreColonia"))
+        Debug.Print "Colonia local, longitud: " & Len(TextoLocal(Empleado_1.Colonia))
+        Debug.Print "Correo SQL, longitud: " & Len(TextoSQL(rs, "correoElectronico"))
+        Debug.Print "Correo local, longitud: " & Len(TextoLocal(Empleado_1.correo))
+        Debug.Print "====================================="
+    End If
+                
+        '============================================================
+        ' OMITIR EMPLEADOS CON BAJA REGISTRADA
+        '============================================================
+        
+        If IsDate(TextoLocal(personal.fab)) Then
+            omitidos = omitidos + 1
+            Debug.Print "ID " & CStr(id) & ": empleado con baja registrada. No se sincroniza."
+            GoTo Siguiente
+        End If
+    
         If Not CoincideIdentidad(rs) Then
             omitidos = omitidos + 1
             Debug.Print "ID " & id & ": conflicto de identidad entre SQL y archivos locales."
@@ -324,18 +399,34 @@ Public Sub ImportarPersonalDesdeSQL(ByVal empresaSAT As String, ByRef nuevos As 
                 GoTo Siguiente
             End If
         End If
-        If Len(sNombre) > Len(personal.nom) Or _
-           Len(sApe1) > Len(personal.ape1) Or _
-           Len(sApe2) > Len(personal.ape2) Or _
-           Len(sRFC) > Len(personal.RFC) Or _
-           Len(TextoSQL(rs, "curp")) > Len(Otros_Rgtros.curp) Then
-            omitidos = omitidos + 1
-            Debug.Print "ID " & id & ": campo de identidad excede longitud local."
-            GoTo Siguiente
+        
+        '============================================================
+        ' VALIDAR LONGITUDES SIN OMITIR DATOS UTILES
+        '============================================================
+        habiaPersona = (Len(TextoLocal(personal.nom)) > 0 Or Len(TextoLocal(personal.RFC)) > 0)
+        
+        'Si todavia no existe nombre local, debemos poder
+        'guardarlo completo. No permitir altas sin nombre
+        'por truncamiento del campo SQL.
+        
+        If Len(TextoLocal(personal.nom)) = 0 Then
+            If Len(sNombre) > Len(personal.nom) Then
+                omitidos = omitidos + 1
+                Debug.Print "ID " & id & ": nombre SQL demasiado largo para personal.dno."
+                GoTo Siguiente
+            End If
         End If
-
-        habiaPersona = (Len(TextoLocal(personal.nom)) > 0 Or _
-                        Len(TextoLocal(personal.RFC)) > 0)
+        
+        'Para un empleado completamente nuevo, la identidad debe caber en los campos locales.
+        'En un empleado existente, DatoNuevo validara cada campo faltante individualmente sin impedir que se complete la direccion o el correo.
+        
+        If Not habiaPersona Then
+            If Len(sApe1) > Len(personal.ape1) Or Len(sApe2) > Len(personal.ape2) Or Len(sRFC) > Len(personal.RFC) Or Len(TextoSQL(rs, "curp")) > Len(Otros_Rgtros.curp) Then
+                omitidos = omitidos + 1
+                Debug.Print "ID " & id & ": identidad nueva excede el ancho del archivo local."
+                GoTo Siguiente
+            End If
+        End If
 
         'Detectar si hay algo nuevo (sin tocar campos que existan).
         datosAntes = FirmaRegistroActual()
@@ -368,6 +459,9 @@ Public Sub ImportarPersonalDesdeSQL(ByVal empresaSAT As String, ByRef nuevos As 
             If FirmaRegistroActual() <> datosDespues Then
                 Err.Raise vbObjectError + 2013, , "Verificacion de datos fallida para ID " & CStr(id)
             End If
+            
+            'Recordar el contenido esperado para esta posicion.
+            firmasEsperadas(id) = datosDespues
 
             If habiaPersona Then
                 completados = completados + 1
@@ -383,13 +477,37 @@ Siguiente:
     Close #hPer: hPer = 0
     Close #hOtros: hOtros = 0
     Close #hCfdi: hCfdi = 0
-
-    If nuevos = 0 And completados = 0 Then GoTo Salida
-
-    'Respaldos PERMANENTES antes de cambiar algun archivo.
+    
+    If nuevos = 0 And completados = 0 Then
+        Debug.Print "Sincronizacion sin cambios."
+        Debug.Print "No se sustituyeron archivos .dno."
+        GoTo Salida
+    End If
+    
     For i = 1 To 6
-        If existia(i) Then FileCopy originales(i), respaldos(i)
+        If existia(i) Then
+            etapaImportacion = "Verificacion final de " & originales(i)
+            VerificarArchivoDisponible originales(i)
+        End If
     Next i
+    
+    'Crear respaldos reales de los archivos originales.
+    'Nunca utilizar los temporales como respaldo.
+    For i = 1 To 6
+        If existia(i) Then
+            etapaImportacion = "Creando respaldo de " & originales(i)
+            FileCopy originales(i), respaldos(i)
+    
+            'Comprobar que la copia conserva el tamano.
+            If FileLen(respaldos(i)) <> FileLen(originales(i)) Then
+                Err.Raise vbObjectError + 2040, , "El respaldo no coincide con el archivo original: " & originales(i)
+            End If
+        End If
+    Next i
+    
+    Debug.Print "Respaldos SYNC_*.bak creados."
+    
+    etapaImportacion = "Publicando archivos locales"
 
     'Publicar las copias preparadas. Ante error se intenta restaurar
     'el conjunto previo usando los originales renombrados.
@@ -401,19 +519,77 @@ Siguiente:
         Name temporales(i) As originales(i)
         instalado(i) = True
     Next i
+    
+    etapaImportacion = "Verificando archivos publicados"
+    
+    '============================================================
+    ' VERIFICAR PUBLICACION DE ARCHIVOS LOCALES
+    '============================================================
+    
+    'Comprobar que los seis archivos publicados conservan la longitud esperada y contienen la posicion maxima de los empleados.
+    
+    For i = 1 To 6
+        If FileLen(originales(i)) Mod anchos(i) <> 0 Then
+            Err.Raise vbObjectError + 2030, , "Archivo publicado desalineado: " & originales(i)
+        End If
+    
+        If FileLen(originales(i)) < CLng(anchos(i)) * maxID Then
+            Err.Raise vbObjectError + 2031, , "Faltan posiciones en: " & originales(i)
+        End If
+    Next i
+    
+    'Leer nuevamente los archivos definitivos,
+    'no las copias temporales.
+    
+    hPer = FreeFile
+    Open originales(1) For Random Access Read As #hPer Len = anchos(1)
+    
+    hOtros = FreeFile
+    Open originales(2) For Random Access Read As #hOtros Len = anchos(2)
+    
+    hCfdi = FreeFile
+    Open originales(3) For Random Access Read As #hCfdi Len = anchos(3)
+    
+    'Verificar unicamente los IDs que se modificaron.
+    
+    For id = 1 To maxID
+    
+        If Len(firmasEsperadas(id)) > 0 Then
+    
+            Get #hPer, id, personal
+            Get #hOtros, id, Otros_Rgtros
+            Get #hCfdi, id, Empleado_1
+    
+            If FirmaRegistroActual() <> firmasEsperadas(id) Then
+                Err.Raise vbObjectError + 2032, , "Los datos publicados no coinciden con el empleado ID " & CStr(id)
+            End If
+    
+        End If
+    
+    Next id
+    
+    Close #hPer
+    hPer = 0
+    
+    Close #hOtros
+    hOtros = 0
+    
+    Close #hCfdi
+    hCfdi = 0
+    
+    Debug.Print "Publicacion local verificada correctamente."
 
     On Error Resume Next
     For i = 1 To 6
         If desplazado(i) And Dir$(antiguos(i)) <> "" Then Kill antiguos(i)
     Next i
     On Error GoTo ErrorImportacion
-    Debug.Print "Sincronizacion local: " & nuevos & " nuevos; " & _
-                completados & " completados; " & omitidos & " omitidos."
+    Debug.Print "Sincronizacion local: " & nuevos & " nuevos; " & completados & " completados; " & omitidos & " omitidos."
     GoTo Salida
 
 ErrorImportacion:
     errorN = Err.Number
-    errorTexto = Err.Description
+    errorTexto = Err.Description & vbCrLf & "Etapa: " & etapaImportacion
     On Error Resume Next
     If hPer > 0 Then Close #hPer
     If hOtros > 0 Then Close #hOtros
@@ -453,3 +629,40 @@ Salida:
     Next i
     On Error GoTo 0
 End Sub
+
+
+Private Sub VerificarArchivoDisponible(ByVal ruta As String)
+
+    Dim h As Integer
+    Dim archivoAbierto As Boolean
+    Dim detalle As String
+
+    On Error GoTo ArchivoOcupado
+
+    h = FreeFile
+
+    'Abrir temporalmente con acceso exclusivo.
+    'No escribir ni modificar contenido.
+    Open ruta For Binary Access Read Write Lock Read Write As #h
+
+    archivoAbierto = True
+
+    Close #h
+    archivoAbierto = False
+
+    Exit Sub
+
+ArchivoOcupado:
+
+    detalle = Err.Description
+
+    On Error Resume Next
+
+    If archivoAbierto Then Close #h
+
+    On Error GoTo 0
+
+    Err.Raise vbObjectError + 2051, "VerificarArchivoDisponible", "No se puede sincronizar porque el archivo esta abierto, bloqueado o sin permisos de escritura:" & vbCrLf & ruta & vbCrLf & "Detalle: " & detalle
+
+End Sub
+

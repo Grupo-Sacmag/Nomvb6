@@ -306,10 +306,53 @@ Private NavegandoDirectorio As Boolean
 ' ============================================================
 
 Private Sub Form_Load()
+
+    Dim rutaInicio As String
+    
     On Error GoTo ManejoError
 
+    'Elegir el entorno antes de consultar rutas.
+    ElegirEntornoNomina
+
     Apertura
-    veridir
+
+    
+    
+    If gModoTesting Then
+    
+        '====================================================
+        ' TESTING: RECUPERAR SU RUTA INDEPENDIENTE
+        '====================================================
+    
+        rutaInicio = RutaInicialNomina()
+    
+        'Evitar eventos de navegacion durante la carga.
+        NavegandoDirectorio = True
+    
+        If mID$(rutaInicio, 2, 1) = ":" Then
+    
+            ChDrive Left$(rutaInicio, 2)
+            Drive1.Drive = Left$(rutaInicio, 2)
+    
+        End If
+    
+        ChDir rutaInicio
+        Dir1.Path = rutaInicio
+        NavegandoDirectorio = False
+    
+    Else
+    
+        '====================================================
+        ' PRODUCCION: MANTENER FUNCIONAMIENTO ORIGINAL
+        '====================================================
+    
+        NavegandoDirectorio = True
+        veridir
+        NavegandoDirectorio = False
+    
+    End If
+
+
     ActualizarDirectorio
 
     Kincenal = 1
@@ -317,34 +360,37 @@ Private Sub Form_Load()
     InicializarMeses
     InicializarDiasMes
 
-Inicio:
     z1$ = "#,###,##0.00"
     z2$ = "##,##0.00"
 
     empresarial
-
-    'Intentar conexión, pero NO impedir el arranque.
     AplicarPoliticaConexion
 
     File1.Pattern = "*.NOM"
     Label4.Caption = Dir1.Path
+
+    Me.Caption = "Nomina [" & EtiquetaEntornoNomina() & "]"
 
     If empresa.ao > 2007 Then
         a_opago = empresa.ao
         tarcre(3).Visible = False
     End If
 
-    GoTo Sale
+    Exit Sub
 
 ManejoError:
-    ChDir "C:\"
-    Dir1 = "C:\"
-    File1 = Dir1
-    GoTo Inicio
 
-Sale:
-    Exit Sub
+    MsgBox "No fue posible iniciar el entorno." & vbCrLf & Err.Description, vbCritical, "Nomina"
+
+    'Fallo de inicio: no continuar en otra ruta.
+    gEntornoElegido = False
+    gRutaTrabajoAprobada = vbNullString
+
+    Close
+    End
+
 End Sub
+
 
 Private Sub Form_Unload(Cancel As Integer)
     Close
@@ -387,8 +433,9 @@ End Sub
 
 Sub Apertura()
     On Error GoTo mens1
-
+    
     DIR_CALC = "C:\GconTA\Rutabl.gcs"
+    
     miarchivo = ""
     miarchivo = Dir(DIR_CALC, vbDirectory)
 
@@ -400,7 +447,7 @@ Sub Apertura()
     End If
 
     If Mi_limite = 0 Then
-        DirecT_arifas = "C:\TARIFA25\"
+        DirecT_arifas = "C:\TARIFA26\"
         Dir_imptos = DirecT_arifas
         CambioDirectorio
         SubT_Mes = DirecT_arifas
@@ -420,7 +467,7 @@ End Sub
 Sub CambioDirectorio()
     On Error GoTo mens2
 
-    Close
+    Close #9
 
     Tot_Dat = 0
     CapturaDatos.Caption = Form1.Caption
@@ -518,17 +565,27 @@ End Sub
 ' NAVEGACION DE DIRECTORIOS / ARCHIVOS NOM
 ' ============================================================
 
-Private Sub Drive1_Change()
-    On Error GoTo manejadorError
 
-    ChDrive Drive1.Drive
-    Dir1.Path = Drive1.Drive
+Private Sub Drive1_Change()
+
+    On Error GoTo ErrorUnidad
+
+    If NavegandoDirectorio Then Exit Sub
+
+    'Permitir seleccionar cualquier unidad disponible.
+    ChDrive Left$(Drive1.Drive, 2)
+
+    Dir1.Path = Left$(Drive1.Drive, 2) & "\"
 
     Exit Sub
 
-manejadorError:
-    MsgBox Err.Description, vbExclamation, "Cambio de unidad"
+ErrorUnidad:
+
+    MsgBox "No fue posible cambiar de unidad." & vbCrLf & Err.Description, vbExclamation, "Cambio de unidad"
+
 End Sub
+
+
 
 Private Sub Dir1_Click()
     'Un solo clic únicamente selecciona la carpeta.
@@ -539,9 +596,18 @@ Private Sub Dir1_DblClick()
     AbrirDirectorioSeleccionado
 End Sub
 
+
 Private Sub Dir1_Change()
+
+    'No actualizar rutas mientras Form1
+    'esta configurando sus controles.
+
+    If NavegandoDirectorio Then Exit Sub
+
     ActualizarDirectorio
+
 End Sub
+
 
 Private Sub Dir1_KeyPress(KeyAscii As Integer)
     If KeyAscii = 13 Then
@@ -550,7 +616,9 @@ Private Sub Dir1_KeyPress(KeyAscii As Integer)
     End If
 End Sub
 
+
 Private Sub ActualizarDirectorio()
+
     Dim RutaActual As String
 
     On Error GoTo ErrorActualizar
@@ -559,7 +627,24 @@ Private Sub ActualizarDirectorio()
 
     If RutaActual = "" Then Exit Sub
 
+    
+    If Not RutaPermitidaPorEntorno(RutaActual) Then
+    
+        MsgBox "La carpeta seleccionada no existe o no se puede acceder a ella.", vbExclamation, "Directorio"
+    
+        Exit Sub
+    
+    End If
+
+
+    If mID$(RutaActual, 2, 1) = ":" Then
+        ChDrive Left$(RutaActual, 2)
+    End If
+
     ChDir RutaActual
+
+    'La ruta queda aprobada solo despues de navegar.
+    gRutaTrabajoAprobada = CurDir$
 
     File1.Pattern = "*.NOM"
     File1.Path = RutaActual
@@ -570,32 +655,58 @@ Private Sub ActualizarDirectorio()
 
     GuardarUltimoDirectorio RutaActual
 
-    Close #1
     empresarial
     AplicarPoliticaConexion
-    
+
     Exit Sub
 
 ErrorActualizar:
-    On Error Resume Next
-    Close #7
+
+    NavegandoDirectorio = False
+
+    MsgBox "No fue posible cambiar de carpeta." & vbCrLf & Err.Description, vbExclamation, "Directorio"
+
 End Sub
 
+
+
 Private Sub GuardarUltimoDirectorio(ByVal RutaActual As String)
-    On Error Resume Next
 
-    Close #7
+    Dim h As Integer
 
-    Open "C:\GconTA\perma.dno" For Random As #7 Len = Len(basico)
+    On Error GoTo ErrorGuardar
 
-    If Err.Number = 0 Then
-        fin_basico = LOF(7) / Len(basico)
-        basico.datoarch = RutaActual
-        Put #7, 1, basico
+    'Verificar que la carpeta corresponde al entorno.
+    If Not RutaTrabajoSegura(False) Then Exit Sub
+
+    If Not RutaPermitidaPorEntorno(RutaActual) Then
+        Exit Sub
     End If
 
-    Close #7
-    Err.Clear
+    'Utilizar el archivo de configuracion correspondiente.
+    h = FreeFile
+
+    Open RutaArchivoEntornoNomina() For Random Access Read Write As #h Len = Len(basico)
+
+    'Conservar el formato binario original.
+    basico.datoarch = RutaActual
+
+    Put #h, 1, basico
+
+Salida:
+    On Error Resume Next
+
+    If h <> 0 Then Close #h
+
+    On Error GoTo 0
+    Exit Sub
+
+ErrorGuardar:
+
+    Debug.Print "Error guardando ruta: " & Err.Number & " - " & Err.Description
+
+    Resume Salida
+
 End Sub
 
 Private Sub AbrirDirectorioSeleccionado()
@@ -609,15 +720,18 @@ Private Sub AbrirDirectorioSeleccionado()
     RutaSeleccionada = Dir1.List(Dir1.ListIndex)
 
     If Trim$(RutaSeleccionada) = "" Then Exit Sub
-
-    NavegandoDirectorio = True
-
-    If UCase$(Dir1.Path) <> UCase$(RutaSeleccionada) Then
-        Dir1.Path = RutaSeleccionada
+        
+    If Not RutaPermitidaPorEntorno(RutaSeleccionada) Then
+        MsgBox "Carpeta no permitida en este entorno.", _
+               vbExclamation, "Directorio"
+        Exit Sub
     End If
 
     NavegandoDirectorio = False
 
+    'Actualizar y guardar la carpeta seleccionada.
+    ActualizarDirectorio
+    
     Exit Sub
 
 ErrorDirectorio:

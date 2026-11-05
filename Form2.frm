@@ -450,6 +450,8 @@ Dim empleadoDuplicado As Boolean
 Dim algunCampoVacioGlobal As Boolean
 Dim ModoEdicion As Boolean
 Private EsNuevo As Boolean
+Private mIDFijo As Long
+Private mRutaFija As String
 Private Const PAT_LETRAS As String = "[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]"
 Private Const PAT_ALFANUM As String = "[A-Za-z0-9Ññ&]"
 
@@ -474,8 +476,12 @@ Public Sub IniciarNuevo()
 
     AbrirArchivosPersistentes
     LimpiarCampos
+    
+    
 
     Text16.Text = (largoPersonal + 1)
+    mIDFijo = CLng(Text16.Text)
+    mRutaFija = CurDir$
 
     If largoPersonal <= 0 Then
         MsgBox ("Achis, no hay personal. Intenta con otra carpeta!")
@@ -495,6 +501,8 @@ Public Sub IniciarConsulta(ByVal id As Integer)
 
     AbrirArchivosPersistentes
     cargarEmpleado id
+    mIDFijo = CLng(id)
+    mRutaFija = CurDir$
 
     LabelAnterior.Visible = False
     ActualizarBotones
@@ -511,7 +519,7 @@ Private Sub AbrirArchivosPersistentes()
     largoPersonal = LOF(2) / Len(personal)
 
     Open "PerOtre.dno" For Random As 3 Len = Len(Otros_Rgtros)
-    largoOtros = LOF(3) / Len(personal)
+    largoOtros = LOF(3) \ Len(Otros_Rgtros)
 
     Open "maestro.dno" For Random As 8 Len = Len(maestro)
     largoMaestro = LOF(8) / Len(maestro)
@@ -587,17 +595,42 @@ Private Sub BtnHabilitarEdicion_Click()
     ActualizarBotones
 End Sub
 
+
 Private Sub BtnCancelarCambios_Click()
-    If MsgBox("Se descartarán los cambios hechos desde que habilitaste edición. ¿Continuar?", vbYesNo + vbExclamation) = vbYes Then
 
-        RestaurarArchivos
-        AbrirArchivosPersistentes
+    If MsgBox("Desea descartar los cambios sin guardar?", vbYesNo Or vbQuestion Or vbDefaultButton2, "Cancelar edicion") <> vbYes Then
 
-        ModoEdicion = False
-        ActualizarBotones
-        cargarEmpleado Val(Text16.Text)
+        Exit Sub
+
     End If
+
+    If EsNuevo Then
+        Unload Me
+        Exit Sub
+    End If
+
+    If Not RutaTrabajoSegura() Then Exit Sub
+
+    If mIDFijo < 1 Or mIDFijo > 32767 Then
+        MsgBox "El ID seleccionado no es valido.", vbCritical, "Cancelar cambios"
+        Exit Sub
+    End If
+
+    If StrComp(CurDir$, mRutaFija, vbTextCompare) <> 0 Then
+        MsgBox "La carpeta de trabajo cambio.", vbCritical, "Cancelar cambios"
+        Exit Sub
+    End If
+
+    ModoEdicion = False
+
+    'Recuperar los valores actuales del mismo empleado.
+    'Nunca restaurar archivos .bak completos.
+    cargarEmpleado CInt(mIDFijo)
+
+    ActualizarBotones
+
 End Sub
+
 
 ' ============================================================
 ' EVENTOS DE TEXTBOX
@@ -630,11 +663,13 @@ Private Sub Text3_KeyPress(KeyAscii As Integer)
 End Sub
 
 Private Sub Text3_Change()
+
     If Not EsNuevo Then Exit Sub
 
     If Len(Text3.Text) = 13 And Len(Text4.Text) <= 10 Then
         Text4.Text = Left$(Text3.Text, 10)
     End If
+
 End Sub
 
 Private Sub Text4_KeyPress(KeyAscii As Integer)
@@ -763,8 +798,22 @@ Private Sub Command1_Click()
     verificarEmpleadoDuplicado
     noDuplicado = Not empleadoDuplicado
 
+    
     If camposValidos And noDuplicado And sinCamposVacios Then
-        guardarRegistro
+    
+        If Not RutaTrabajoSegura() Then Exit Sub
+    
+        If MsgBox( _
+            "Confirma guardar al empleado con ID " & _
+            Trim$(Text16.Text) & "?" & vbCrLf & _
+            "Entorno: " & EtiquetaEntornoNomina(), _
+            vbYesNo Or vbQuestion Or vbDefaultButton2, _
+            "Confirmar alta de empleado") = vbYes Then
+    
+            guardarRegistro
+    
+        End If
+
     ElseIf Not sinCamposVacios Then
         MsgBox "Faltan campos por llenar (marcados en rojo).", vbExclamation
     End If
@@ -787,6 +836,23 @@ End Sub
 ' ============================================================
 
 Public Sub cargarEmpleado(id As Integer)
+
+
+    'Validar ID y longitud fisica de los archivos.
+    If id < 1 Then
+        Err.Raise vbObjectError + 4301, , "ID de empleado no valido."
+    End If
+    
+    If LOF(2) Mod Len(personal) <> 0 Or LOF(3) Mod Len(Otros_Rgtros) <> 0 Or LOF(8) Mod Len(maestro) <> 0 Then
+    
+        Err.Raise vbObjectError + 4302, , "Hay archivos de empleados desalineados."
+    End If
+    
+    If id > LOF(2) \ Len(personal) Or id > LOF(3) \ Len(Otros_Rgtros) Or id > LOF(8) \ Len(maestro) Then
+    
+        Err.Raise vbObjectError + 4303, , "El ID no existe en todos los archivos requeridos."
+    End If
+
     Get 2, id, personal
     Get 3, id, Otros_Rgtros
     Get 8, id, maestro
@@ -807,6 +873,10 @@ Public Sub cargarEmpleado(id As Integer)
     Text12.Text = personal.integrado                   'Salario diario integrado.
     Text13.Text = maestro.O_1                          'Número obra.
     Text14.Text = maestro.por_1                        'Porcentaje.
+    
+    mIDFijo = CLng(id)
+    mRutaFija = CurDir$
+    
 End Sub
 
 Private Sub LimpiarCampos()
@@ -945,11 +1015,23 @@ Private Sub ValidarCampos()
         If Not IsValidDate(Text2.Text) Then errores = errores & "- Fecha de baja no válida (dd/mm/aaaa)." & vbCrLf
     End If
 
-    If Len(Trim(Text3.Text)) <> 13 Or Not SoloCaracteres(Trim(Text3.Text), PAT_ALFANUM) Then
-        errores = errores & "- RFC no válido (13 caracteres, solo letras y números)." & vbCrLf
+   
+    '============================================================
+    ' VALIDACION SIMPLE DE RFC
+    '============================================================
+    
+    If Len(Trim$(Text3.Text)) <> 13 Then
+        errores = errores & "- El RFC debe contener exactamente 13 caracteres." & vbCrLf
+    End If
+    
+    '============================================================
+    ' VALIDACION SIMPLE DE CURP
+    '============================================================
+    
+    If Len(Trim$(Text4.Text)) <> 18 Then
+        errores = errores & "- La CURP debe contener exactamente 18 caracteres." & vbCrLf
     End If
 
-    If Not IsValidCURP(Text4.Text) Then errores = errores & "- CURP no válida (18 caracteres)." & vbCrLf
 
     If Not SoloCaracteres(Text5.Text, PAT_LETRAS) Then errores = errores & "- El nombre solo puede llevar letras." & vbCrLf
     If Not SoloCaracteres(Text6.Text, PAT_LETRAS) Then errores = errores & "- El apellido paterno solo puede llevar letras." & vbCrLf
@@ -987,10 +1069,56 @@ Private Sub verificarEmpleadoDuplicado()
     empleadoDuplicado = empleadoExistente
 End Sub
 
+
 Private Function IsValidDate(ByVal fecha As String) As Boolean
+
+    Dim dia As Integer
+    Dim mes As Integer
+    Dim anio As Integer
+    Dim fechaValidada As Date
+
+    On Error GoTo FechaIncorrecta
+
+    IsValidDate = False
+
     fecha = Trim$(fecha)
-    IsValidDate = (Len(fecha) = 10) And IsDate(fecha)
+
+    'Formato exacto: dd/mm/aaaa
+    If Len(fecha) <> 10 Then Exit Function
+
+    If mID$(fecha, 3, 1) <> "/" Then Exit Function
+    If mID$(fecha, 6, 1) <> "/" Then Exit Function
+
+    'Verificar los componentes numericos.
+    If Left$(fecha, 2) Like "*[!0-9]*" Then Exit Function
+    If mID$(fecha, 4, 2) Like "*[!0-9]*" Then Exit Function
+    If Right$(fecha, 4) Like "*[!0-9]*" Then Exit Function
+
+    dia = CInt(Left$(fecha, 2))
+    mes = CInt(mID$(fecha, 4, 2))
+    anio = CInt(Right$(fecha, 4))
+
+    If dia < 1 Or dia > 31 Then Exit Function
+    If mes < 1 Or mes > 12 Then Exit Function
+    If anio < 100 Or anio > 9999 Then Exit Function
+
+    fechaValidada = DateSerial(anio, mes, dia)
+
+    'DateSerial puede ajustar fechas inexistentes.
+    'Comprobamos que no haya modificado dia, mes o anio.
+    If Day(fechaValidada) <> dia Then Exit Function
+    If Month(fechaValidada) <> mes Then Exit Function
+    If Year(fechaValidada) <> anio Then Exit Function
+
+    IsValidDate = True
+    Exit Function
+
+FechaIncorrecta:
+
+    IsValidDate = False
+
 End Function
+
 
 Private Function IsValidCURP(ByVal curp As String) As Boolean
     Dim regex As Object
@@ -1018,14 +1146,102 @@ Private Sub actualizarRegistro()
     guardarRegistro
 End Sub
 
+
 Private Sub guardarRegistro()
+
     Dim id As Long
+    Dim totalPersonal As Long
+    Dim totalOtros As Long
+    Dim totalMaestro As Long
 
-    id = Val(Text16.Text)
+    Dim personalVacio As per
+    Dim otrosVacios As OtrasCh
+    Dim maestroVacio As ob
 
-    Get 2, id, personal
-    Get 3, id, Otros_Rgtros
-    Get 8, id, maestro
+    If Not RutaTrabajoSegura() Then Exit Sub
+
+    'No utilizar directamente un ID editable.
+    If mIDFijo < 1 Or mIDFijo > 32767 Then
+        MsgBox "No hay un ID de empleado valido.", vbCritical, "Guardar personal"
+        Exit Sub
+    End If
+
+    If Trim$(Text16.Text) <> CStr(mIDFijo) Then
+        MsgBox "El ID en pantalla no coincide con el empleado seleccionado." & vbCrLf & "No se guardaron cambios.", vbCritical, "Guardar personal"
+        Exit Sub
+    End If
+
+    If StrComp(CurDir$, mRutaFija, vbTextCompare) <> 0 Then
+        MsgBox "La carpeta de trabajo cambio." & vbCrLf & "No se guardaron datos.", vbCritical, "Guardar personal"
+        Exit Sub
+    End If
+
+    id = mIDFijo
+
+    On Error GoTo ErrorValidacion
+
+    'Comprobar que los manejadores estan abiertos
+    'y que las estructuras son compatibles.
+    If LOF(2) Mod Len(personal) <> 0 Then
+        Err.Raise vbObjectError + 4101, , "personal.dno esta desalineado."
+    End If
+
+    If LOF(3) Mod Len(Otros_Rgtros) <> 0 Then
+        Err.Raise vbObjectError + 4102, , "PerOtre.dno esta desalineado."
+    End If
+
+    If LOF(8) Mod Len(maestro) <> 0 Then
+        Err.Raise vbObjectError + 4103, , "maestro.dno esta desalineado."
+    End If
+
+    totalPersonal = LOF(2) \ Len(personal)
+    totalOtros = LOF(3) \ Len(Otros_Rgtros)
+    totalMaestro = LOF(8) \ Len(maestro)
+
+    If EsNuevo Then
+
+        'La nueva alta solo puede agregarse despues
+        'del ultimo registro de personal.
+        If id <> totalPersonal + 1 Then
+            Err.Raise vbObjectError + 4104, , "La posicion del nuevo empleado cambio."
+        End If
+
+        'No sobrescribir posiciones auxiliares existentes.
+        If id <= totalOtros Or id <= totalMaestro Then
+            Err.Raise vbObjectError + 4105, , "La posicion nueva ya contiene un registro en un archivo auxiliar. Requiere revision."
+        End If
+
+        'Para un empleado nuevo, iniciar registros vacios.
+        'Nunca arrastrar buffers del empleado anterior.
+        personal = personalVacio
+        Otros_Rgtros = otrosVacios
+        maestro = maestroVacio
+
+    Else
+
+        'Un empleado existente debe encontrarse en
+        'los tres archivos antes de cualquier escritura.
+        If id > totalPersonal Or _
+           id > totalOtros Or _
+           id > totalMaestro Then
+
+            Err.Raise vbObjectError + 4106, , "El empleado no tiene registros alineados en los tres archivos."
+        End If
+
+        Get #2, id, personal
+        Get #3, id, Otros_Rgtros
+        Get #8, id, maestro
+
+    End If
+
+    GoTo DatosValidados
+
+ErrorValidacion:
+
+    MsgBox "Guardado bloqueado:" & vbCrLf & Err.Description, vbCritical, "Proteccion de archivos"
+    Exit Sub
+
+DatosValidados:
 
     personal.fal = Text1.Text
     personal.fab = Text2.Text
@@ -1055,106 +1271,13 @@ Private Sub guardarRegistro()
     Unload Me
 End Sub
 
+
 Private Sub eliminarRegistro()
-    Dim respuesta As VbMsgBoxResult
-    Dim registro As Integer
-    Dim i As Integer
-    Dim personalList() As per
-    Dim otrosList() As OtrasCh
-    Dim maestroList() As ob
-    Dim countPersonal As Integer
-    Dim countOtros As Integer
-    Dim countMaestro As Integer
 
-    respuesta = MsgBox("¿Desea eliminar el registro?", vbYesNo + vbQuestion, "Confirmar eliminación")
+    MsgBox "La eliminacion fisica de empleados " & "esta deshabilitada para proteger sus IDs." & vbCrLf & vbCrLf & "Para registrar una baja, utilice " & "la fecha de baja del empleado.", vbExclamation, "Proteccion de personal"
 
-    If respuesta = vbNo Then
-        MsgBox "Operación cancelada.", vbInformation
-        Exit Sub
-    End If
-
-    registro = Val(Text16.Text)
-
-    countPersonal = LOF(2) / Len(personal)
-    countOtros = LOF(3) / Len(Otros_Rgtros)
-    countMaestro = LOF(8) / Len(maestro)
-
-    ReDim personalList(1 To countPersonal)
-    ReDim otrosList(1 To countOtros)
-    ReDim maestroList(1 To countMaestro)
-
-    For i = 1 To countPersonal
-        Get 2, i, personalList(i)
-    Next i
-
-    For i = 1 To countOtros
-        Get 3, i, otrosList(i)
-    Next i
-
-    For i = 1 To countMaestro
-        Get 8, i, maestroList(i)
-    Next i
-
-    Close 2
-    Close 3
-    Close 8
-
-    If registro > 0 And registro <= countPersonal Then
-        For i = registro To countPersonal - 1
-            personalList(i) = personalList(i + 1)
-        Next i
-
-        ReDim Preserve personalList(1 To countPersonal - 1)
-    End If
-
-    If registro > 0 And registro <= countOtros Then
-        For i = registro To countOtros - 1
-            otrosList(i) = otrosList(i + 1)
-        Next i
-
-        ReDim Preserve otrosList(1 To countOtros - 1)
-    End If
-
-    If registro > 0 And registro <= countMaestro Then
-        For i = registro To countMaestro - 1
-            maestroList(i) = maestroList(i + 1)
-        Next i
-
-        ReDim Preserve maestroList(1 To countMaestro - 1)
-    End If
-
-    Open "personal.dno" For Output As #2
-    Open "PerOtre.dno" For Output As #3
-    Open "maestro.dno" For Output As #8
-
-    Close #2
-    Close #3
-    Close #8
-
-    Open "personal.dno" For Random As 2 Len = Len(personal)
-    Open "PerOtre.dno" For Random As 3 Len = Len(Otros_Rgtros)
-    Open "maestro.dno" For Random As 8 Len = Len(maestro)
-
-    For i = 1 To UBound(personalList)
-        Put 2, i, personalList(i)
-    Next i
-
-    For i = 1 To UBound(otrosList)
-        Put 3, i, otrosList(i)
-    Next i
-
-    For i = 1 To UBound(maestroList)
-        Put 8, i, maestroList(i)
-    Next i
-
-    Close 2
-    Close 3
-    Close 8
-
-    MsgBox "Registro eliminado con éxito.", vbInformation
-
-    Unload Me
 End Sub
+
 
 Private Sub EliminarNumeroTarjeta()
     Dim respuesta As Integer

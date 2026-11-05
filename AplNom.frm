@@ -70,7 +70,7 @@ Private Sub EdCop_Click()
  Clipboard.Clear
    difer = NomPol.RowSel - NomPol.Row
    For i = NomPol.Row To NomPol.RowSel
-      For f = NomPol.Col To NomPol.ColSel
+      For f = NomPol.col To NomPol.ColSel
             Temporal1 = Temporal1 + NomPol.TextMatrix(i, f)
             If f < NomPol.ColSel Then
                 Temporal1 = Temporal1 & Chr(9)
@@ -85,7 +85,7 @@ End Sub
 
 Private Sub EdSelT_Click()
    Clipboard.Clear
-    NomPol.Col = 0: NomPol.Row = 0
+    NomPol.col = 0: NomPol.Row = 0
     NomPol.RowSel = NomPol.Rows - 1
     NomPol.ColSel = NomPol.Cols - 1
     
@@ -93,7 +93,7 @@ End Sub
 
 Private Sub Form_Load()
    If (Len(Form8.Label7.Caption) > 30) Then
-            Label1.Caption = UCase(Mid(Form8.Label7.Caption, 13))
+            Label1.Caption = UCase(mID(Form8.Label7.Caption, 13))
             Else
             Label1.Caption = UCase(Form8.Label7.Caption)
    End If
@@ -109,19 +109,19 @@ Private Sub Form_Load()
 End Sub
 Sub ColDefine()
     NomPol.Row = 0
-    NomPol.Col = 0: NomPol.ColWidth(0) = 600:  NomPol.CellAlignment = 4: NomPol.Text = "Cuenta"
-    NomPol.Col = 1: NomPol.ColWidth(1) = 600:  NomPol.CellAlignment = 4: NomPol.Text = "SubCta"
-    NomPol.Col = 2: NomPol.ColWidth(2) = 3350: NomPol.CellFontBold = True: NomPol.CellAlignment = 4: NomPol.Text = "Nombre"
-    NomPol.Col = 3: NomPol.ColWidth(3) = 1200: NomPol.CellFontBold = True: NomPol.CellAlignment = 4: NomPol.Text = "Parcial"
-    NomPol.Col = 4: NomPol.ColWidth(4) = 1100: NomPol.CellFontBold = True: NomPol.CellAlignment = 4: NomPol.Text = "Debe"
-    NomPol.Col = 5: NomPol.ColWidth(5) = 1100: NomPol.CellFontBold = True: NomPol.CellAlignment = 4: NomPol.Text = "Haber"
-    NomPol.Col = 6: NomPol.ColWidth(6) = 3200: NomPol.CellFontBold = True: NomPol.CellAlignment = 3: NomPol.Text = "Redaccion"
-    NomPol.Col = 7: NomPol.ColWidth(7) = 480
+    NomPol.col = 0: NomPol.ColWidth(0) = 600:  NomPol.CellAlignment = 4: NomPol.Text = "Cuenta"
+    NomPol.col = 1: NomPol.ColWidth(1) = 600:  NomPol.CellAlignment = 4: NomPol.Text = "SubCta"
+    NomPol.col = 2: NomPol.ColWidth(2) = 3350: NomPol.CellFontBold = True: NomPol.CellAlignment = 4: NomPol.Text = "Nombre"
+    NomPol.col = 3: NomPol.ColWidth(3) = 1200: NomPol.CellFontBold = True: NomPol.CellAlignment = 4: NomPol.Text = "Parcial"
+    NomPol.col = 4: NomPol.ColWidth(4) = 1100: NomPol.CellFontBold = True: NomPol.CellAlignment = 4: NomPol.Text = "Debe"
+    NomPol.col = 5: NomPol.ColWidth(5) = 1100: NomPol.CellFontBold = True: NomPol.CellAlignment = 4: NomPol.Text = "Haber"
+    NomPol.col = 6: NomPol.ColWidth(6) = 3200: NomPol.CellFontBold = True: NomPol.CellAlignment = 3: NomPol.Text = "Redaccion"
+    NomPol.col = 7: NomPol.ColWidth(7) = 480
        
 End Sub
 Sub Carga_nomina()
      Close
-     Open "C:\GconTA\perma.dno" For Random As #7 Len = Len(basico)
+     Open RutaArchivoEntornoNomina() For Random As #7 Len = Len(basico)
      fin_basico = LOF(7) / Len(basico)
      Get 7, fin_basico, basico
      Direc_torio = Trim(basico.datoarch)
@@ -134,14 +134,14 @@ Sub Carga_nomina()
      Direc_torio = Trim(Direc_t)
 
      Rem End If
-     MesNom = InputBox("Esta poliza se va a registrar en " + Trim(mm(ReferOper.Mes)) + " es correcto ??? ", _
-               "Aplicacion nomina", ReferOper.Mes)
-     ReferOper.Mes = MesNom
+     MesNom = InputBox("Esta poliza se va a registrar en " + Trim(mm(ReferOper.mes)) + " es correcto ??? ", _
+               "Aplicacion nomina", ReferOper.mes)
+     ReferOper.mes = MesNom
      
-     If ReferOper.Mes < 10 Then
-        ArcOper = "COS" + "0" + Trim(Str(ReferOper.Mes))
+     If ReferOper.mes < 10 Then
+        ArcOper = "COS" + "0" + Trim(Str(ReferOper.mes))
         Else
-        ArcOper = "COS" + Trim(Str(ReferOper.Mes))
+        ArcOper = "COS" + Trim(Str(ReferOper.mes))
      End If
      
      Open Direc_torio + "\" + ArcOper For Random As 11 Len = Len(oper)

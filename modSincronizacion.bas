@@ -27,17 +27,40 @@ End Function
 
 ' Lista de empresas AUTORIZADAS (igualdad exacta, ya normalizada:
 ' mayusculas, sin acentos, sin puntos ni comas).
-Private Function EsEmpresaAutorizada(ByVal nombre As String) As Boolean
-    Select Case NormalizarNombreEmpresa(nombre)
-        Case "SACMAG DE MEXICO SA DE CV"
-            EsEmpresaAutorizada = True
-    End Select
+
+Private Function EsEmpresaAutorizada( _
+    ByVal nombre As String) As Boolean
+
+    Dim nombreActual As String
+
+    nombreActual = UCase$(Trim$(Replace(nombre, vbNullChar, "")))
+
+    EsEmpresaAutorizada = (StrComp(nombreActual, "SACMAG DE MEXICO, S.A. DE C.V.", vbBinaryCompare) = 0)
+
 End Function
 
+
 ' True = puede sincronizar con la BD remota.
+
 Public Function SincronizacionRemotaPermitida() As Boolean
-    If Not g_EmpresaCargada Then Exit Function                  ' sin datos de empresa: NO
-    If Not EsEmpresaAutorizada(empresa.name) Then Exit Function ' no esta en la lista: NO
-    If EsEmpresaLocal(empresa.name) Then Exit Function          ' bandera / reglas legacy: NO
+
+    SincronizacionRemotaPermitida = False
+
+    'La empresa debe estar cargada correctamente.
+    If Not g_EmpresaCargada Then Exit Function
+
+    'Verificar la razon social completa.
+    If Not EsEmpresaAutorizada(empresa.name) Then
+        Exit Function
+    End If
+
+    'Respetar empresas declaradas locales.
+    If EsEmpresaLocal(empresa.name) Then Exit Function
+
+    'No autorizar importaciones fuera de la ruta activa.
+    If Not RutaTrabajoSegura(False) Then Exit Function
+
     SincronizacionRemotaPermitida = True
+
 End Function
+

@@ -5,10 +5,10 @@ Begin VB.Form PeCfdi
    ClientHeight    =   5940
    ClientLeft      =   150
    ClientTop       =   450
-   ClientWidth     =   9555
+   ClientWidth     =   13140
    LinkTopic       =   "Form9"
    ScaleHeight     =   5940
-   ScaleWidth      =   9555
+   ScaleWidth      =   13140
    StartUpPosition =   2  'CenterScreen
    Visible         =   0   'False
    Begin MSFlexGridLib.MSFlexGrid dat 
@@ -98,11 +98,31 @@ Private temporal As String
 Private Temporal1 As String
 Private valcelant As String
 Private mSincronizacionInicial As Boolean
+Private mEditandoCFDI As Boolean
+Private mLeyendoGrid As Boolean
+Private mFilasCargadas As Long
+Private mRutaCarga As String
+Private mIdsFila() As Long
+Private mNombresFila() As String
+Private mIdentidadesFila() As String
+Private mOriginalCFDI() As String
+
 
 'True: en empresas con sincronizacion SQL, el grid solo muestra a los empleados
 'que ya tienen algun dato en Perscfdi.dno. False: muestra a todos los activos.
 '(En empresas en modo local siempre se muestran todos, porque ahi se capturan a mano.)
 Private Const OCULTAR_SIN_DATOS As Boolean = False
+
+
+'============================================================
+' VALIDAR EMPRESA AUTORIZADA PARA SQL
+'============================================================
+
+Private Function EsSACMAGExacta() As Boolean
+    'Autorizacion central: empresa.name EXACTAMENTE como razon social.
+    'Ver modSincronizacion.bas. El codigo SQL de datosSat sigue siendo SACMAG.
+    EsSACMAGExacta = SincronizacionRemotaPermitida()
+End Function
 
 ' ============================================================
 ' CONFIGURACION DEL GRID
@@ -171,41 +191,40 @@ End Sub
 ' CARGA DEL FORMULARIO / SINCRONIZACION INICIAL
 ' ============================================================
 
+
 Private Sub Form_Load()
 
+    mEditandoCFDI = False
+    mSincronizacionInicial = False
+    mLeyendoGrid = False
+    mFilasCargadas = 0
+
+    'Preparar solamente los encabezados.
     Col_Def
 
-    If Not SincronizacionRemotaPermitida() Then
-        PeCfdi.Caption = "Datos complementarios de Personal - Modo local"
+    'No mostrar empleados hasta presionar Abrir o DB.
+    PCpCfdi.Rows = 1
+
+    ActualizarModoCFDI
+
+    If EsSACMAGExacta() Then
+        Me.Caption = "Datos complementarios - SACMAG"
     Else
-        PeCfdi.Caption = "Datos complementarios de Personal - Cargando archivos locales"
+        Me.Caption = "Datos complementarios - Modo local"
     End If
 
 End Sub
 
-'Importacion automatica la primera vez que se muestra el formulario.
-'El boton DB queda disponible para sincronizar manualmente otra vez.
-Private Sub Form_Activate()
-    If mSincronizacionInicial Then Exit Sub
-    mSincronizacionInicial = True
-    DB_Click
-End Sub
-
 Private Function ObtenerEmpresaSAT() As String
-    Dim abrEmpresa As String
 
-    abrEmpresa = Left(Trim(emp), 4)
+    ObtenerEmpresaSAT = vbNullString
 
-    If (UCase(abrEmpresa) = "SACM") Then abrEmpresa = "SACMAG"
-    If (UCase(abrEmpresa) = "SUPT") Then abrEmpresa = "SUPTER"
-    If (UCase(abrEmpresa) = "COOR") Then abrEmpresa = "CORDINA"
-    If (UCase(abrEmpresa) = "EPES") Then abrEmpresa = "EPESA"
-    If (UCase(abrEmpresa) = "SUPE") Then abrEmpresa = "SUPERVISA"
-    If (UCase(abrEmpresa) = "CONS") Then abrEmpresa = "CONSULTE"
-    If (UCase(abrEmpresa) = "GEOA") Then abrEmpresa = "GEOAMBIENTE"
+    If EsSACMAGExacta() Then
+        ObtenerEmpresaSAT = "SACMAG"
+    End If
 
-    ObtenerEmpresaSAT = abrEmpresa
 End Function
+
 
 ' ============================================================
 ' ARCHIVO LOCAL CFDI
@@ -245,8 +264,7 @@ Private Function EmpleadoDeBaja() As Boolean
 End Function
 
 'Llena el grid leyendo Personal.dno y Perscfdi.dno.
-'Lo usan el boton Abrir y, al terminar, el boton DB, para que el grid
-'siempre muestre lo que realmente quedo guardado en el archivo.
+'Lo usan el boton Abrir y, al terminar, el boton DB, para que el grid siempre muestre lo que realmente quedo guardado en el archivo.
 Private Sub CargarGridDesdeArchivos()
     Dim hPers As Integer
     Dim hCfdi As Integer
@@ -258,45 +276,51 @@ Private Sub CargarGridDesdeArchivos()
     Dim modoLocal As Boolean
 
     On Error GoTo ErrCarga
-        modoLocal = Not SincronizacionRemotaPermitida()
+    If Not RutaTrabajoSegura() Then Exit Sub
 
+    mLeyendoGrid = True
+    mEditandoCFDI = False
+    mFilasCargadas = 0
+    mRutaCarga = CurDir$
+    modoLocal = Not EsSACMAGExacta()
     PCpCfdi.Rows = 1
 
-    If Dir$("Personal.dno") = "" Then
-        Err.Raise vbObjectError + 1101, , "No existe Personal.dno en la carpeta actual."
+    If Dir$("personal.dno") = "" Then
+        Err.Raise vbObjectError + 1101, , "No existe personal.dno en la carpeta actual."
     End If
 
     hPers = FreeFile
-    Open "Personal.dno" For Random Access Read As #hPers Len = Len(personal)
+    Open "personal.dno" For Random Access Read As #hPers Len = Len(personal)
+    If LOF(hPers) Mod Len(personal) <> 0 Then
+        Err.Raise vbObjectError + 1102, , "personal.dno tiene estructura incompatible."
+    End If
     totalPers = LOF(hPers) \ Len(personal)
 
-    'Si Perscfdi.dno aun no existe, se muestran los empleados sin datos complementarios.
+    If totalPers > 0 Then
+        ReDim mIdsFila(1 To totalPers)
+        ReDim mNombresFila(1 To totalPers)
+        ReDim mIdentidadesFila(1 To totalPers)
+        ReDim mOriginalCFDI(1 To totalPers)
+    End If
+
     If Dir$("Perscfdi.dno") <> "" Then
         hCfdi = FreeFile
         Open "Perscfdi.dno" For Random Access Read As #hCfdi Len = Len(Empleado_1)
+        If LOF(hCfdi) Mod Len(Empleado_1) <> 0 Then
+            Err.Raise vbObjectError + 1103, , "Perscfdi.dno tiene estructura incompatible."
+        End If
         totalCfdi = LOF(hCfdi) \ Len(Empleado_1)
     End If
 
     For i = 1 To totalPers
         Get #hPers, i, personal
-
-        'Los empleados de baja no se muestran en el grid.
         If CampoArchivoCFDI(personal.nom) <> "" And Not EmpleadoDeBaja() Then
+            LimpiarEmpleadoCFDI
+            If i <= totalCfdi Then Get #hCfdi, i, Empleado_1
 
-            'Los empleados mas nuevos pueden quedar despues del final de Perscfdi.dno.
-            'Get no marca error en ese caso y dejaria los datos del empleado anterior.
-            If i <= totalCfdi Then
-                Get #hCfdi, i, Empleado_1
-            Else
-                LimpiarEmpleadoCFDI
-            End If
-
-            'Un registro sin ningun dato no se muestra (salvo en modo local o si
-            'OCULTAR_SIN_DATOS = False).
             If TieneDatosCFDI() Or modoLocal Or Not OCULTAR_SIN_DATOS Then
-
-                nombre = Trim$(personal.nom) & " " & Trim$(personal.ape1) & " " & Trim$(personal.ape2)
-
+                nombre = Trim$(personal.nom) & " " & _
+                         Trim$(personal.ape1) & " " & Trim$(personal.ape2)
                 cadena = Format$(i, "####0") & vbTab & nombre & vbTab & _
                          CampoArchivoCFDI(Empleado_1.Direccion) & vbTab & _
                          CampoArchivoCFDI(Empleado_1.Colonia) & vbTab & _
@@ -305,9 +329,12 @@ Private Sub CargarGridDesdeArchivos()
                          CampoArchivoCFDI(Empleado_1.Delegacion) & vbTab & _
                          CampoArchivoCFDI(Empleado_1.Cpostal) & vbTab & _
                          CampoArchivoCFDI(Empleado_1.correo)
-
                 PCpCfdi.AddItem cadena
-
+                mFilasCargadas = mFilasCargadas + 1
+                mIdsFila(mFilasCargadas) = i
+                mNombresFila(mFilasCargadas) = nombre
+                mIdentidadesFila(mFilasCargadas) = FirmaIdentidadCFDI()
+                mOriginalCFDI(mFilasCargadas) = FirmaRegistroCFDI()
             End If
         End If
     Next i
@@ -316,96 +343,105 @@ Salir:
     On Error Resume Next
     If hCfdi <> 0 Then Close #hCfdi
     If hPers <> 0 Then Close #hPers
+    mLeyendoGrid = False
+    ActualizarModoCFDI
+    On Error GoTo 0
     Exit Sub
 
 ErrCarga:
-    MsgBox "No fue posible cargar los datos." & vbCrLf & "Error " & Err.Number & ": " & Err.Description, vbExclamation, "Datos complementarios"
+    MsgBox "No fue posible cargar datos CFDI: " & Err.Description, _
+           vbExclamation, "Datos complementarios"
     Resume Salir
 End Sub
 
+
+
+
 Private Sub ArCfAbr_Click()
+
+    If Not RutaTrabajoSegura() Then Exit Sub
+
+    MsgBox "Se mostraran los registros actualmente guardados en los archivos locales (.dno)." & vbCrLf & vbCrLf & "Esta consulta es de solo lectura.", vbInformation, "Archivos locales"
+
+    'No consulta SQL ni escribe archivos.
     CargarGridDesdeArchivos
+
 End Sub
-
-Private Sub ArCfGuarda_Click()
-    Dim h As Integer
-    Dim EmpNum As Long
-    Dim renglon As Long
-
-    h = FreeFile
-    Open "Perscfdi.dno" For Random As #h Len = Len(Empleado_1)
-
-    For renglon = 1 To PCpCfdi.Rows - 1
-        If IsNumeric(PCpCfdi.TextMatrix(renglon, 0)) Then
-            EmpNum = CLng(PCpCfdi.TextMatrix(renglon, 0))
-
-            If EmpNum >= 1 Then
-                'Leer antes de modificar: conserva cualquier otro campo del tipo
-                'y evita arrastrar valores del renglon anterior.
-                Get #h, EmpNum, Empleado_1
-
-                Empleado_1.Direccion = PCpCfdi.TextMatrix(renglon, 2)
-                Empleado_1.Colonia = PCpCfdi.TextMatrix(renglon, 3)
-                Empleado_1.Ciudad = PCpCfdi.TextMatrix(renglon, 4)
-                Empleado_1.Estado = PCpCfdi.TextMatrix(renglon, 5)
-                Empleado_1.Delegacion = PCpCfdi.TextMatrix(renglon, 6)
-                Empleado_1.Cpostal = PCpCfdi.TextMatrix(renglon, 7)
-                Empleado_1.correo = PCpCfdi.TextMatrix(renglon, 8)
-
-                Put #h, EmpNum, Empleado_1
-            End If
-        End If
-    Next renglon
-
-    Close #h
-End Sub
-
-Private Sub ArCfSale_Click()
-    Close
-    Unload PeCfdi
-End Sub
-
-' ============================================================
-' CONSULTA REMOTA
-' ============================================================
 
 Private Sub DB_Click()
+
     Dim nuevos As Long
     Dim completados As Long
     Dim omitidos As Long
+    Dim detalleError As String
 
     On Error GoTo ErrorDB
 
-    If Not SincronizacionRemotaPermitida() Then
-        PeCfdi.Caption = "Datos complementarios - Modo local"
-    Else
-        PeCfdi.Caption = "Datos complementarios - Archivos locales"
+    If Not RutaTrabajoSegura() Then Exit Sub
+
+    '====================================================
+    ' 1. AUTORIZACION DE EMPRESA
+    '====================================================
+
+    If Not EsSACMAGExacta() Then
+
+        MsgBox "La sincronizacion SQL esta disponible unicamente para SACMAG DE MEXICO, S.A. DE C.V." & vbCrLf & "No se consulto la base de datos.", vbInformation, "Sincronizacion no disponible"
+
+        Exit Sub
+
     End If
 
-    'Mostrar SIEMPRE lo que quedo en archivos locales.
-    Col_Def
+    '====================================================
+    ' 2. AVISO INFORMATIVO
+    '====================================================
+
+    MsgBox "Se consultara la base de datos de SACMAG para completar los datos faltantes de los archivos locales (.dno)." & vbCrLf & vbCrLf & "Los datos locales existentes se conservaran." & vbCrLf & _
+           "Los empleados nuevos se incorporaran en su posicion correspondiente.", vbInformation, "Sincronizacion de personal"
+
+    '====================================================
+    ' 3. CONSULTAR SQL
+    '====================================================
+
+    'Solo lectura SQL.
+    'La rutina importadora escribe unicamente en .dno.
+
+    ImportarPersonalDesdeSQL "SACMAG", nuevos, completados, omitidos
+
+    '====================================================
+    ' 4. MOSTRAR RESULTADO DESDE ARCHIVOS LOCALES
+    '====================================================
+
     CargarGridDesdeArchivos
 
-    Debug.Print "PeCfdi: " & nuevos & " altas locales; " & _
-                completados & " empleados completados; " & _
-                omitidos & " omitidos."
+    Me.Caption = "Datos complementarios - SACMAG"
 
-    If EsEmpresaLocal(emp) Then
-        PeCfdi.Caption = "Datos complementarios - Modo local"
-    Else
-        PeCfdi.Caption = "Datos complementarios - Archivos locales"
+    '====================================================
+    ' 5. NOTIFICAR EMPLEADOS NUEVOS
+    '====================================================
+
+    If nuevos > 0 Then
+
+        MsgBox "Se encontraron " & CStr(nuevos) & " empleados nuevos en SQL." & vbCrLf & "Se incorporaron a los archivos locales para su consulta y manipulacion desde los formularios correspondientes.", vbInformation, "Personal importado"
+
     End If
+
+    Debug.Print "SACMAG - Nuevos: " & nuevos & " / Completados: " & completados & " / Omitidos: " & omitidos
+
     Exit Sub
 
 ErrorDB:
-    Debug.Print "Error importando SQL: " & Err.Number & " / " & Err.Description
-    MsgBox "No se pudo completar la importacion local." & vbCrLf & _
-           Err.Description, vbExclamation, "Datos complementarios"
 
-    'Mostrar los datos locales previos incluso si fallo la conexion.
-    Col_Def
+    detalleError = Err.Description
+
+    MsgBox "No fue posible completar la sincronizacion." & vbCrLf & detalleError, vbExclamation, "Datos complementarios"
+
+    'Permitir visualizar los archivos anteriores,
+    'sin realizar una segunda importacion.
     CargarGridDesdeArchivos
+
 End Sub
+
+
 
 ' ============================================================
 ' COPIAR / PEGAR / INSERTAR / ELIMINAR
@@ -430,140 +466,67 @@ Private Sub EdCfCopia_Click()
     Clipboard.SetText Temporal1
 End Sub
 
-Private Sub EdCfEliminar_Click()
-    Dim w1 As Long
-    For w1 = PCpCfdi.Row To PCpCfdi.RowSel
-        PCpCfdi.RemoveItem PCpCfdi.Row
-    Next w1
-End Sub
-
-Private Sub EdCfInsertar_Click()
-    Dim W As Long
-
-    For W = PCpCfdi.Row To PCpCfdi.RowSel
-        PCpCfdi.AddItem (""), PCpCfdi.Row
-    Next W
-End Sub
-
-Private Sub EdCfPegar_Click()
-    Dim DeAqui As Long
-    Dim RetornoCarro As Long
-    Dim InicioCopia As Long
-    Dim i As Long
-    Dim InIPGr As Long
-    Dim InIPGc As Long
-
-    Temporal1 = ""
-    temporal = Clipboard.GetText(vbCFText)
-
-    RetornoCarro = PCpCfdi.col
-    InicioCopia = PCpCfdi.Row
-    DeAqui = InicioCopia
-    InIPGr = InicioCopia
-    InIPGc = RetornoCarro
-
-    If temporal <> "" Then
-        Clipboard.Clear
-        DeAqui = 1
-
-        For i = 1 To Len(temporal)
-            Select Case mID$(temporal, i, 1)
-                Case Chr(9)
-                    LTXT.Text = mID$(temporal, DeAqui, (i - DeAqui))
-                    Temporal1 = Temporal1 + PCpCfdi.TextMatrix(PCpCfdi.Row, PCpCfdi.col) & Chr(9)
-                    PCpCfdi.Text = mID$(temporal, DeAqui, (i - DeAqui))
-                    PCpCfdi.col = PCpCfdi.col + 1
-                    DeAqui = i + 1
-
-                Case Chr(13)
-                    Temporal1 = Temporal1 + PCpCfdi.TextMatrix(PCpCfdi.Row, PCpCfdi.col) & Chr(13)
-                    LTXT.Text = mID$(temporal, DeAqui, (i - DeAqui))
-                    PCpCfdi.Text = mID$(temporal, DeAqui, (i - DeAqui))
-
-                    If (PCpCfdi.Rows - 1) <= PCpCfdi.Row Then PCpCfdi.Rows = PCpCfdi.Rows + 1
-
-                    PCpCfdi.Row = PCpCfdi.Row + 1
-                    PCpCfdi.TopRow = 1
-                    DeAqui = i + 1
-
-                Case Chr(10)
-                    Temporal1 = Temporal1 & Chr(10)
-                    PCpCfdi.col = RetornoCarro
-                    DeAqui = i + 1
-
-                Case Else
-                    Rem nada
-            End Select
-        Next i
-
-        PCpCfdi.col = RetornoCarro
-    End If
-
-    Clipboard.Clear
-    Clipboard.SetText Clipboard.GetText + Temporal1
-End Sub
 
 Private Sub EdCfSelT_Click()
-    Dim limite As Long
-    Dim renglon As Long
 
-    Clipboard.Clear
+    If PCpCfdi.Rows <= 1 Then Exit Sub
 
     PCpCfdi.Row = 1
     PCpCfdi.col = 0
 
-    For limite = 1 To PCpCfdi.Rows - 1
-        renglon = limite
-
-        If IsNumeric(PCpCfdi.TextMatrix(renglon, 0)) Then
-            PCpCfdi.RowSel = PCpCfdi.Row
-        End If
-    Next limite
-
+    PCpCfdi.RowSel = PCpCfdi.Rows - 1
     PCpCfdi.ColSel = PCpCfdi.Cols - 1
-End Sub
 
-' ============================================================
-' EDICION DE CELDAS
-' ============================================================
-
-Private Sub LTXT_Change()
-    PCpCfdi.Text = LTXT.Text
 End Sub
 
 Private Sub pcpcfdi_EnterCell()
+    'Resaltar visualmente la celda seleccionada.
+    'No activar cuadros de edicion.
     PCpCfdi.CellBackColor = vbYellow
-    valcelant = PCpCfdi.Text
-    LTXT.Text = valcelant
 End Sub
 
+
 Private Sub pcpcfdi_KeyDown(KeyCode As Integer, Shift As Integer)
-    Dim q As Long
-    Dim W As Long
+
+    'Permitir copiar la seleccion con Ctrl + C.
+    If (Shift And vbCtrlMask) <> 0 Then
+
+        If KeyCode = vbKeyC Then
+            EdCfCopia_Click
+            KeyCode = 0
+            Exit Sub
+        End If
+
+        'Bloquear Ctrl + V.
+        If KeyCode = vbKeyV Then
+            KeyCode = 0
+            Exit Sub
+        End If
+
+    End If
 
     Select Case KeyCode
-        Case vbKeyDelete
-            For q = PCpCfdi.Row To PCpCfdi.RowSel
-                For W = PCpCfdi.col To PCpCfdi.ColSel
-                    PCpCfdi.TextMatrix(q, W) = ""
-                Next W
-            Next q
 
-            LTXT.Text = PCpCfdi.Text
+        Case vbKeyDelete, vbKeyBack, vbKeyF2
+            'No permitir borrar ni editar.
+            KeyCode = 0
 
-        Case vbKeyF2
-            If PCpCfdi.Text <> "" Then valcelant = PCpCfdi.Text
+        Case vbKeyReturn
+            'Enter no edita ni muestra mensajes.
+            KeyCode = 0
 
-            LTXT.Text = LTrim(RTrim(PCpCfdi.Text))
-            LTXT.SetFocus
     End Select
+
 End Sub
 
 Private Sub pcpcfdi_KeyPress(KeyAscii As Integer)
-    valcelant = PCpCfdi.Text
-    LTXT.Text = Chr(KeyAscii)
-    LTXT.SetFocus
+
+    'Impedir escribir directamente en las celdas.
+    'La seleccion y la navegacion siguen disponibles.
+    KeyAscii = 0
+
 End Sub
+
 
 Private Sub pcpcfdi_LeaveCell()
     PCpCfdi.CellBackColor = vbWhite
@@ -703,5 +666,95 @@ Private Function VerificarRegistroCFDI(ByVal oRS As ADODB.Recordset) As Boolean
 
 End Function
 
+'============================================================
+' EDICION EXPLICITA Y PROTECCION DE IDENTIFICADORES
+'============================================================
+
+
+Private Sub ActualizarModoCFDI()
+
+    'PeCfdi es exclusivamente de consulta.
+    'No permitir habilitar edicion.
+
+    mEditandoCFDI = False
+
+    LTXT.Locked = True
+    LTXT.Visible = False
+
+End Sub
+
+Private Function PuedeEditarCeldaCFDI(Optional ByVal aviso As Boolean = True) As Boolean
+    'PeCfdi es exclusivamente de consulta.
+    'No mostrar mensajes de habilitar edicion.
+    PuedeEditarCeldaCFDI = False
+End Function
+
+
+Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
+    If mEditandoCFDI Then
+        If MsgBox("Hay cambios potenciales sin guardar. Desea cerrar?", vbYesNo Or vbQuestion Or vbDefaultButton2, "Cerrar CFDI") <> vbYes Then Cancel = 1
+    End If
+End Sub
+
+Private Function FirmaCampoCFDI(ByVal valor As String) As String
+    Dim limpio As String
+    limpio = CampoArchivoCFDI(valor)
+    FirmaCampoCFDI = CStr(Len(limpio)) & ":" & limpio
+End Function
+
+Private Function FirmaRegistroCFDI() As String
+    FirmaRegistroCFDI = _
+        FirmaCampoCFDI(Empleado_1.Direccion) & _
+        FirmaCampoCFDI(Empleado_1.Colonia) & _
+        FirmaCampoCFDI(Empleado_1.Ciudad) & _
+        FirmaCampoCFDI(Empleado_1.Estado) & _
+        FirmaCampoCFDI(Empleado_1.Delegacion) & _
+        FirmaCampoCFDI(Empleado_1.Cpostal) & _
+        FirmaCampoCFDI(Empleado_1.correo)
+End Function
+
+Private Function FirmaIdentidadCFDI() As String
+    FirmaIdentidadCFDI = FirmaCampoCFDI(personal.nom) & FirmaCampoCFDI(personal.ape1) & FirmaCampoCFDI(personal.ape2) & FirmaCampoCFDI(personal.RFC)
+End Function
+
+Private Function FirmaGridCFDI(ByVal fila As Long) As String
+    Dim c As Long
+    Dim resultado As String
+    For c = 2 To 8
+        resultado = resultado & FirmaCampoCFDI(PCpCfdi.TextMatrix(fila, c))
+    Next c
+    FirmaGridCFDI = resultado
+End Function
+
+Private Sub ValidarValorCFDI(ByVal valor As String, ByVal ancho As Long, _
+                              ByVal fila As Long, ByVal columna As Long)
+    If Len(valor) > ancho Then
+        Err.Raise vbObjectError + 1210, , "Fila " & fila & ", columna " & columna & ": " & "supera " & ancho & " caracteres."
+    End If
+    If StrConv(StrConv(valor, vbFromUnicode), vbUnicode) <> valor Then
+        Err.Raise vbObjectError + 1211, , _
+             "Fila " & fila & ": caracteres no compatibles con el .dno."
+    End If
+End Sub
+
+Private Sub ValidarCamposGridCFDI(ByVal fila As Long)
+    ValidarValorCFDI PCpCfdi.TextMatrix(fila, 2), Len(Empleado_1.Direccion), fila, 2
+    ValidarValorCFDI PCpCfdi.TextMatrix(fila, 3), Len(Empleado_1.Colonia), fila, 3
+    ValidarValorCFDI PCpCfdi.TextMatrix(fila, 4), Len(Empleado_1.Ciudad), fila, 4
+    ValidarValorCFDI PCpCfdi.TextMatrix(fila, 5), Len(Empleado_1.Estado), fila, 5
+    ValidarValorCFDI PCpCfdi.TextMatrix(fila, 6), Len(Empleado_1.Delegacion), fila, 6
+    ValidarValorCFDI PCpCfdi.TextMatrix(fila, 7), Len(Empleado_1.Cpostal), fila, 7
+    ValidarValorCFDI PCpCfdi.TextMatrix(fila, 8), Len(Empleado_1.correo), fila, 8
+End Sub
+
+Private Sub CopiarGridARegistroCFDI(ByVal fila As Long)
+    Empleado_1.Direccion = PCpCfdi.TextMatrix(fila, 2)
+    Empleado_1.Colonia = PCpCfdi.TextMatrix(fila, 3)
+    Empleado_1.Ciudad = PCpCfdi.TextMatrix(fila, 4)
+    Empleado_1.Estado = PCpCfdi.TextMatrix(fila, 5)
+    Empleado_1.Delegacion = PCpCfdi.TextMatrix(fila, 6)
+    Empleado_1.Cpostal = PCpCfdi.TextMatrix(fila, 7)
+    Empleado_1.correo = PCpCfdi.TextMatrix(fila, 8)
+End Sub
 
 

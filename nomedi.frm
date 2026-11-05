@@ -196,8 +196,28 @@ Sub ArchCorr()
       ListPer.Text = ValorAnt
       Exit Sub
   End If
+  
   Close 1, 3
   rgtro = ListPer.TextMatrix(ListPer.Row, 0)   ' <-- mover esta línea PRIMERO
+  
+  
+    If Not RutaTrabajoSegura() Then
+        ListPer.Text = ValorAnt
+        Exit Sub
+    End If
+    
+    If ListPer.col >= 2 And ListPer.col <= 9 Then
+    
+        If MsgBox("Confirma guardar este cambio del empleado " & ListPer.TextMatrix(ListPer.Row, 0) & "?" & vbCrLf & vbCrLf & "Valor anterior: " & CStr(ValorAnt) & vbCrLf & "Valor nuevo: " & ListPer.Text, vbYesNo Or vbQuestion Or vbDefaultButton2, _
+            "Confirmar cambio") <> vbYes Then
+    
+            ListPer.Text = ValorAnt
+            Exit Sub
+    
+        End If
+    
+    End If
+
 
   Open "personal.dno" For Random As 1 Len = Len(personal)
   Get 1, rgtro, personal
@@ -219,18 +239,18 @@ Sub ArchCorr()
             Put 1, rgtro, personal
         Case 5
             If ListPer.Text <> "" Then
-                Mes = Mid(ListPer.Text, 4, 2)
-                yea = Mid(ListPer.Text, 7, 4)
+                mes = mID(ListPer.Text, 4, 2)
+                yea = mID(ListPer.Text, 7, 4)
                 dia = Left(ListPer.Text, 2)
                 
-                If (Mes < 1) Or (Mes > 12) Then
+                If (mes < 1) Or (mes > 12) Then
                     MsgBox "Mes invalido "
                     Tex_Edicion = ValorAnt
                     ListPer.Text = ValorAnt
                     GoTo salte5
                 End If
                 
-                If (dia < 1) Or (dia > dd(Mes)) Then
+                If (dia < 1) Or (dia > dd(mes)) Then
                     MsgBox "dia invalido "
                     Tex_Edicion = ValorAnt
                     ListPer.Text = ValorAnt
@@ -250,18 +270,18 @@ Sub ArchCorr()
 salte5:
         Case 6
             If ListPer.Text <> "" Then
-                Mes = Mid(ListPer.Text, 4, 2)
-                yea = Mid(ListPer.Text, 7, 4)
+                mes = mID(ListPer.Text, 4, 2)
+                yea = mID(ListPer.Text, 7, 4)
                 dia = Left(ListPer.Text, 2)
                 
-                If (Mes < 1) Or (Mes > 12) Then
+                If (mes < 1) Or (mes > 12) Then
                     MsgBox "Mes invalido "
                     Tex_Edicion = ValorAnt
                     ListPer.Text = ValorAnt
                     GoTo salte6
                 End If
                 
-                If (dia < 1) Or (dia > dd(Mes)) Then
+                If (dia < 1) Or (dia > dd(mes)) Then
                     MsgBox "dia invalido "
                     Tex_Edicion = ValorAnt
                     ListPer.Text = ValorAnt
@@ -284,7 +304,7 @@ salte6:
                 personal.ingr = ListPer.Text
                 ListPer.Text = Format(ListPer.Text, z2$)
                 If personal.ingr > 0 Then
-                yea = Mid(personal.fal, 7, 4)
+                yea = mID(personal.fal, 7, 4)
                 If yea < 1900 Then
                     MsgBox "La fecha de ingreso no es correcta, no es posible calcular el salario integrado"
                 Else
@@ -301,7 +321,7 @@ salte6:
             If ListPer.Text = "" Then ListPer.Text = 0
                 personal.viat = ListPer.Text
                 ListPer.Text = Format(ListPer.Text, z2$)
-                yea = Mid(personal.fal, 7, 4)
+                yea = mID(personal.fal, 7, 4)
             
                 If yea < 1900 Then
                     MsgBox "La fecha de ingreso no es correcta, no es posible calcular el salario integrado"
@@ -320,7 +340,7 @@ salte6:
             If ListPer.Text = "" Then ListPer.Text = 0
             personal.otras = ListPer.Text
             ListPer.Text = Format(ListPer.Text, z2$)
-            yea = Mid(personal.fal, 7, 4)
+            yea = mID(personal.fal, 7, 4)
             
             If yea < 1900 Then
                 MsgBox "La fecha de ingreso no es correcta, no es posible calcular el salario integrado"
@@ -462,14 +482,23 @@ End Sub
 ' MODO EDICION / RESPALDO Y CANCELACION
 ' ============================================================
 
+
 Private Sub BtnCancelarCambios_Click()
-    If MsgBox("Esto descartará TODOS los cambios hechos desde que habilitaste edición. ¿Continuar?", vbYesNo + vbExclamation) = vbYes Then
-        RestaurarArchivos
-        ModoEdicion = False
-        ActualizarBotones
-        CargarGrid   ' releer y repintar desde los archivos restaurados
+
+    If MsgBox("Desea salir del modo edicion?" & vbCrLf & "Las modificaciones ya confirmadas se conservaran." & vbCrLf & "Las modificaciones pendientes en pantalla se descartaran.", vbYesNo Or vbQuestion Or vbDefaultButton2, "Finalizar edicion") <> vbYes Then
+        Exit Sub
     End If
+
+    ModoEdicion = False
+
+    'Recuperar lo realmente guardado.
+    'No restaurar copias antiguas de archivos completos.
+    CargarGrid
+
+    ActualizarBotones
+
 End Sub
+
 
 Private Sub BtnGuardarCambios_Click()
     If MsgBox("¿Confirmar y salir del modo edición?", vbYesNo + vbQuestion) = vbYes Then
@@ -504,6 +533,18 @@ Dim file2 As Integer
 Dim dbFile As String
 
 On Error GoTo ErrHandler
+
+    
+    If Not ModoEdicion Then
+        MsgBox "Primero debe habilitar la edicion.", vbExclamation, "Personal"
+        Exit Sub
+    End If
+    If Not RutaTrabajoSegura() Then Exit Sub
+    
+    If MsgBox("Esta operacion recalculara y guardara el salario integrado de varios empleados." & vbCrLf & vbCrLf & "Confirma continuar?", vbYesNo Or vbQuestion Or vbDefaultButton2, "Confirmar calculo masivo") <> vbYes Then
+        Exit Sub
+    End If
+
 
     ' 1. Asegurar la lectura del UMA actual
     empFile = "empresa.dno"
@@ -670,41 +711,12 @@ Private Sub EditSelTot_Click()
     ListPer.ColSel = ListPer.Cols - 1
 End Sub
 
+
 Private Sub EdPegar_Click()
-    If Not ModoEdicion Then
-      MsgBox "Debes pulsar 'Habilitar edición' antes de pegar datos.", vbExclamation
-      Exit Sub
-  End If
-  Dim temporal, DeAqui As Integer, RetornoCarro As Long, InicioCopia As Long
-  temporal = Clipboard.GetText(vbCFText)
-  RetornoCarro = ListPer.col
-  InicioCopia = ListPer.Row
-If temporal <> "" Then
-  Clipboard.Clear
-  DeAqui = 1
-For i = 1 To Len(temporal)
-    Select Case Mid(temporal, i, 1)
-          Case Chr(9)
-          TexEdicion.Text = Mid(temporal, DeAqui, (i - DeAqui))
-          ListPer.Text = Mid(temporal, DeAqui, (i - DeAqui))
-          ListPer.col = ListPer.col + 1
-          DeAqui = i + 1
-          Case Chr(13)
-          TexEdicion.Text = Mid(temporal, DeAqui, (i - DeAqui))
-          ListPer.Text = Mid(temporal, DeAqui, (i - DeAqui))
-          ArchCorr
-          ListPer.Row = ListPer.Row + 1
-          DeAqui = i + 1
-          Case Chr(10)
-          ListPer.col = RetornoCarro
-          DeAqui = i + 1
-          Case Else
-          Rem nada
-    End Select
- Next i
- ListPer.Row = InicioCopia: ListPer.col = RetornoCarro
-End If
+    MsgBox "El pegado masivo de empleados esta temporalmente deshabilitado para evitar mezclar IDs o modificar varios registros." & vbCrLf & vbCrLf & "Puede modificar individualmente cada campo en modo edicion.", _
+           vbExclamation, "Proteccion de personal"
 End Sub
+
 
 Private Sub EdSup_Click()
  ListPer.FixedCols = 0
@@ -813,25 +825,49 @@ Private Sub listper_KeyDown(KeyCode As Integer, Shift As Integer)
 End Sub
 
 Private Sub ListPer_KeyPress(KeyAscii As Integer)
-     Select Case KeyAscii
-         Case 13:
-            rgtro = ListPer.TextMatrix(ListPer.Row, 0)
-            Load Form2
-            Form2.IniciarConsulta CInt(rgtro)   ' reemplaza a Form2.cargarEmpleado (rgtro)
-            Form2.Show 1
-            Close 2
-            Open "personal.dno" For Random As 2 Len = Len(personal)
-            Get 2, rgtro, personal
-            Close 3
-            Open "PerOtre.dno" For Random As 3 Len = Len(Otros_Rgtros)
-            dmper = LOF(3) / Len(personal)
-            RecPra
-            TexEdicion.Text = ListPer.Text
-            Close 2, 3
-         Case 27
-         Case Else
-     End Select
+
+    Dim idEmpleado As Long
+    Dim textoID As String
+
+    If KeyAscii <> 13 Then Exit Sub
+
+    KeyAscii = 0
+
+    If ListPer.Row < 1 Then Exit Sub
+
+    textoID = Trim$(ListPer.TextMatrix(ListPer.Row, 0))
+
+    If textoID = "" Then Exit Sub
+    If textoID Like "*[!0-9]*" Then Exit Sub
+    If Len(textoID) > 5 Then Exit Sub
+
+    idEmpleado = CLng(textoID)
+
+    If idEmpleado < 1 Or idEmpleado > 32767 Then
+        MsgBox "ID de empleado no valido.", vbExclamation
+        Exit Sub
+    End If
+
+    On Error GoTo ErrorEmpleado
+
+    Load Form2
+
+    Form2.IniciarConsulta CInt(idEmpleado)
+    Form2.Show vbModal
+
+    'Regresar leyendo nuevamente los datos locales.
+    'No utilizar rgtro ni buffers de otra form.
+    CargarGrid
+
+    Exit Sub
+
+ErrorEmpleado:
+
+    MsgBox "No fue posible abrir al empleado " & CStr(idEmpleado) & "." & vbCrLf & Err.Description, vbExclamation, "Edicion de Personal"
+
 End Sub
+
+
 
 Private Sub listper_LeaveCell()
     If ListPer.col > 1 And ListPer.Row > 0 Then
@@ -1022,94 +1058,232 @@ End Sub
 
 Private Sub CargarGrid()
 
-    Close 2, 3, 4, 15
+    Dim hPersonal As Integer
+    Dim hOtros As Integer
+    Dim hBancos As Integer
+    Dim hDeon As Integer
 
-    Open "personal.dno" For Random As 2 Len = Len(personal)
-    Dm = LOF(2) / Len(personal)
-    Open "PerOtre.dno" For Random As 3 Len = Len(Otros_Rgtros)
-    dmper = LOF(3) / Len(Otros_Rgtros)
-    Open "Bnxcla.dno" For Random As 4 Len = Len(Clbnx)   ' <- estaba comentada; sin esto, Get/Put 4 fallan
-    Open "deon.dno" For Random As 15 Len = Len(DEON)
-    largoDeon = LOF(15) / Len(DEON)
+    Dim totalPersonal As Long
+    Dim totalOtros As Long
+    Dim totalBancos As Long
+    Dim totalDeon As Long
 
-    If dmper < Dm Then
-        If dmper < 1 Then dmper = 1
-        For r = (dmper + 1) To Dm: Get 3, r, Otros_Rgtros
-            Otros_Rgtros.curp = "": Otros_Rgtros.otra = ""
-            Otros_Rgtros.yotra = "": Otros_Rgtros.yporsi = ""
-            Put 3, r, Otros_Rgtros
-        Next r
+    Dim id As Long
+    Dim nombre As String
+    Dim cSdi As Currency
+    Dim antiguedad As Integer
+    Dim facto As Double
+    Dim anioBaja As Long
+    Dim detalleError As String
+
+    Dim otrosVacios As OtrasCh
+    Dim bancoVacio As Clabnx
+    Dim deonVacio As sueldosDEON
+
+    On Error GoTo ErrorCarga
+
+    If Not RutaTrabajoSegura() Then Exit Sub
+
+    '====================================================
+    ' 1. ABRIR PERSONAL EN SOLO LECTURA
+    '====================================================
+
+    If Dir$("personal.dno") = "" Then
+        Err.Raise vbObjectError + 4201, , "No existe personal.dno."
     End If
 
-    ListPer.Cols = 13: ListPer.Rows = 1: ListPer.Row = 0
-    ListPer.col = 0: ListPer.CellAlignment = 4: ListPer.ColWidth(0) = 400: ListPer.Text = "#"
-    ListPer.col = 1: ListPer.CellAlignment = 4: ListPer.ColWidth(1) = 3200: ListPer.Text = "Nombre"
-    ListPer.col = 2: ListPer.CellAlignment = 4: ListPer.ColWidth(2) = 2200: ListPer.Text = "RFC"
-    ListPer.col = 3: ListPer.CellAlignment = 4: ListPer.ColWidth(3) = 2200: ListPer.Text = "CURP"
-    ListPer.col = 4: ListPer.CellAlignment = 4: ListPer.ColWidth(4) = 1600: ListPer.Text = "IMSS"
-    ListPer.col = 5: ListPer.CellAlignment = 4: ListPer.ColWidth(5) = 1200: ListPer.Text = "Fcha.Alta"
-    ListPer.col = 6: ListPer.CellAlignment = 4: ListPer.ColWidth(6) = 1200: ListPer.Text = "Fcha.Baja"
-    ListPer.col = 7: ListPer.CellAlignment = 4: ListPer.ColWidth(7) = 1200: ListPer.Text = "Salario dia"
-    ListPer.col = 8: ListPer.CellAlignment = 4: ListPer.ColWidth(8) = 1200: ListPer.Text = "O.F. dia"
-    ListPer.col = 9: ListPer.CellAlignment = 4: ListPer.ColWidth(9) = 1200: ListPer.Text = "Otros diario"
-    ListPer.col = 10: ListPer.CellAlignment = 4: ListPer.ColWidth(10) = 1200: ListPer.Text = "Integrado"
-    ListPer.col = 11: ListPer.CellAlignment = 4: ListPer.ColWidth(11) = 2200: ListPer.Text = "Tarjeta Bnx"
-    ListPer.col = 12: ListPer.CellAlignment = 4: ListPer.ColWidth(12) = 2200: ListPer.Text = "Impuesto (ISR)"
+    hPersonal = FreeFile
 
-    If Dm > 0 Then
-        For r = 1 To Dm: Get 2, r, personal: Get 3, r, Otros_Rgtros: Get 4, r, Clbnx: Get 15, r, DEON
-             apelativo1$ = "": abaja = Val(Mid(personal.fab, 7, 4))
-             If (abaja > 0) And (abaja < empresa.ao - 1) Then GoTo Sig_te
-             If Len(Trim$(Replace(personal.nom, vbNullChar, ""))) > 0 Or _
-                Len(Trim$(Replace(personal.ape1, vbNullChar, ""))) > 0 Or _
-                Len(Trim$(Replace(personal.ape2, vbNullChar, ""))) > 0 Then
-                apelativo1$ = RTrim$(personal.ape1) + " " + RTrim$(personal.ape2) + " " + RTrim$(personal.nom)
-                apelativo$ = Left(apelativo1$, 59) + String$(60 - Len(Left(apelativo1$, 59)), " ")
+    Open "personal.dno" For Random Access Read _
+        As #hPersonal Len = Len(personal)
 
-                Dim lAntig As Integer, dFacto As Double, cSdi As Currency
-                'Un empleado recien importado no trae fecha de alta
-                'de nomina; no intentar calcular antiguedad en ese caso.
-                cSdi = personal.integrado
-                If IsDate(Trim$(Replace(personal.fal, vbNullChar, ""))) Then
-                    lAntig = CalcularAntiguedad(personal.fal)
-                    dFacto = 0
-                    factor lAntig, dFacto
-                    cSdi = (personal.ingr + personal.viat + personal.otras) * dFacto
-                    If empresa.sm > 0 Then
-                        If cSdi > (empresa.sm * 25) Then cSdi = (empresa.sm * 25)
-                    End If
-                End If
-
-                If personal.integrado <> cSdi Then
-                    personal.integrado = cSdi   ' solo en memoria, para mostrarlo correcto en la grilla
-                End If
-
-                ListPer.AddItem Format(r, "####0") _
-                    & Chr(9) & apelativo$ _
-                    & Chr(9) & RTrim(personal.RFC) _
-                    & Chr(9) & RTrim(Otros_Rgtros.curp) _
-                    & Chr(9) & (" " + Replace(RTrim(personal.imss), "-", "")) _
-                    & Chr(9) & RTrim(personal.fal) _
-                    & Chr(9) & RTrim(personal.fab) _
-                    & Chr(9) & Format(personal.ingr, z2) _
-                    & Chr(9) & Format(personal.viat, z2) _
-                    & Chr(9) & Format(personal.otras, z2) _
-                    & Chr(9) & Format(personal.integrado, z2) _
-                    & Chr(9) & Format(Clbnx.Q1, "<")
-             End If
-Sig_te:
-        Next r
-
-        Close 2, 3
-
-    Else
-        MsgBox "No existe personal para la edicion "
-        Close 2, 3
-        Load Form1
-        Form1.Show
+    If LOF(hPersonal) Mod Len(personal) <> 0 Then
+        Err.Raise vbObjectError + 4202, , "personal.dno tiene registros desalineados."
     End If
+
+    totalPersonal = LOF(hPersonal) \ Len(personal)
+
+    If totalPersonal > 32767 Then
+        Err.Raise vbObjectError + 4203, , "El numero de empleados supera el limite actual de Form2."
+    End If
+
+    '====================================================
+    ' 2. ABRIR ARCHIVOS AUXILIARES
+    '====================================================
+
+    If Dir$("PerOtre.dno") <> "" Then
+
+        hOtros = FreeFile
+
+        Open "PerOtre.dno" For Random Access Read As #hOtros Len = Len(Otros_Rgtros)
+
+        If LOF(hOtros) Mod Len(Otros_Rgtros) <> 0 Then
+            Err.Raise vbObjectError + 4204, , "PerOtre.dno tiene registros desalineados."
+        End If
+
+        totalOtros = LOF(hOtros) \ Len(Otros_Rgtros)
+
+    End If
+
+    If Dir$("Bnxcla.dno") <> "" Then
+
+        hBancos = FreeFile
+
+        Open "Bnxcla.dno" For Random Access Read _
+            As #hBancos Len = Len(Clbnx)
+
+        If LOF(hBancos) Mod Len(Clbnx) <> 0 Then
+            Err.Raise vbObjectError + 4205, , "Bnxcla.dno tiene registros desalineados."
+        End If
+
+        totalBancos = LOF(hBancos) \ Len(Clbnx)
+
+    End If
+
+    If Dir$("deon.dno") <> "" Then
+
+        hDeon = FreeFile
+
+        Open "deon.dno" For Random Access Read _
+            As #hDeon Len = Len(DEON)
+
+        If LOF(hDeon) Mod Len(DEON) <> 0 Then
+            Err.Raise vbObjectError + 4206, , "deon.dno tiene registros desalineados."
+        End If
+
+        totalDeon = LOF(hDeon) \ Len(DEON)
+
+    End If
+
+    '====================================================
+    ' 3. INICIALIZAR GRID
+    '====================================================
+
+    Dm = totalPersonal
+    dmper = totalOtros
+    largoDeon = totalDeon
+
+    ListPer.Cols = 13
+    ListPer.Rows = 1
+    ListPer.Row = 0
+
+    ListPer.TextMatrix(0, 0) = "#"
+    ListPer.TextMatrix(0, 1) = "Nombre"
+    ListPer.TextMatrix(0, 2) = "RFC"
+    ListPer.TextMatrix(0, 3) = "CURP"
+    ListPer.TextMatrix(0, 4) = "IMSS"
+    ListPer.TextMatrix(0, 5) = "Fcha.Alta"
+    ListPer.TextMatrix(0, 6) = "Fcha.Baja"
+    ListPer.TextMatrix(0, 7) = "Salario dia"
+    ListPer.TextMatrix(0, 8) = "O.F. dia"
+    ListPer.TextMatrix(0, 9) = "Otros diario"
+    ListPer.TextMatrix(0, 10) = "Integrado"
+    ListPer.TextMatrix(0, 11) = "Tarjeta Bnx"
+    ListPer.TextMatrix(0, 12) = "Impuesto (ISR)"
+
+    '====================================================
+    ' 4. LEER EMPLEADOS SIN MODIFICAR ARCHIVOS
+    '====================================================
+
+    For id = 1 To totalPersonal
+
+        Get #hPersonal, id, personal
+
+        'Limpiar buffers ANTES de cada lectura.
+        Otros_Rgtros = otrosVacios
+        Clbnx = bancoVacio
+        DEON = deonVacio
+
+        If id <= totalOtros Then
+            Get #hOtros, id, Otros_Rgtros
+        End If
+
+        If id <= totalBancos Then
+            Get #hBancos, id, Clbnx
+        End If
+
+        If id <= totalDeon Then
+            Get #hDeon, id, DEON
+        End If
+
+        'No mostrar posiciones vacias.
+        If Trim$(Replace(personal.nom, vbNullChar, "")) = "" And Trim$(Replace(personal.ape1, vbNullChar, "")) = "" And Trim$(Replace(personal.ape2, vbNullChar, "")) = "" Then
+
+            GoTo SiguienteEmpleado
+
+        End If
+
+        'Mantener el filtro existente de bajas antiguas.
+        anioBaja = Val(mID$(personal.fab, 7, 4))
+
+        If anioBaja > 0 Then
+            If anioBaja < empresa.ao - 1 Then
+                GoTo SiguienteEmpleado
+            End If
+        End If
+
+        nombre = Trim$(personal.ape1) & " " & Trim$(personal.ape2) & " " & Trim$(personal.nom)
+
+        cSdi = personal.integrado
+
+        'Calculo exclusivamente para visualizar.
+        'No modificar personal.dno.
+        If IsDate(Trim$(Replace( _
+            personal.fal, vbNullChar, ""))) Then
+
+            antiguedad = CalcularAntiguedad(personal.fal)
+            facto = 0
+
+            factor antiguedad, facto
+
+            cSdi = (personal.ingr + personal.viat + personal.otras) * facto
+
+            If empresa.sm > 0 Then
+                If cSdi > empresa.sm * 25 Then
+                    cSdi = empresa.sm * 25
+                End If
+            End If
+
+        End If
+
+        ListPer.AddItem _
+            Format$(id, "####0") & vbTab & _
+            nombre & vbTab & _
+            Trim$(personal.RFC) & vbTab & _
+            Trim$(Otros_Rgtros.curp) & vbTab & _
+            Replace(Trim$(personal.imss), "-", "") & vbTab & _
+            Trim$(personal.fal) & vbTab & _
+            Trim$(personal.fab) & vbTab & _
+            Format$(personal.ingr, z2) & vbTab & _
+            Format$(personal.viat, z2) & vbTab & _
+            Format$(personal.otras, z2) & vbTab & _
+            Format$(cSdi, z2) & vbTab & _
+            Trim$(Clbnx.Q1)
+
+SiguienteEmpleado:
+    Next id
+
+Salida:
+    On Error Resume Next
+
+    If hDeon <> 0 Then Close #hDeon
+    If hBancos <> 0 Then Close #hBancos
+    If hOtros <> 0 Then Close #hOtros
+    If hPersonal <> 0 Then Close #hPersonal
+
+    On Error GoTo 0
+    Exit Sub
+
+ErrorCarga:
+
+    detalleError = Err.Description
+
+    MsgBox "No fue posible cargar los empleados:" & vbCrLf & detalleError, vbCritical, "Edicion de Personal"
+
+    Resume Salida
 
 End Sub
+
 ' comentario
 
 
