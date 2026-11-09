@@ -187,16 +187,16 @@ Private Sub EdPg_Click()
         DeAqui = 1
 
         For i = 1 To Len(temporal)
-            Select Case Mid(temporal, i, 1)
+            Select Case mID(temporal, i, 1)
                 Case Chr(9)
                     Temporal1 = Temporal1 + connom1.TextMatrix(connom1.Row, connom1.col) & Chr(9)
-                    connom1.Text = Mid(temporal, DeAqui, (i - DeAqui))
+                    connom1.Text = mID(temporal, DeAqui, (i - DeAqui))
                     connom1.col = connom1.col + 1
                     DeAqui = i + 1
 
                 Case Chr(13)
                     Temporal1 = Temporal1 + connom1.TextMatrix(connom1.Row, connom1.col) & Chr(13)
-                    connom1.Text = Mid(temporal, DeAqui, (i - DeAqui))
+                    connom1.Text = mID(temporal, DeAqui, (i - DeAqui))
 
                     If (connom1.Rows - 1) <= connom1.Row Then connom1.Rows = connom1.Rows + 100
 
@@ -372,10 +372,47 @@ Private Sub ConNom1_EnterCell()
     End If
 End Sub
 
+
 Private Sub ConNom1_KeyPress(KeyAscii As Integer)
-    Text1.Text = Chr$(KeyAscii)
-    Text1.SetFocus
+
+    Dim tecla As String
+
+    If KeyAscii = vbKeyReturn Then
+        KeyAscii = 0
+        Exit Sub
+    End If
+
+    If KeyAscii < 32 Then Exit Sub
+
+    If Not EsColumnaNumericaCaptura(connom1.col) Then
+
+        If connom1.col <> C_BANAMEX Then
+            KeyAscii = 0
+            Exit Sub
+        End If
+
+    Else
+
+        tecla = Chr$(KeyAscii)
+
+        If Not ((tecla >= "0" And tecla <= "9") Or tecla = ".") Then
+
+            KeyAscii = 0
+            Exit Sub
+
+        End If
+
+    End If
+
+    valcelant = connom1.Text
+
+    Text2.Text = Chr$(KeyAscii)
+    Text2.SetFocus
+
+    KeyAscii = 0
+
 End Sub
+
 
 Private Sub ConNom1_LeaveCell()
     If connom1.col > 0 And connom1.Row > 0 Then
@@ -458,4 +495,21 @@ Private Sub Text1_KeyPress(KeyAscii As Integer)
             connom1.SetFocus
     End Select
 End Sub
+
+
+Private Function EsColumnaNumericaCaptura(ByVal columna As Long) As Boolean
+
+    EsColumnaNumericaCaptura = False
+
+    'Columnas protegidas o de texto.
+    Select Case columna
+        Case C_NUM, C_NOMBRE, C_SUELDO, C_TOTING, C_TOTDED, C_NETO, C_BANAMEX, C_FLAG_ISR, C_FLAG_IMSS, C_FLAG_ESP
+            Exit Function
+    End Select
+
+    'Columnas que permiten captura numerica.
+    EsColumnaNumericaCaptura = (columna = C_DIAS Or columna = C_EXENTA Or (columna >= C_PERC_INI And columna <= C_PERC_FIN) Or (columna >= C_DED_INI And columna <= C_DED_FIN))
+
+End Function
+
 

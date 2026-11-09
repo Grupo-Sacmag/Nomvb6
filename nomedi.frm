@@ -1142,6 +1142,20 @@ Private Sub CargarGrid()
     ListPer.TextMatrix(0, 10) = "Integrado"
     ListPer.TextMatrix(0, 11) = "Tarjeta Bnx"
     ListPer.TextMatrix(0, 12) = "Impuesto (ISR)"
+    
+    ListPer.ColWidth(0) = 650      ' #
+    ListPer.ColWidth(1) = 3800     ' Nombre
+    ListPer.ColWidth(2) = 1800     ' RFC
+    ListPer.ColWidth(3) = 2200     ' CURP
+    ListPer.ColWidth(4) = 1500     ' IMSS
+    ListPer.ColWidth(5) = 1200     ' Fcha.Alta
+    ListPer.ColWidth(6) = 1200     ' Fcha.Baja
+    ListPer.ColWidth(7) = 1500     ' Salario dia
+    ListPer.ColWidth(8) = 1500     ' O.F. dia
+    ListPer.ColWidth(9) = 1500     ' Otros diario
+    ListPer.ColWidth(10) = 1500    ' Integrado
+    ListPer.ColWidth(11) = 2200    ' Tarjeta Bnx
+    ListPer.ColWidth(12) = 1500    ' Impuesto (ISR)
 
     '====================================================
     ' 4. LEER EMPLEADOS SIN MODIFICAR ARCHIVOS
@@ -1180,14 +1194,12 @@ Private Sub CargarGrid()
 
         End If
 
-        'Mantener el filtro existente de bajas antiguas.
-        anioBaja = Val(mID$(CampoVisiblePersonal(personal.fab), 7, 4))
-
-        If anioBaja > 0 Then
-            If anioBaja < empresa.ao - 1 Then
-                GoTo SiguienteEmpleado
-            End If
+        'No mostrar posiciones vacias.
+        If Trim$(Replace(personal.nom, vbNullChar, "")) = "" And Trim$(Replace(personal.ape1, vbNullChar, "")) = "" And Trim$(Replace(personal.ape2, vbNullChar, "")) = "" Then
+            GoTo SiguienteEmpleado
         End If
+
+        'Se muestran activos y dados de baja: la baja NO elimina al empleado del registro.
 
         nombre = Trim$(CampoVisiblePersonal(personal.ape1) & " " & CampoVisiblePersonal(personal.ape2) & " " & CampoVisiblePersonal(personal.nom))
 

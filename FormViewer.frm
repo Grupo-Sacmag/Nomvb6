@@ -6,10 +6,10 @@ Begin VB.Form FormViewer
    ClientHeight    =   8220
    ClientLeft      =   60
    ClientTop       =   645
-   ClientWidth     =   17490
+   ClientWidth     =   17610
    LinkTopic       =   "FormViewer"
    ScaleHeight     =   8220
-   ScaleWidth      =   17490
+   ScaleWidth      =   17610
    StartUpPosition =   1  'CenterOwner
    Begin VB.CommandButton CmdLimpiarFiltro 
       Caption         =   "Limpiar"
@@ -180,6 +180,9 @@ Begin VB.Form FormViewer
          Caption         =   "Copiar selección"
       End
    End
+   Begin VB.Menu MnuEditarNomina 
+      Caption         =   "Modificar Nómina"
+   End
 End
 Attribute VB_Name = "FormViewer"
 Attribute VB_GlobalNameSpace = False
@@ -201,6 +204,9 @@ Private cargandoNomina As Boolean
 
 Public CargaCorrecta As Boolean
 
+Public SolicitudEdicionNomina As Boolean
+Private RetornoDesdeForm8 As Boolean
+
 Private Const FILA_INICIO_DATOS As Long = 1
 Private Const COL_BUSQUEDA As Long = 1
 
@@ -209,6 +215,7 @@ Private textoFiltro As String
 
 Private Const COL_ID As Long = 0
 Private Const COL_NOMBRE As Long = 1
+Private VolviendoAForm1 As Boolean
 
 Private Sub CmdLimpiarFiltro_Click()
 
@@ -262,6 +269,11 @@ Private Sub Form_Load()
     InicializarColumnas tnOrdinaria
     cargandoNomina = True
     CargaCorrecta = False
+    
+    SolicitudEdicionNomina = False
+    RetornoDesdeForm8 = False
+    MnuEditarNomina.Visible = False
+    MnuEditarNomina.Enabled = False
 
     If z1$ = "" Then
         z1$ = "###,###,##0.00"
@@ -314,6 +326,7 @@ Public Sub LoadPayroll(ByVal fName As String)
 
     cargandoNomina = True
     CargaCorrecta = False
+    ActualizarVisibilidadEdicionNomina
 
     CerrarArchivosVisor
 
@@ -343,7 +356,7 @@ Public Sub LoadPayroll(ByVal fName As String)
 
     If pos > 0 Then
 
-        nameOnly = Mid$(fName, pos + 1)
+        nameOnly = mID$(fName, pos + 1)
         rutaBase = Left$(fName, pos)
 
     Else
@@ -429,11 +442,7 @@ Public Sub LoadPayroll(ByVal fName As String)
     Debug.Print "Registros personal.dno: "; Dm
 
     If Dm <= 0 Then
-
-        MsgBox "No existe informaci n v lida en personal.dno." & _
-               vbCrLf & "No se puede abrir la n mina.", _
-               vbCritical, "Error"
-
+        MsgBox "No existe informaci n v lida en personal.dno." & vbCrLf & "No se puede abrir la n mina.", vbCritical, "Error"
         GoTo Salida
 
     End If
@@ -789,11 +798,12 @@ Public Sub LoadPayroll(ByVal fName As String)
     '========================================================
 
     etapaCarga = "Finalizar carga"
-
     ConNom1.Redraw = True
     ProgressBar1.Visible = False
-
     CargaCorrecta = True
+        
+    'La nomina ya esta cargada correctamente. Comprobar si todavia admite modificaciones.
+    ActualizarVisibilidadEdicionNomina
 
     Debug.Print "========================================"
     Debug.Print "NOMINA CARGADA CORRECTAMENTE"
@@ -811,7 +821,6 @@ ErrorHandler:
 
     numeroError = Err.Number
     descripcionError = Err.Description
-
     CargaCorrecta = False
 
     ' Capturar informacion antes de limpiar el visor
@@ -820,11 +829,9 @@ ErrorHandler:
     Debug.Print "========================================"
     Debug.Print "ERROR EN FORMVIEWER"
     Debug.Print "========================================"
-
     Debug.Print "Etapa: "; etapaCarga
     Debug.Print "Error: "; numeroError
     Debug.Print "Descripcion: "; descripcionError
-
     Debug.Print "Archivo: "; nameOnly
     Debug.Print "Tipo: "; g_TipoNominaActiva
 
@@ -879,9 +886,9 @@ Private Function IsNormalPayrollName(ByVal fName As String) As Boolean
            namePart = "SEP" Or namePart = "OCT" Or namePart = "NOV" Or namePart = "DIC" Then
             
             Dim q As String
-            q = Mid$(fName, 4, 1)
+            q = mID$(fName, 4, 1)
             If q = "1" Or q = "2" Then
-                If IsNumeric(Mid$(fName, 5, 4)) Then
+                If IsNumeric(mID$(fName, 5, 4)) Then
                     IsNormalPayrollName = True
                     Exit Function
                 End If
@@ -1372,17 +1379,23 @@ CopySelError:
 End Sub
 
 Private Sub CmdExit_Click()
-
-    Unload Me
-
+    If RetornoDesdeForm8 Then
+        SolicitudEdicionNomina = False
+        Me.Hide
+    Else
+        Unload Me
+    End If
 End Sub
+
 Private Sub Form_Unload(Cancel As Integer)
 
     cargandoNomina = True
     CargaCorrecta = False
 
-    CerrarArchivosVisor
-
+    'En el retorno a Form1, los archivos ya fueron cerrados expresamente.
+    If Not VolviendoAForm1 Then
+        CerrarArchivosVisor
+    End If
 End Sub
 
 Private Sub Form_Resize()
@@ -1413,23 +1426,50 @@ Private Sub Form_Resize()
 End Sub
 
 Private Sub mnuCFDI_Click()
+
     Dim numeroError As Long
     Dim descripcionError As String
+    Dim nombreNomina As String
 
     On Error GoTo ErrorCFDI
 
-    OrigenCFDI = 1
-    g_FechaPagoCFDI2026 = ""
-
-    ' Solo las nuevas Liquidaciones y Finiquitos usan la ficha persistida.
-    ' No dependemos de la variable MiFecha que dejo Form8.
-    If EsSeparacionNueva() Then
-        g_FechaPagoCFDI2026 = FechaCFDI_LeerFicha(Arch)
+    If Not CargaCorrecta Then
+        MsgBox "No hay una nomina cargada correctamente.", vbExclamation, "CFDI"
+        Exit Sub
     End If
 
+    OrigenCFDI = 1
+    g_FechaPagoCFDI2026 = ""
+    g_QuincenaCFDI2026 = 0
+
+    nombreNomina = NombreBaseNomina(Arch)
+
+    If EsNominaNormal(Arch) Then
+
+        'Identificar primera o segunda quincena.
+        g_QuincenaCFDI2026 = CInt(mID$(nombreNomina, 4, 1))
+
+        'Reconstruir la fecha programada segun el sistema VB6 original.
+        g_FechaPagoCFDI2026 = FechaCFDI_PagoOrdinariaLegacy(Arch)
+
+    ElseIf EsSeparacionNueva() Then
+
+        'Leer la fecha historica persistida.
+        g_FechaPagoCFDI2026 = FechaCFDI_LeerFicha(Arch)
+
+    Else
+
+        'No inventar fechas de nominas especiales antiguas que no almacenan una fecha.
+        Err.Raise vbObjectError + 5212, "FormViewer.mnuCFDI_Click", "La nomina especial archivada no dispone de una fecha historica verificable."
+
+    End If
+
+    'Compatibilidad con funciones heredadas.
+    MiFecha = g_FechaPagoCFDI2026
     UltimaFilaCFDI = limite
     AbrirArchivosParaCFDI
     NOMCF2.Show vbModal
+
     CerrarArchivosCFDI
     Exit Sub
 
@@ -1437,7 +1477,9 @@ ErrorCFDI:
     numeroError = Err.Number
     descripcionError = Err.Description
     CerrarArchivosCFDI
+
     MsgBox "Error al generar el CFDI." & vbCrLf & "Error " & CStr(numeroError) & ": " & descripcionError, vbCritical, "CFDI"
+
 End Sub
 
 
@@ -1448,6 +1490,90 @@ End Sub
 Private Sub mnuCopiarTodo_Click()
     CmdCopyAll_Click
 End Sub
+
+Private Sub MnuEditarNomina_Click()
+
+    Dim detalle As String
+    Dim rutaNom As String
+    Dim carpetaNom As String
+    Dim carpetaSeleccionada As String
+
+    If Not CargaCorrecta Then Exit Sub
+
+    rutaNom = Arch
+
+    'Comprobar el plazo antes de iniciar.
+    If Not PuedeModificarNomina5Dias(rutaNom, detalle) Then
+
+        MnuEditarNomina.Visible = False
+        MnuEditarNomina.Enabled = False
+
+        MsgBox detalle, vbExclamation, "Modificar nomina"
+        Exit Sub
+
+    End If
+
+    'CASO 1: FormViewer fue abierto desde Form8.
+    'Regresar al mismo formulario de captura.
+    If RetornoDesdeForm8 Then
+        SolicitudEdicionNomina = True
+        Me.Hide
+        Exit Sub
+    End If
+
+    'CASO 2: FormViewer se abrio independientemente.
+    'Preparar la misma nomina para editarla en Form8.
+    If InStrRev(rutaNom, "\") = 0 Then
+        MsgBox "No se conoce la ruta completa de la nomina.", vbExclamation, "Modificar nomina"
+        Exit Sub
+    End If
+
+    carpetaNom = Left$(rutaNom, InStrRev(rutaNom, "\") - 1)
+    carpetaSeleccionada = Trim$(CStr(Form1.Dir1))
+
+    If Right$(carpetaSeleccionada, 1) = "\" Then
+        carpetaSeleccionada = Left$(carpetaSeleccionada, Len(carpetaSeleccionada) - 1)
+    End If
+
+    'Evitar modificar archivos de una empresa
+    'o carpeta diferente de la que esta seleccionada.
+    If StrComp(carpetaNom, carpetaSeleccionada, vbTextCompare) <> 0 Or StrComp(carpetaNom, CurDir$, vbTextCompare) <> 0 Then
+        MsgBox "La carpeta activa no corresponde a la nomina seleccionada." & vbCrLf & "Seleccione la carpeta correcta antes de modificarla.", vbExclamation, "Modificar nomina"
+        Exit Sub
+    End If
+
+    Load Form8
+
+    If Not Form8.ProgramarEdicionDesdeVisor(rutaNom) Then
+        Exit Sub
+    End If
+    
+    Me.Hide
+
+    'Abrir Form8 en modalidad de edicion.
+    Form8.Show vbModal
+
+    'Cuando Form8 se cierre o se oculte, la ejecucion continuara aqui.
+    Unload Form8
+
+    'Liberar los numeros de archivo del visor antes de regresar a la pantalla principal.
+    CerrarArchivosVisor
+    
+    'Evitar que Form_Unload vuelva a cerrar archivos que Form1 podria necesitar.
+    VolviendoAForm1 = True
+
+    'Mantener un formulario principal cargado.
+    Load Form1
+
+    'Descargar el visor, ahora sin archivos abiertos.
+    Unload Me
+
+    'Ya terminaron los formularios modales.
+    Form1.Show
+
+End Sub
+
+
 
 Private Sub mnuExportarExcel_Click()
     ExportarNominaExcel
@@ -1840,3 +1966,105 @@ Private Sub Encab(ByVal c As Long, ByVal txt As String, ByVal ancho As Long)
     ConNom1.ColWidth(c) = ancho
     ConNom1.Text = txt
 End Sub
+
+Private Sub ActualizarVisibilidadEdicionNomina()
+
+    Dim detalle As String
+    Dim puedeEditar As Boolean
+
+    'Ocultar inicialmente el menu.
+    MnuEditarNomina.Visible = False
+    MnuEditarNomina.Enabled = False
+
+    'No permitir edicion sin nomina cargada.
+    If Not CargaCorrecta Then Exit Sub
+
+    'Validar que exista la ruta de nomina.
+    If Len(Trim$(Arch)) = 0 Then Exit Sub
+
+    'Consultar el plazo de cinco dias.
+    puedeEditar = PuedeModificarNomina5Dias(Arch, detalle)
+
+    'Mostrar exclusivamente dentro del plazo.
+    MnuEditarNomina.Visible = puedeEditar
+    MnuEditarNomina.Enabled = puedeEditar
+
+End Sub
+
+Public Sub HabilitarRetornoEdicionDesdeForm8()
+    'Conservar el mecanismo de retorno a Form8.
+    RetornoDesdeForm8 = True
+    SolicitudEdicionNomina = False
+
+    'La fecha determina si el menu se muestra.
+    ActualizarVisibilidadEdicionNomina
+End Sub
+
+Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
+
+    If RetornoDesdeForm8 Then
+        If UnloadMode = vbFormControlMenu Then
+            Cancel = 1
+            SolicitudEdicionNomina = False
+            Me.Hide
+        End If
+    End If
+End Sub
+
+
+Private Sub Form_Activate()
+    'Actualizar visibilidad al regresar al visor.
+    ActualizarVisibilidadEdicionNomina
+End Sub
+
+Private Sub PrepararPeriodoCFDIAutomatico()
+
+    Dim fechaTexto As String
+    Dim anio As Long
+    Dim mes As Long
+
+    fechaTexto = Trim$(g_FechaPagoCFDI2026)
+
+    If Len(fechaTexto) = 0 Then
+        Err.Raise vbObjectError + 5340, "PrepararPeriodoCFDIAutomatico", "No se dispone de la fecha de la nomina."
+    End If
+
+    'Convertir la fecha sin depender de la configuracion regional de Windows.
+    FechaPagoCFDI = FechaCFDI_InterpretarDMY(fechaTexto)
+    
+    anio = Year(FechaPagoCFDI)
+    mes = Month(FechaPagoCFDI)
+
+    Select Case g_QuincenaCFDI2026
+
+        Case 1
+            'PRIMERA QUINCENA: 1 al 15.
+            FechaInicialCFDI = DateSerial(anio, mes, 1)
+            FechaFinalCFDI = DateSerial(anio, mes, 15)
+
+        Case 2
+            'SEGUNDA QUINCENA: 16 al ultimo dia.
+            FechaInicialCFDI = DateSerial(anio, mes, 16)
+            FechaFinalCFDI = DateSerial(anio, mes + 1, 0)
+
+        Case 0
+            'NOMINA EXTRAORDINARIA. Conservar el criterio de un solo dia.
+            FechaInicialCFDI = FechaPagoCFDI
+            FechaFinalCFDI = FechaPagoCFDI
+
+        Case Else
+
+            Err.Raise vbObjectError + 5341, "PrepararPeriodoCFDIAutomatico", "Tipo de periodo CFDI desconocido."
+
+    End Select
+
+    Debug.Print "===== PERIODO CFDI ====="
+    Debug.Print "Quincena: "; g_QuincenaCFDI2026
+    Debug.Print "Pago: "; FechaCFDI_FormatoISO(FechaPagoCFDI)
+    Debug.Print "Inicial: "; FechaCFDI_FormatoISO(FechaInicialCFDI)
+    Debug.Print "Final: "; FechaCFDI_FormatoISO(FechaFinalCFDI)
+    Debug.Print "========================"
+
+End Sub
+
+

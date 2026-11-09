@@ -6,6 +6,11 @@ Option Explicit
 ' cuando el origen es FormViewer.
 Public g_FechaPagoCFDI2026 As String
 
+'0 = Nomina extraordinaria
+'1 = Primera quincena
+'2 = Segunda quincena
+Public g_QuincenaCFDI2026 As Integer
+
 Private Function FechaCFDI_NombreArchivo(ByVal rutaNomina As String) As String
     Dim p As Long
     p = InStrRev(rutaNomina, "\")
@@ -154,4 +159,53 @@ ErrorFicha:
     Err.Raise numero, "FechaCFDI_LeerFicha", descripcion
 End Function
 
+Public Function FechaCFDI_PagoOrdinariaLegacy( _
+    ByVal rutaNomina As String) As String
+
+    Dim nombre As String
+    Dim mes As Long
+    Dim anio As Long
+    Dim fechaPago As Date
+
+    If Not EsNominaNormal(rutaNomina) Then
+        Err.Raise vbObjectError + 5210, "FechaCFDI_PagoOrdinariaLegacy", "No es una nomina ordinaria reconocida."
+    End If
+
+    nombre = NombreBaseNomina(rutaNomina)
+
+    If Right$(nombre, 4) = ".NOM" Then
+        nombre = Left$(nombre, Len(nombre) - 4)
+    End If
+
+    anio = CLng(Right$(nombre, 4))
+
+    Select Case Left$(nombre, 3)
+        Case "ENE": mes = 1
+        Case "FEB": mes = 2
+        Case "MAR": mes = 3
+        Case "ABR": mes = 4
+        Case "MAY": mes = 5
+        Case "JUN": mes = 6
+        Case "JUL": mes = 7
+        Case "AGO": mes = 8
+        Case "SEP": mes = 9
+        Case "OCT": mes = 10
+        Case "NOV": mes = 11
+        Case "DIC": mes = 12
+    End Select
+
+    If anio < 1900 Or anio > 9999 Then
+        Err.Raise vbObjectError + 5211, "FechaCFDI_PagoOrdinariaLegacy", "El ejercicio de la nomina no es valido."
+    End If
+
+    If mID$(nombre, 4, 1) = "1" Then
+        fechaPago = DateSerial(anio, mes, 14)
+    Else
+        fechaPago = DateSerial(anio, mes + 1, 0) - 1
+    End If
+
+    FechaCFDI_PagoOrdinariaLegacy = _
+        FechaCFDI_FormatoDMY(fechaPago)
+
+End Function
 

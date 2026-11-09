@@ -126,6 +126,11 @@ Const TOTAL_COLUMNAS As Long = 296
 Const COL_2DA_RFC As Long = 98
 Const COL_2DA_BANDERA As Long = 295   ' GP
 Private Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
+
+Private FechaPagoCFDI As Date
+Private FechaInicialCFDI As Date
+Private FechaFinalCFDI As Date
+
     
 Public Sub IniCols()
 On Error GoTo ErrorHandler
@@ -299,6 +304,8 @@ End Sub
 
 Private Sub Form_Load()
 
+    On Error GoTo ErrorGeneracionCFDI
+
     IniCols
     
     Close 10
@@ -351,22 +358,12 @@ DENUEVO:
     End Select
         
     EmpCFDI.Folio = Folio: EmpCFDI.Consecutivo = ConNomina: EmpCFDI.serie = serie:  EmpCFDI.RegPatr = Reg_Patr: EmpCFDI.RiesgoImss = RiesgoImss
-
-    Put 10, 1, EmpCFDI
+    
     Dim x8 As Long
     Dim x9 As Long
     
     I8 = 0
-    
-    
-    
-   Rem ActualizarCorreos
-    
-    Get 10, 1, EmpCFDI: EmpCFDI.Folio = Folio
-    Put 10, 1, EmpCFDI
-    Close 10
-        
-    SDI_Click (Index)
+            
     fila = 0
         '=========================================================
         ' GENERACION CFDI DESDE FORM8 O FORMVIEWER
@@ -397,33 +394,43 @@ DENUEVO:
         Debug.Print "Ultima fila: "; ultimaFila
         Debug.Print "Cols origen: "; GridOrigenCFDI.Cols
         
-        For I7 = 1 To ultimaFila
         
-            If Len(Trim$(GridOrigenCFDI.TextMatrix(I7, C_NUM))) > 0 Then
-        
-                If IsNumeric(GridOrigenCFDI.TextMatrix(I7, C_NUM)) Then
-        
-                    NumerodePersonal = _
-                        CLng(GridOrigenCFDI.TextMatrix(I7, C_NUM))
-        
-                    If NumerodePersonal > 0 Then
-        
-                        Debug.Print "Empleado: "; NumerodePersonal
-                        Debug.Print "Fila origen: "; I7
-        
-                        reng
-                        MdAbr_1
-        
-                    End If
-        
+    'Preparar una sola vez las fechas del CFDI antes de generar los registros de empleados.
+    PrepararPeriodoCFDIAutomatico
+    
+    'Evitar generar CFDI con fechas sin inicializar.
+    If FechaPagoCFDI = 0 Or FechaInicialCFDI = 0 Or FechaFinalCFDI = 0 Then
+        Err.Raise vbObjectError + 5342, "NOMCF2.Form_Load", "Las fechas del CFDI no fueron inicializadas."
+    End If
+    
+    Debug.Print "CFDI - FechaPago: "; FechaCFDI_FormatoISO(FechaPagoCFDI)
+    Debug.Print "CFDI - FechaInicial: "; FechaCFDI_FormatoISO(FechaInicialCFDI)
+    Debug.Print "CFDI - FechaFinal: "; FechaCFDI_FormatoISO(FechaFinalCFDI)
+            
+    For I7 = 1 To ultimaFila
+        If Len(Trim$(GridOrigenCFDI.TextMatrix(I7, C_NUM))) > 0 Then
+            If IsNumeric(GridOrigenCFDI.TextMatrix(I7, C_NUM)) Then
+                NumerodePersonal = CLng(GridOrigenCFDI.TextMatrix(I7, C_NUM))
+                If NumerodePersonal > 0 Then
+    
+                    Debug.Print "Empleado: "; NumerodePersonal
+                    Debug.Print "Fila origen: "; I7
+    
+                    'Asignar folio únicamente al empleado válido.
+                    Folio = Folio + 1
+                    reng
+                    MdAbr_1
                 End If
-        
             End If
-        
-        Next I7
+        End If
+    Next I7
         
 FinGeneracionCFDI:
     
+    'Guardar el ultimo folio generado.
+    EmpCFDI.Folio = Folio
+    Put 10, 1, EmpCFDI
+    Close 10
     Close 7, 9
     
     '=========================================================
@@ -432,23 +439,35 @@ FinGeneracionCFDI:
     
     For fila = 1 To NOMCF.Rows - 2
     
-        If IsNumeric(NOMCF.TextMatrix(fila, 56)) And _
-           IsNumeric(NOMCF.TextMatrix(fila, 58)) Then
+        If IsNumeric(NOMCF.TextMatrix(fila, 56)) And IsNumeric(NOMCF.TextMatrix(fila, 58)) Then
     
-            If CCur(NOMCF.TextMatrix(fila, 56)) >= _
-               CCur(NOMCF.TextMatrix(fila, 58)) Then
+            If CCur(NOMCF.TextMatrix(fila, 56)) <> CCur(NOMCF.TextMatrix(fila, 58)) Then
     
                 pintarRojo fila
-    
             End If
-    
         End If
-    
+        
     Next fila
     
-handler:
+
+    Exit Sub
+
+ErrorGeneracionCFDI:
+
+    Dim numeroError As Long
+    Dim descripcionError As String
+
+    numeroError = Err.Number
+    descripcionError = Err.Description
+
+    On Error Resume Next
+    Close 7, 9, 10
+    On Error GoTo 0
+
+    MsgBox "No fue posible generar la plantilla CFDI." & vbCrLf & "Error " & CStr(numeroError) & ": " & descripcionError, vbCritical, "NOMCF2"
 
 End Sub
+
 
 
 
@@ -845,31 +864,16 @@ End If
         NOMCF2.NOMCF.TextMatrix(I7, 41) = "02 Sueldos"
     '42 43 NUMSEGURIDADSOCIAL
         NOMCF2.NOMCF.TextMatrix(I7, 42) = Trim(personal.imss)
-        
-        DDINI = Left(MiFecha, 2)
-             If DDINI < 16 Then
-                  DDINI = 1
-                  MiFecha1 = "01" + mID(MiFecha, 3)
-                  Else
-                  DDINI = 16
-                  MiFecha1 = "16" + mID(MiFecha, 3)
-             End If
-        VMiFecha = mID(Trim(MiFecha), 7, 4) + "-" + mID(Trim(MiFecha), 4, 2) + "-" + mID(Trim(MiFecha), 1, 2)
-        VMiFecha1 = mID(Trim(MiFecha1), 7, 4) + "-" + mID(Trim(MiFecha1), 4, 2) + "-" + mID(Trim(MiFecha1), 1, 2)
-        
     '43 44 FECHAPAGO
-        NOMCF2.NOMCF.TextMatrix(I7, 43) = VMiFecha
+    NOMCF2.NOMCF.TextMatrix(I7, 43) = FechaCFDI_FormatoISO(FechaPagoCFDI)
     '44 45 FECHAINICIALPAGO
-        NOMCF2.NOMCF.TextMatrix(I7, 44) = VMiFecha1
+    NOMCF2.NOMCF.TextMatrix(I7, 44) = FechaCFDI_FormatoISO(FechaInicialCFDI)
     '45 46 FECHAFINALPAGO
-        NOMCF2.NOMCF.TextMatrix(I7, 45) = VMiFecha
+    NOMCF2.NOMCF.TextMatrix(I7, 45) = FechaCFDI_FormatoISO(FechaFinalCFDI)
+    
     Rem *****************   MODIFICADO CON PARCHE DEL 6/6/17
     '46 47 NUMDIASPAGADOS
-       If N_ormal = 1 Then
-        NOMCF2.NOMCF.TextMatrix(I7, 46) = 1
-        Else
-        NOMCF2.NOMCF.TextMatrix(I7, 46) = GridOrigen.TextMatrix(I7, 2)
-       End If
+        NOMCF2.NOMCF.TextMatrix(I7, 46) = DiasPagadosCFDI(GridOrigen)
     '47 48 DEPARTAMENTO
         NOMCF2.NOMCF.TextMatrix(I7, 47) = "ADMINISTRACION"
     '48 49 CLABE
@@ -877,10 +881,9 @@ End If
     '49 50 BANCO
         NOMCF2.NOMCF.TextMatrix(I7, 49) = "002"
     '50 51 FECHAINICIORELLABORAL
-        VFal = mID(Trim(personal.fal), 7, 4) + "-" + mID(Trim(personal.fal), 4, 2) + "-" + mID(Trim(personal.fal), 1, 2)
-        NOMCF2.NOMCF.TextMatrix(I7, 50) = VFal
+        NOMCF2.NOMCF.TextMatrix(I7, 50) = FechaCFDI_FormatoISO(FechaCFDI_InterpretarDMY(Trim$(personal.fal)))
     '51 52 ANTIGUEDAD
-        NOMCF2.NOMCF.TextMatrix(I7, 51) = Year(MiFecha) - Year(MiFechaAlta)
+        NOMCF2.NOMCF.TextMatrix(I7, 51) = AntiguedadSemanasCFDI(Trim$(personal.fal), FechaFinalCFDI)
     '52 53 PUESTO
         NOMCF2.NOMCF.TextMatrix(I7, 52) = "Administracion"
     '53 54 TIPOCONTRATO
@@ -893,12 +896,20 @@ End If
                     Else
                     NOMCF2.NOMCF.TextMatrix(I7, 55) = "04 QUINCENAL":
         End If
+    
     '56 57 SALARIOBASECOTAPOR
-        NOMCF2.NOMCF.TextMatrix(I7, 56) = Format(personal.ingr, "#,##0.00")
+    If personal.integrado <= 0 Then
+        Err.Raise vbObjectError + 5301, "NOMCF2", "El empleado " & CStr(NumerodePersonal) & " no tiene salario integrado valido."
+    End If
+    
+    NOMCF2.NOMCF.TextMatrix(I7, 56) = Format$(personal.integrado, "#,##0.00")
+    
     '57 58 RIESGOPUESTO
-        NOMCF2.NOMCF.TextMatrix(I7, 57) = RiesgoImss
+    NOMCF2.NOMCF.TextMatrix(I7, 57) = RiesgoImss
+    
     '58 59 SALARIODIARIOINTEGRADO
-        'NOMCF2.NOMCF.TextMatrix(I7, 58) = Format(personal.integrado, "#,##0.00")
+    NOMCF2.NOMCF.TextMatrix(I7, 58) = NOMCF2.NOMCF.TextMatrix(I7, 56)
+
     '59 60 ENTIDADFEDERATIVA
         NOMCF2.NOMCF.TextMatrix(I7, 59) = "CMX"
     '60 61 RFCLABORA
@@ -1478,20 +1489,21 @@ Exit Sub
 
 ErrorHandler:
 
-    'No mostrar errores al usuario final.
-    'Solamente se registra en la ventana Immediate de VB6
-    'para poder diagnosticarlo durante desarrollo.
-    Debug.Print "Error en MdAbr_1"
-    Debug.Print "Empleado: " & Nombrey
-    Debug.Print "Numero empleado: " & NumerodePersonal
-    Debug.Print "Fila: " & I7
-    Debug.Print "Error: " & Err.Number
-    Debug.Print "Descripcion: " & Err.Description
+    Dim numeroError As Long
+    Dim descripcionError As String
 
-    Err.Clear
-    Exit Sub
+    numeroError = Err.Number
+    descripcionError = Err.Description
+
+    Debug.Print "Error en MdAbr_1"
+    Debug.Print "Empleado: "; NumerodePersonal
+    Debug.Print "Error: "; numeroError
+    Debug.Print "Descripcion: "; descripcionError
+
+    Err.Raise numeroError, "NOMCF2.MdAbr_1", descripcionError
 
 End Sub
+
 
 '==========================================================================
 ' NOMCF2 - Solo nueva Liquidacion / Finiquito formato 2026.
@@ -1694,38 +1706,29 @@ Private Sub MdAbr_1SeparacionNueva()
         NOMCF2.NOMCF.TextMatrix(I7, 41) = "02 Sueldos"
     '42 43 NUMSEGURIDADSOCIAL
         NOMCF2.NOMCF.TextMatrix(I7, 42) = Trim(personal.imss)
-        
-        DDINI = Left(MiFecha, 2)
-             If DDINI < 16 Then
-                  DDINI = 1
-                  MiFecha1 = "01" + mID(MiFecha, 3)
-                  Else
-                  DDINI = 16
-                  MiFecha1 = "16" + mID(MiFecha, 3)
-             End If
-        VMiFecha = mID(Trim(MiFecha), 7, 4) + "-" + mID(Trim(MiFecha), 4, 2) + "-" + mID(Trim(MiFecha), 1, 2)
-        VMiFecha1 = mID(Trim(MiFecha1), 7, 4) + "-" + mID(Trim(MiFecha1), 4, 2) + "-" + mID(Trim(MiFecha1), 1, 2)
-        
     '43 44 FECHAPAGO
-        NOMCF2.NOMCF.TextMatrix(I7, 43) = VMiFecha
+        NOMCF2.NOMCF.TextMatrix(I7, 43) = FechaCFDI_FormatoISO(FechaPagoCFDI)
     '44 45 FECHAINICIALPAGO
-        NOMCF2.NOMCF.TextMatrix(I7, 44) = VMiFecha1
+        NOMCF2.NOMCF.TextMatrix(I7, 44) = FechaCFDI_FormatoISO(FechaInicialCFDI)
     '45 46 FECHAFINALPAGO
-        NOMCF2.NOMCF.TextMatrix(I7, 45) = VMiFecha
+        NOMCF2.NOMCF.TextMatrix(I7, 45) = FechaCFDI_FormatoISO(FechaFinalCFDI)
+
     Rem *****************   MODIFICADO CON PARCHE DEL 6/6/17
     '46 47 NUMDIASPAGADOS
-       NOMCF2.NOMCF.TextMatrix(I7, 46) = GridOrigen.TextMatrix(I7, C_DIAS)
+        NOMCF2.NOMCF.TextMatrix(I7, 46) = DiasPagadosCFDI(GridOrigen)
     '47 48 DEPARTAMENTO
         NOMCF2.NOMCF.TextMatrix(I7, 47) = "ADMINISTRACION"
     '48 49 CLABE
         NOMCF2.NOMCF.TextMatrix(I7, 48) = ""
     '49 50 BANCO
         NOMCF2.NOMCF.TextMatrix(I7, 49) = "002"
+    
     '50 51 FECHAINICIORELLABORAL
-        VFal = mID(Trim(personal.fal), 7, 4) + "-" + mID(Trim(personal.fal), 4, 2) + "-" + mID(Trim(personal.fal), 1, 2)
-        NOMCF2.NOMCF.TextMatrix(I7, 50) = VFal
+        NOMCF2.NOMCF.TextMatrix(I7, 50) = FechaCFDI_FormatoISO(FechaCFDI_InterpretarDMY(Trim$(personal.fal)))
+    
     '51 52 ANTIGUEDAD
-        NOMCF2.NOMCF.TextMatrix(I7, 51) = Year(MiFecha) - Year(MiFechaAlta)
+        NOMCF2.NOMCF.TextMatrix(I7, 51) = AntiguedadSemanasCFDI(Trim$(personal.fal), FechaFinalCFDI)
+
     '52 53 PUESTO
         NOMCF2.NOMCF.TextMatrix(I7, 52) = "Administracion"
     '53 54 TIPOCONTRATO
@@ -1734,12 +1737,20 @@ Private Sub MdAbr_1SeparacionNueva()
         NOMCF2.NOMCF.TextMatrix(I7, 54) = "01 Diurna"
     '55 56 PERIODICIDADPAGO
         NOMCF2.NOMCF.TextMatrix(I7, 55) = "99 OTRA PERIODICIDAD"
+    
     '56 57 SALARIOBASECOTAPOR
-        NOMCF2.NOMCF.TextMatrix(I7, 56) = Format(personal.ingr, "#,##0.00")
+    If personal.integrado <= 0 Then
+        Err.Raise vbObjectError + 5301, "NOMCF2", "El empleado " & CStr(NumerodePersonal) & " no tiene salario integrado valido."
+    End If
+    
+    NOMCF2.NOMCF.TextMatrix(I7, 56) = Format$(personal.integrado, "#,##0.00")
+    
     '57 58 RIESGOPUESTO
-        NOMCF2.NOMCF.TextMatrix(I7, 57) = RiesgoImss
+    NOMCF2.NOMCF.TextMatrix(I7, 57) = RiesgoImss
+    
     '58 59 SALARIODIARIOINTEGRADO
-        'NOMCF2.NOMCF.TextMatrix(I7, 58) = Format(personal.integrado, "#,##0.00")
+    NOMCF2.NOMCF.TextMatrix(I7, 58) = NOMCF2.NOMCF.TextMatrix(I7, 56)
+
     '59 60 ENTIDADFEDERATIVA
         NOMCF2.NOMCF.TextMatrix(I7, 59) = "CMX"
     '60 61 RFCLABORA
@@ -1939,3 +1950,138 @@ Private Function TxtCelda(ByVal c As Long, ByVal v As String) As String
         TxtCelda = v
     End If
 End Function
+
+Private Function AntiguedadSemanasCFDI(ByVal fechaAltaTexto As String, ByVal fechaCorte As Date) As String
+
+    Dim fechaAlta As Date
+    Dim dias As Long
+    Dim semanas As Long
+    Dim origenTexto As String
+
+    fechaAlta = FechaCFDI_InterpretarDMY(Trim$(fechaAltaTexto))
+
+    If OrigenCFDI = 1 Then
+        origenTexto = "FormViewer"
+    Else
+        origenTexto = "Form8"
+    End If
+
+    'DIAGNOSTICO DE FECHAS CFDI
+    Debug.Print "================================="
+    Debug.Print "DIAGNOSTICO ANTIGUEDAD CFDI"
+    Debug.Print "Origen: "; origenTexto
+    Debug.Print "Empleado: "; NumerodePersonal
+    Debug.Print "Fecha ingreso: "; FechaCFDI_FormatoDMY(fechaAlta)
+    Debug.Print "Fecha pago: "; FechaCFDI_FormatoDMY(FechaPagoCFDI)
+    Debug.Print "Fecha inicial: "; FechaCFDI_FormatoDMY(FechaInicialCFDI)
+    Debug.Print "Fecha final: "; FechaCFDI_FormatoDMY(fechaCorte)
+    Debug.Print "Quincena: "; g_QuincenaCFDI2026
+    Debug.Print "================================="
+
+    If fechaAlta > fechaCorte Then
+        Err.Raise vbObjectError + 5320, "AntiguedadSemanasCFDI", "Inconsistencia de fechas para el empleado " & CStr(NumerodePersonal) & vbCrLf & vbCrLf & "Fecha de ingreso: " & FechaCFDI_FormatoDMY(fechaAlta) & vbCrLf & _
+                  "Fecha de pago: " & FechaCFDI_FormatoDMY(FechaPagoCFDI) & vbCrLf & "Inicio del periodo: " & FechaCFDI_FormatoDMY(FechaInicialCFDI) & vbCrLf & "Final del periodo: " & FechaCFDI_FormatoDMY(fechaCorte) & vbCrLf & "Origen: " & origenTexto
+    End If
+
+    dias = DateDiff("d", fechaAlta, fechaCorte) + 1
+
+    If dias < 7 Then
+        AntiguedadSemanasCFDI = "P" & CStr(dias) & "D"
+    Else
+        semanas = dias \ 7
+
+        If semanas > 9999 Then
+            Err.Raise vbObjectError + 5321, "AntiguedadSemanasCFDI", "La antiguedad excede el limite."
+        End If
+
+        AntiguedadSemanasCFDI = "P" & CStr(semanas) & "W"
+    End If
+
+End Function
+
+Private Function DiasPagadosCFDI( _
+    ByVal gr As Object) As String
+
+    Dim texto As String
+    Dim dias As Currency
+
+    dias = 0
+    texto = Trim$(gr.TextMatrix(I7, C_DIAS))
+    If Len(texto) > 0 Then
+        If Not IsNumeric(texto) Then
+            Err.Raise vbObjectError + 5330, "DiasPagadosCFDI", "Dias no numericos del empleado " & CStr(NumerodePersonal)
+        End If
+        dias = CCur(texto)
+    End If
+    If dias <= 0 Then
+        If g_QuincenaCFDI2026 <> 0 Then
+        
+            'Nomina ordinaria: no inventar dias.
+            Err.Raise vbObjectError + 5331, "DiasPagadosCFDI", "No hay dias pagados validos " & "para el empleado " & CStr(NumerodePersonal)
+        Else
+
+            'Nomina extraordinaria sin detalle de dias pagados.
+            dias = 1
+        End If
+    End If
+
+    If dias > 36160 Then
+        Err.Raise vbObjectError + 5332, "DiasPagadosCFDI", "Los dias pagados exceden el limite permitido."
+    End If
+
+    DiasPagadosCFDI = Format$(dias, "0.000")
+
+End Function
+
+Private Sub PrepararPeriodoCFDIAutomatico()
+
+    Dim fechaTexto As String
+    Dim anio As Long
+    Dim mes As Long
+
+    'Obtener la fecha previamente preparada
+    'por Form8 o FormViewer.
+    fechaTexto = Trim$(g_FechaPagoCFDI2026)
+
+    'Compatibilidad con la captura heredada.
+    If Len(fechaTexto) = 0 And OrigenCFDI = 0 Then
+        fechaTexto = Trim$(CStr(MiFecha))
+    End If
+
+    If Len(fechaTexto) = 0 Then
+        Err.Raise vbObjectError + 5340, "PrepararPeriodoCFDIAutomatico", "No se encontro la fecha de la nomina."
+    End If
+
+    FechaPagoCFDI = FechaCFDI_InterpretarDMY(fechaTexto)
+
+    anio = Year(FechaPagoCFDI)
+    mes = Month(FechaPagoCFDI)
+
+    Select Case g_QuincenaCFDI2026
+
+        Case 1
+            FechaInicialCFDI = DateSerial(anio, mes, 1)
+            FechaFinalCFDI = DateSerial(anio, mes, 15)
+
+        Case 2
+            FechaInicialCFDI = DateSerial(anio, mes, 16)
+            FechaFinalCFDI = DateSerial(anio, mes + 1, 0)
+
+        Case 0
+            'Nominas extraordinarias: criterio
+            'de fecha unica que ya acordamos.
+            FechaInicialCFDI = FechaPagoCFDI
+            FechaFinalCFDI = FechaPagoCFDI
+
+        Case Else
+            Err.Raise vbObjectError + 5341, "PrepararPeriodoCFDIAutomatico", "La quincena CFDI no es valida."
+
+    End Select
+
+    If FechaPagoCFDI = 0 Or FechaInicialCFDI = 0 Or FechaFinalCFDI = 0 Then
+
+        Err.Raise vbObjectError + 5342, "PrepararPeriodoCFDIAutomatico", "No se pudieron establecer las fechas CFDI."
+    End If
+
+End Sub
+
