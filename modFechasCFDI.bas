@@ -11,6 +11,9 @@ Public g_FechaPagoCFDI2026 As String
 '2 = Segunda quincena
 Public g_QuincenaCFDI2026 As Integer
 
+'Ruta de la nomina que esta generando CFDI. Compartida entre Form8, FormViewer y NOMCF2.
+Public g_RutaNominaCFDI2026 As String
+
 Private Function FechaCFDI_NombreArchivo(ByVal rutaNomina As String) As String
     Dim p As Long
     p = InStrRev(rutaNomina, "\")

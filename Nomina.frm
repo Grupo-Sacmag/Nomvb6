@@ -391,7 +391,6 @@ ManejoError:
 
 End Sub
 
-
 Private Sub Form_Unload(Cancel As Integer)
     Close
     End
@@ -446,24 +445,30 @@ Sub Apertura()
         Mi_limite = 0
     End If
 
-    If Mi_limite = 0 Then
+        If Mi_limite = 0 Then
+        Close #9
         DirecT_arifas = "C:\TARIFA26\"
-        Dir_imptos = DirecT_arifas
         CambioDirectorio
-        SubT_Mes = DirecT_arifas
-        Dir_imptos = DirecT_arifas
     Else
         Line Input #9, DirecT_arifas
-        SubT_Mes = DirecT_arifas
         Close #9
-        Exit Sub
     End If
 
-mens1:
-    MsgBox ("No se encuentra Microsoft Excel")
-    MkDir "C:\GconTA"
-End Sub
+    'La ruta debe terminar en "\" porque se concatena con el nombre del archivo.
+    DirecT_arifas = Trim$(DirecT_arifas)
+    If DirecT_arifas <> "" And Right$(DirecT_arifas, 1) <> "\" Then
+        DirecT_arifas = DirecT_arifas & "\"
+    End If
 
+    'Dejar las tres variables siempre iguales.
+    SubT_Mes = DirecT_arifas
+    Dir_imptos = DirecT_arifas
+
+    Exit Sub
+
+mens1:
+    MsgBox "Error en Apertura: " & Err.Description, vbCritical
+End Sub
 Sub CambioDirectorio()
     On Error GoTo mens2
 
@@ -715,31 +720,84 @@ Private Sub AbrirDirectorioSeleccionado()
     On Error GoTo ErrorDirectorio
 
     If NavegandoDirectorio Then Exit Sub
-    If Dir1.ListIndex < 0 Then Exit Sub
+    If Dir1.ListIndex = -1 Then Exit Sub
 
     RutaSeleccionada = Dir1.List(Dir1.ListIndex)
 
     If Trim$(RutaSeleccionada) = "" Then Exit Sub
-        
+
+    'Ya estamos en esa carpeta (p. ej. tras un doble clic): nada que hacer.
+    If StrComp(RutaSeleccionada, Dir1.Path, vbTextCompare) = 0 Then Exit Sub
+
     If Not RutaPermitidaPorEntorno(RutaSeleccionada) Then
         MsgBox "Carpeta no permitida en este entorno.", _
                vbExclamation, "Directorio"
         Exit Sub
     End If
 
+    'Cambiar la ruta sin disparar Dir1_Change (evita doble actualizacion).
+    NavegandoDirectorio = True
+    Dir1.Path = RutaSeleccionada
     NavegandoDirectorio = False
 
     'Actualizar y guardar la carpeta seleccionada.
     ActualizarDirectorio
-    
+
     Exit Sub
 
 ErrorDirectorio:
     NavegandoDirectorio = False
 
-    MsgBox "No fue posible acceder al directorio." & vbCrLf & _
-           "Error " & Err.Number & ": " & Err.Description, _
-           vbExclamation, "Directorio"
+    MsgBox "No fue posible acceder al directorio." & vbCrLf & "Error " & Err.Number & ": " & Err.Description, vbExclamation, "Directorio"
+End Sub
+
+Private Sub Dir1_KeyDown(KeyCode As Integer, Shift As Integer)
+    'Retroceso o Supr: subir un nivel.
+    If KeyCode = vbKeyBack Or KeyCode = vbKeyDelete Then
+        KeyCode = 0
+        SubirDirectorio
+    End If
+End Sub
+
+Private Sub SubirDirectorio()
+    Dim RutaActual As String
+    Dim RutaPadre As String
+    Dim p As Long
+
+    On Error GoTo ErrorSubir
+
+    If NavegandoDirectorio Then Exit Sub
+
+    RutaActual = Dir1.Path
+
+    'Si termina en "\" ya estamos en la raiz de la unidad.
+    If Right$(RutaActual, 1) = "\" Then Exit Sub
+
+    p = InStrRev(RutaActual, "\")
+    If p = 0 Then Exit Sub
+
+    RutaPadre = Left$(RutaActual, p - 1)
+
+    'C:\Carpeta -> "C:" -> "C:\"
+    If Right$(RutaPadre, 1) = ":" Then RutaPadre = RutaPadre & "\"
+
+    If Not RutaPermitidaPorEntorno(RutaPadre) Then
+        Beep
+        Exit Sub
+    End If
+
+    NavegandoDirectorio = True
+    Dir1.Path = RutaPadre
+    NavegandoDirectorio = False
+
+    ActualizarDirectorio
+
+    Exit Sub
+
+ErrorSubir:
+    NavegandoDirectorio = False
+
+    MsgBox "No fue posible subir de carpeta." & vbCrLf & "Error " & Err.Number & ": " & Err.Description, vbExclamation, "Directorio"
 End Sub
 
 Private Sub File1_KeyPress(KeyAscii As Integer)

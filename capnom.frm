@@ -1305,10 +1305,37 @@ Private Sub nomcap_ini_Click(Index As Integer)
     GuardadoFallidoSesion = False
     
     
-    generarNominas
-    FuncionImpuesto
     
-    BloquearSeleccionNomina True
+generarNominas
+
+If limite > 0 Then
+    Debug.Print "========== ISPT ANTES =========="
+    Debug.Print "Empleado: "; _
+        ConNom1.TextMatrix(1, C_NUM)
+    Debug.Print "Ingreso: "; _
+        ConNom1.TextMatrix(1, C_TOTING)
+    Debug.Print "ISPT: [" & _
+        ConNom1.TextMatrix(1, C_ISPT) & "]"
+    Debug.Print "================================"
+End If
+
+FuncionImpuesto
+
+If limite > 0 Then
+    Debug.Print "========== ISPT DESPUES =========="
+    Debug.Print "Empleado: "; _
+        ConNom1.TextMatrix(1, C_NUM)
+    Debug.Print "Ingreso: "; _
+        ConNom1.TextMatrix(1, C_TOTING)
+    Debug.Print "ISPT: [" & _
+        ConNom1.TextMatrix(1, C_ISPT) & "]"
+    Debug.Print "Bandera ISR: [" & _
+        ConNom1.TextMatrix(1, C_FLAG_ISR) & "]"
+    Debug.Print "=================================="
+End If
+
+BloquearSeleccionNomina True
+
 
     Exit Sub
 
@@ -1641,13 +1668,14 @@ Sub TituloCompl()
 
 End Sub
 
+
 Private Sub Capcf_Click()
-
-    OrigenCFDI = 0
-
-    NOMCF2.Show
+    'Utilizar el mismo proceso CFDI del menu principal.
+    'No abrir NOMCF2 sin preparar antes el periodo.
+    CFDI2_Click
 
 End Sub
+
 
 Private Sub CapDetImp_Click()
     For i = 2 To 7: sumv(i) = 0: Next i
@@ -1754,29 +1782,40 @@ End Sub
 
 Private Sub CFDI2_Click()
 
+    Dim nombreNomina As String
+
     On Error GoTo ErrorCFDI
 
     OrigenCFDI = 0
     g_QuincenaCFDI2026 = 0
     g_FechaPagoCFDI2026 = ""
 
-    'Identificar la quincena desde la captura actual.
-    If Option1.Value = True Then
-        
-        If Option3.Value = True Then
-            g_QuincenaCFDI2026 = 1
+    'Debe existir una sesion de nomina identificada.
+    If Len(Trim$(RutaNominaSesion)) = 0 Then
+    Err.Raise vbObjectError + 5221, "Form8.CFDI2_Click", "No hay una nomina activa para generar CFDI."
+    End If
+    
+    'Identificar la nomina para recuperar folios.
+    g_RutaNominaCFDI2026 = RutaNominaSesion
+    
+    nombreNomina = NombreBaseNomina(RutaNominaSesion)
 
-        ElseIf Option4.Value = True Then
-            g_QuincenaCFDI2026 = 2
+    If EsNominaNormal(RutaNominaSesion) Then
 
-        Else
-            Err.Raise vbObjectError + 5220, "CFDI2_Click", "No se ha seleccionado la quincena."
-        End If
+        'Nomina ordinaria: identificar periodo directamente desde el archivo correspondiente a la sesion.
+        g_QuincenaCFDI2026 = CInt(mID$(nombreNomina, 4, 1))
+
+        'Misma fecha programada que usa FormViewer.
+        g_FechaPagoCFDI2026 = FechaCFDI_PagoOrdinariaLegacy(RutaNominaSesion)
+
+    Else
+
+        'Nomina extraordinaria: conservar la fecha original de captura.
+        g_QuincenaCFDI2026 = 0
+
+        g_FechaPagoCFDI2026 = FechaCFDI_FormatoDMY(FechaCFDI_InterpretarDMY(CStr(MiFecha)))
 
     End If
-
-    'Recuperar la fecha que genero Form8. No preguntar nuevamente al usuario.
-    g_FechaPagoCFDI2026 = FechaCFDI_FormatoDMY(FechaCFDI_InterpretarDMY(CStr(MiFecha)))
 
     NOMCF2.Show
     Exit Sub
@@ -1786,7 +1825,6 @@ ErrorCFDI:
     MsgBox "No fue posible preparar el CFDI." & vbCrLf & "Error " & CStr(Err.Number) & ": " & Err.Description, vbCritical, "CFDI"
 
 End Sub
-
 
 Private Sub cheajte_Click(Index As Integer)
    Load AJTECH
@@ -3526,11 +3564,24 @@ Sub sumah(si_impto1 As Integer, si_imss1 As Integer)
         cPV = C_CONC8
     End If
 
-    For late = C_PERC_INI To C_PERC_FIN
-        If ConNom1.TextMatrix(li, late) <> "" Then
-            sum(1) = sum(1) + ConNom1.TextMatrix(li, late)
-        End If
-    Next late
+        
+    'La nomina ordinaria conserva el recorrido original de percepciones de VB6: columnas 3 a 9. Las nominas especiales mantienen su estructura 2026.
+    
+    If g_TipoNominaActiva = tnOrdinaria And N_ormal = 0 Then
+        For late = 3 To 9
+            If ConNom1.TextMatrix(li, late) <> "" Then
+                sum(1) = sum(1) + _
+                    CCur(ConNom1.TextMatrix(li, late))
+            End If
+        Next late
+    
+    Else
+        For late = C_PERC_INI To C_PERC_FIN
+            If ConNom1.TextMatrix(li, late) <> "" Then
+                sum(1) = sum(1) + CCur(ConNom1.TextMatrix(li, late))
+            End If
+        Next late
+    End If
 
     rgtro = ConNom1.TextMatrix(li, C_NUM)
     Acum_Doble
@@ -5683,8 +5734,8 @@ End Function
 
 Private Function ConfirmarSalidaNomina() As Boolean
     
-    Dim numeroErrorCmp As Long
-    Dim descripcionErrorCmp As String
+    Dim numeroErrorCMP As Long
+    Dim descripcionErrorCMP As String
     Dim responde As VbMsgBoxResult
     ConfirmarSalidaNomina = False
 
@@ -5798,8 +5849,8 @@ Private Function ConfirmarSalidaNomina() As Boolean
 
 ErrorRestaurarCmp:
 
-    numeroErrorCmp = Err.Number
-    descripcionErrorCmp = Err.Description
+    numeroErrorCMP = Err.Number
+    descripcionErrorCMP = Err.Description
 
     'Intentar recuperar el acceso al CMP.
     On Error Resume Next
@@ -5812,8 +5863,8 @@ ErrorRestaurarCmp:
 
     On Error GoTo 0
 
-    MsgBox "No fue posible descartar los cambios." & vbCrLf & "El formulario permanecera abierto." & vbCrLf & "No continue modificando hasta revisar el CMP." & vbCrLf & vbCrLf & "Error " & CStr(numeroErrorCmp) & ": " & _
-           descripcionErrorCmp, vbCritical, "Restauracion de nomina"
+    MsgBox "No fue posible descartar los cambios." & vbCrLf & "El formulario permanecera abierto." & vbCrLf & "No continue modificando hasta revisar el CMP." & vbCrLf & vbCrLf & "Error " & CStr(numeroErrorCMP) & ": " & _
+           descripcionErrorCMP, vbCritical, "Restauracion de nomina"
     ConfirmarSalidaNomina = False
 End Function
 

@@ -1439,6 +1439,9 @@ Private Sub mnuCFDI_Click()
     End If
 
     OrigenCFDI = 1
+    
+    'Usar la nomina realmente abierta en FormViewer.
+    g_RutaNominaCFDI2026 = Arch
     g_FechaPagoCFDI2026 = ""
     g_QuincenaCFDI2026 = 0
 
@@ -1804,11 +1807,11 @@ Private Sub CerrarArchivosVisor()
 
 End Sub
 
-' comentario
-
 Private Sub AbrirArchivosParaCFDI()
 
     Dim rutaCFDI As String
+    Dim numeroError As Long
+    Dim descripcionError As String
 
     On Error GoTo ErrorAbrir
 
@@ -1855,14 +1858,29 @@ Private Sub AbrirArchivosParaCFDI()
 
     Exit Sub
 
+
 ErrorAbrir:
 
-    MsgBox "No se pudieron abrir los archivos necesarios para generar el CFDI." & vbCrLf & _
-           "Error: " & Err.Number & vbCrLf & _
-           Err.Description, _
-           vbCritical, "CFDI"
+    'Conservar el error original.
+    numeroError = Err.Number
+    descripcionError = Err.Description
+
+    'Cerrar cualquier archivo que se haya abierto parcialmente durante este intento.
+    On Error Resume Next
+
+    Close #2
+    Close #6
+    Close #8
+    Close #12
+    Close #14
+
+    On Error GoTo 0
+
+    'Informar al evento mnuCFDI_Click. Ese evento ya tiene un manejador de errores.
+    Err.Raise numeroError, "FormViewer.AbrirArchivosParaCFDI", descripcionError
 
 End Sub
+
 Private Sub CerrarArchivosCFDI()
 
     On Error Resume Next

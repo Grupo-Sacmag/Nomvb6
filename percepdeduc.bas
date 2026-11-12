@@ -49,9 +49,9 @@ Public g_ExentoIndem As Double, g_GravadoIndem As Double
 Public g_ExentoAguiLiq As Double, g_GravadoAguiLiq As Double
 Public g_ExentoPVacLiq As Double, g_GravadoPVacLiq As Double
 
-Public Function DeterminarTipoNomina(ByVal NombreArchivo As String, Optional ByVal OpcionForm8 As Integer = -1) As TipoNominaCFDI
+Public Function DeterminarTipoNomina(ByVal nombreArchivo As String, Optional ByVal OpcionForm8 As Integer = -1) As TipoNominaCFDI
     Dim TipoPorNombre As TipoNominaCFDI
-    TipoPorNombre = ClasificarTipoNomina(NombreArchivo)
+    TipoPorNombre = ClasificarTipoNomina(nombreArchivo)
 
     ' Si el nombre trae una palabra clave reconocida, esa manda.
     If TipoPorNombre <> tnOrdinaria Then
@@ -105,28 +105,47 @@ Dim GridOrigen As Object
     '====================================================
     
     If IsNumeric(GridOrigen.TextMatrix(I7, C_SUBEMP)) Then
-    
         sub13 = CCur(GridOrigen.TextMatrix(I7, C_SUBEMP)) * -1
     
     Else
-    
         sub13 = 0
     
     End If
     
-    If IsNumeric(GridOrigen.TextMatrix(I7, 0)) Then
+    If IsNumeric(GridOrigen.TextMatrix(I7, C_NUM)) Then
+    
         Dim pruebaArchivo As Long
+        Dim numeroErrorCMP As Long
+        Dim descripcionErrorCMP As String
+        Dim registroEmpleado As Long
+    
+        registroEmpleado = CLng(GridOrigen.TextMatrix(I7, C_NUM))
+    
+        'Comprobar que el archivo CMP este disponible.
+        Err.Clear
         On Error Resume Next
+    
         pruebaArchivo = LOF(14)
-        If Err.Number <> 0 Then
-            MsgBox "El archivo #14 NO está abierto." & vbCrLf & _
-                   "Error: " & Err.Number & vbCrLf & Err.Description, vbCritical, "percepdeduc"
-            Err.Clear: On Error GoTo 0
-            Exit Sub
-        End If
+        numeroErrorCMP = Err.Number
+        descripcionErrorCMP = Err.Description
+    
         On Error GoTo 0
-        Get 14, GridOrigen.TextMatrix(I7, 0), nom_com
+    
+        If numeroErrorCMP <> 0 Then
+            Err.Raise vbObjectError + 5350, "percepdeduc.reng", "No se pudo acceder al CMP del empleado " & CStr(registroEmpleado) & ". " & descripcionErrorCMP
+    
+        End If
+    
+        'Validar que exista el registro necesario.
+        If registroEmpleado < 1 Or registroEmpleado > (pruebaArchivo \ Len(nom_com)) Then
+            Err.Raise vbObjectError + 5351, "percepdeduc.reng", "No existe el registro CMP del empleado " & CStr(registroEmpleado)
+    
+        End If
+    
+        'Conservar la lectura original.
+        Get #14, registroEmpleado, nom_com
         subc13 = nom_com.subdio
+    
     End If
      
     'percepciones---------------------------------------------------
@@ -137,8 +156,8 @@ Dim GridOrigen As Object
         sue3 = 0
     End If
     
-    'Parche Aguinaldo 19/12/2017------------------------------------------
-    If N_ormal = 1 Then
+    'Parche Aguinaldo 19/12/2017 Usar el tipo de periodo identificado para CFDI.
+    If g_QuincenaCFDI2026 = 0 Then
         If IsNumeric(GridOrigen.TextMatrix(I7, 5)) Then
             agui5 = GridOrigen.TextMatrix(I7, 5)
             c_per = c_per + 1: t_per = t_per + agui5
@@ -471,7 +490,7 @@ Public Function NombreBaseNomina(ByVal nombre As String) As String
     Dim p As Long
     b = UCase$(Trim$(nombre))
     p = InStrRev(b, "\")
-    If p > 0 Then b = Mid$(b, p + 1)
+    If p > 0 Then b = mID$(b, p + 1)
     NombreBaseNomina = b
 End Function
 

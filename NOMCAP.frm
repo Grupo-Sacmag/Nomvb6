@@ -131,6 +131,21 @@ Private FechaPagoCFDI As Date
 Private FechaInicialCFDI As Date
 Private FechaFinalCFDI As Date
 
+'================================================
+' CONTROL TEMPORAL DE FOLIOS CFDI
+'================================================
+Private Const ARCHIVO_FOLIOS_TEMP As String = "C:\GconTA\CFDI_FOLIOS_TEMP.txt"
+
+Private mFoliosPorEmpleado As Object
+Private mEmpleadosProcesados As Object
+
+Private mFolioSiguiente As Long
+Private mIdentidadNomina As String
+
+Private m_CFDIGeneracionFallida As Boolean
+
+Private mCFDIListaParaCopiar As Boolean
+Private mCFDIUltimaFila As Long
     
 Public Sub IniCols()
 On Error GoTo ErrorHandler
@@ -163,21 +178,16 @@ Else
 
 End If
 
-    NOMCF.Row = 0
+       NOMCF.Row = 0
 
-    Open "DatCFDI.dno" For Random As 7 Len = Len(DATcf)
+    Dim nombres() As String
+    nombres = NombresColumnasCFDI()
 
     For I_7 = 0 To cm - 1
         NOMCF.col = I_7
         NOMCF.CellAlignment = 4
         NOMCF.ColWidth(I_7) = 1200
-
-        If (I_7 + 1) <= LOF(7) / Len(DATcf) Then
-            Get 7, (I_7 + 1), DATcf
-            NOMCF.Text = Trim(DATcf.concepto)
-        Else
-            NOMCF.Text = ""   ' columnas nuevas sin encabezado
-        End If
+        NOMCF.Text = nombres(I_7)
     Next I_7
 
     Close 7
@@ -231,11 +241,19 @@ Public Function Exportar_Excel(sOutputPath As String, FlexGrid As Object) As Boo
                 o_Hoja.Columns(columna + 1).NumberFormat = "@"
             End If
         Next
-        For fila = 1 To .Rows - 1
+            
+    Dim filaSalida As Long
+    filaSalida = 0
+    
+    For fila = 1 To mCFDIUltimaFila
+        If Len(Trim$(.TextMatrix(fila, 0))) > 0 Then
+            filaSalida = filaSalida + 1
             For columna = 0 To .Cols - 1
-                o_Hoja.Cells(fila, columna + 1).Value = .TextMatrix(fila, columna)
-            Next
-        Next
+                o_Hoja.Cells(filaSalida, columna + 1).Value = .TextMatrix(fila, columna)
+            Next columna
+        End If
+    Next fila
+
     End With
     o_Libro.Close True, sOutputPath
     ' -- Cerrar Excel
@@ -303,6 +321,11 @@ End If
 End Sub
 
 Private Sub Form_Load()
+    
+    mCFDIListaParaCopiar = False
+    mCFDIUltimaFila = 0
+
+    m_CFDIGeneracionFallida = False
 
     On Error GoTo ErrorGeneracionCFDI
 
@@ -316,9 +339,16 @@ Private Sub Form_Load()
     Open "PerOtre.dno" For Random As 9 Len = Len(Otros_Rgtros)
     
     Get 10, 1, EmpCFDI
+        
+    Dim folioAnteriorCFDI As Long
+    folioAnteriorCFDI = EmpCFDI.Folio
     
     Folio = InputBox("Dame el numero de Folio Anterior", "CFDI NOMINA", EmpCFDI.Folio)
     serie = InputBox("Dame la serie", "CFDI NOMINA", EmpCFDI.serie)
+        
+    'Preparar folios antes de generar empleados.
+    PrepararFoliosTemporales folioAnteriorCFDI
+
     ConNomina = InputBox("Numero de nomina consecutivo ", "CFDI NOMINA", (EmpCFDI.Consecutivo + 1))
     
     Reg_Patr = InputBox("Registro Patronal Imss ", "CFDI NOMINA", EmpCFDI.RegPatr)
@@ -379,13 +409,13 @@ DENUEVO:
         End If
         
         ' Evitar recorrer filas inexistentes o la fila de totales.
+        
         If GridOrigenCFDI.Rows < 3 Then
-            MsgBox "No hay empleados para generar el CFDI.", _
-                   vbExclamation, "CFDI"
-            GoTo FinGeneracionCFDI
+            Err.Raise vbObjectError + 5360, "NOMCF2.Form_Load", "No hay empleados para generar el CFDI."
         End If
         
         ultimaFila = GridOrigenCFDI.Rows - 2
+        mCFDIUltimaFila = ultimaFila
         
         Debug.Print "=================================="
         Debug.Print "INICIO GENERACION CFDI"
@@ -417,40 +447,55 @@ DENUEVO:
                     Debug.Print "Fila origen: "; I7
     
                     'Asignar folio únicamente al empleado válido.
-                    Folio = Folio + 1
+                    
+                    'Asignar folio nuevo o recuperar el anterior.
+                    AsignarFolioEmpleadoCFDI NumerodePersonal
+                    
+                    'Conservar la generacion original de conceptos.
                     reng
                     MdAbr_1
                 End If
             End If
         End If
     Next I7
-        
-FinGeneracionCFDI:
     
-    'Guardar el ultimo folio generado.
-    EmpCFDI.Folio = Folio
+    'Verificar todos los registros antes de guardar el ultimo folio generado.
+    ValidarCamposPrioritariosCFDI GridOrigenCFDI, ultimaFila
+        
+    'Guardar la relacion temporal empleado-folio. Se realiza solamente tras validar la plantilla.
+    GuardarFoliosTemporales
+    
+FinGeneracionCFDI:
+        
+    'Conservar el mecanismo original EMP_CFDI.DNO. Guardar el mayor consecutivo alcanzado.
+    EmpCFDI.Folio = mFolioSiguiente
     Put 10, 1, EmpCFDI
+
     Close 10
     Close 7, 9
-    
-    '=========================================================
+        '=========================================================
     ' VALIDACION DE SALARIOS EN EL GRID CFDI
     '=========================================================
     
-    For fila = 1 To NOMCF.Rows - 2
     
-        If IsNumeric(NOMCF.TextMatrix(fila, 56)) And IsNumeric(NOMCF.TextMatrix(fila, 58)) Then
+    'Para nuevas liquidaciones y finiquitos, el SDI ya fue obtenido de personal.integrado.
+    'No sobrescribirlo con C:\salarioDI\Archivo.cg.
+    'Conservar el comportamiento existente para nominas ordinarias y formatos anteriores.
     
-            If CCur(NOMCF.TextMatrix(fila, 56)) <> CCur(NOMCF.TextMatrix(fila, 58)) Then
-    
-                pintarRojo fila
+    If Not EsSeparacionNueva() Then
+        SDI_Click 0
+        For fila = 1 To mCFDIUltimaFila
+            If IsNumeric(NOMCF.TextMatrix(fila, 56)) And IsNumeric(NOMCF.TextMatrix(fila, 58)) Then
+                If CDbl(NOMCF.TextMatrix(fila, 56)) >= CDbl(NOMCF.TextMatrix(fila, 58)) Then
+                    pintarRojo fila
+                End If
             End If
-        End If
-        
-    Next fila
+        Next fila
+    End If
+    'La plantilla ya fue generada y validada. Las asignaciones temporales de folios y el consecutivo general ya fueron guardados.
+    mCFDIListaParaCopiar = True
     
-
-    Exit Sub
+Exit Sub
 
 ErrorGeneracionCFDI:
 
@@ -460,16 +505,34 @@ ErrorGeneracionCFDI:
     numeroError = Err.Number
     descripcionError = Err.Description
 
+    m_CFDIGeneracionFallida = True
+
     On Error Resume Next
-    Close 7, 9, 10
+    
+    mCFDIListaParaCopiar = False
+    
+    Close #7
+    Close #9
+    Close #10
+
     On Error GoTo 0
 
     MsgBox "No fue posible generar la plantilla CFDI." & vbCrLf & "Error " & CStr(numeroError) & ": " & descripcionError, vbCritical, "NOMCF2"
 
 End Sub
 
+Private Sub Form_Activate()
 
+    If m_CFDIGeneracionFallida Then
 
+        m_CFDIGeneracionFallida = False
+
+        'No permitir copiar una plantilla incompleta.
+        Unload Me
+
+    End If
+
+End Sub
 
 Public Function ObtenerCorreo(ByVal RFC As String) As String
     Dim oRS As ADODB.Recordset
@@ -584,6 +647,11 @@ Private Sub NCfEdCop_Click()
     Dim i As Long, f As Long
     Dim Temporal1 As String
     Dim r1 As Long, r2 As Long, C1 As Long, C2 As Long
+    
+    If Not mCFDIListaParaCopiar Then
+        MsgBox "La plantilla CFDI no esta lista.", vbExclamation, "CFDI"
+        Exit Sub
+    End If
 
     r1 = IIf(NOMCF.Row < NOMCF.RowSel, NOMCF.Row, NOMCF.RowSel)
     r2 = IIf(NOMCF.Row < NOMCF.RowSel, NOMCF.RowSel, NOMCF.Row)
@@ -604,29 +672,12 @@ Private Sub LTXT1_Change()
     NOMCF.Text = LTXT1.Text
 End Sub
 
-
 Private Sub NCFEDPRIM_Click()
-    Dim i As Long, f As Long
-    Dim Temporal1 As String
-
-    Screen.MousePointer = vbHourglass
-
-    ' Selección visual (opcional)
-    NOMCF.Row = 1: NOMCF.col = 0
-    NOMCF.RowSel = NOMCF.Rows - 1
-    NOMCF.ColSel = 97
-
-    For i = 1 To NOMCF.Rows - 1
-        For f = 0 To 97
-            Temporal1 = Temporal1 & TxtCelda(f, NOMCF.TextMatrix(i, f))
-            If f < 97 Then Temporal1 = Temporal1 & vbTab
-        Next f
-        Temporal1 = Temporal1 & vbCrLf
-    Next i
-
-    CopiarAlPortapapeles Temporal1
-    Screen.MousePointer = vbDefault
+    'Primera plantilla: indices 0 a 97.
+    '98 columnas.
+    CopiarRangoPlantillaCFDI 0, 97, True
 End Sub
+
 
 Private Sub NCfEdSel_Click()
      Dim limite As Long
@@ -641,22 +692,11 @@ Private Sub NCfEdSel_Click()
     NOMCF.ColSel = NOMCF.Cols - 1
 End Sub
 
+
 Private Sub NCFEDSG_Click()
-    Dim i As Long, c As Long
-    Dim Temporal1 As String
-
-    Screen.MousePointer = vbHourglass
-
-    For i = 1 To NOMCF2.NOMCF.Rows - 1
-        For c = COL_2DA_RFC To COL_2DA_BANDERA
-            Temporal1 = Temporal1 & NOMCF2.NOMCF.TextMatrix(i, c)
-            If c < COL_2DA_BANDERA Then Temporal1 = Temporal1 & vbTab
-        Next c
-        Temporal1 = Temporal1 & vbCrLf
-    Next i
-
-    CopiarAlPortapapeles Temporal1
-    Screen.MousePointer = vbDefault
+    'Segunda plantilla: indices 98 a 295.
+    '198 columnas.
+    CopiarRangoPlantillaCFDI 98, 295, False
 End Sub
 
 Private Sub NCFEspr_Click()
@@ -1152,6 +1192,10 @@ End If
         NOMCF2.NOMCF.TextMatrix(I7, 133) = Format(0, "#,##0.00")
         NOMCF2.NOMCF.TextMatrix(I7, 134) = Format(0, "#,##0.00")
     End If
+    '131 P024G
+        NOMCF2.NOMCF.TextMatrix(I7, 131) = Format(0, "#,##0.00")
+    '132 P024E
+        NOMCF2.NOMCF.TextMatrix(I7, 132) = Format(0, "#,##0.00")
     '135 P026G
         NOMCF2.NOMCF.TextMatrix(I7, 135) = Format(0, "#,##0.00")
     '135 P026E
@@ -1489,18 +1533,10 @@ Exit Sub
 
 ErrorHandler:
 
-    Dim numeroError As Long
-    Dim descripcionError As String
-
-    numeroError = Err.Number
-    descripcionError = Err.Description
-
     Debug.Print "Error en MdAbr_1"
     Debug.Print "Empleado: "; NumerodePersonal
-    Debug.Print "Error: "; numeroError
-    Debug.Print "Descripcion: "; descripcionError
-
-    Err.Raise numeroError, "NOMCF2.MdAbr_1", descripcionError
+    Debug.Print "Error: "; Err.Number
+    Debug.Print "Descripcion: "; Err.Description
 
 End Sub
 
@@ -1534,6 +1570,83 @@ Private Function MenorCFDI(ByVal x As Currency, ByVal y As Currency) As Currency
         MenorCFDI = y
     End If
 End Function
+
+Private Sub CapturarDesgloseExentoSeparacionCFDI(ByVal totalExento As Currency, ByVal brutoAntig As Currency, ByVal brutoIndem As Currency, ByVal brutoAgui As Currency, ByVal brutoPV As Currency, ByVal brutoOtras As Currency, _
+    ByRef exAntig As Currency, ByRef exIndem As Currency, ByRef exAgui As Currency, ByRef exPV As Currency, ByRef exOtras As Currency)
+
+    Dim limites(0 To 4) As Currency
+    Dim importes(0 To 4) As Currency
+    Dim respuesta As String
+    Dim partes() As String
+    Dim mensaje As String
+    Dim suma As Currency
+    Dim n As Integer
+
+    'Reiniciar el desglose de este empleado.
+    exAntig = 0
+    exIndem = 0
+    exAgui = 0
+    exPV = 0
+    exOtras = 0
+
+    If totalExento < 0 Then
+        Err.Raise vbObjectError + 5430, "CapturarDesgloseExentoSeparacionCFDI", "La percepcion exenta no puede ser negativa."
+    End If
+
+    If totalExento = 0 Then Exit Sub
+
+    limites(0) = brutoAntig
+    limites(1) = brutoIndem
+    limites(2) = brutoAgui
+    limites(3) = brutoPV
+    limites(4) = brutoOtras
+
+    mensaje = "Empleado " & CStr(NumerodePersonal) & vbCrLf & "Total exento capturado: " & Format$(totalExento, "#,##0.00") & vbCrLf & vbCrLf & "Indique el desglose fiscal confirmado " & _
+        "por el contador en este orden:" & vbCrLf & "1. Prima antiguedad (max. " & Format$(brutoAntig, "#,##0.00") & ")" & vbCrLf & "2. Indemnizacion (max. " & Format$(brutoIndem, "#,##0.00") & ")" & vbCrLf & _
+        "3. Aguinaldo (max. " & Format$(brutoAgui, "#,##0.00") & ")" & vbCrLf & "4. Prima vacacional (max. " & Format$(brutoPV, "#,##0.00") & ")" & vbCrLf & "5. Otras (max. " & Format$(brutoOtras, "#,##0.00") & ")" & vbCrLf & vbCrLf & _
+        "Escriba cinco importes separados por punto y coma." & vbCrLf & "Ejemplo de formato: 0;0;0;500;0" & vbCrLf & vbCrLf & "La suma debe ser exactamente " & Format$(totalExento, "#,##0.00")
+
+    respuesta = InputBox$(mensaje, "Desglose exento CFDI", "0;0;0;0;0")
+
+    If Len(Trim$(respuesta)) = 0 Then
+        Err.Raise vbObjectError + 5431, "CapturarDesgloseExentoSeparacionCFDI", "Se cancelo el desglose exento del empleado " & CStr(NumerodePersonal)
+    End If
+
+    partes = Split(respuesta, ";")
+
+    If UBound(partes) <> 4 Then
+        Err.Raise vbObjectError + 5432, "CapturarDesgloseExentoSeparacionCFDI", "Debe indicar exactamente cinco importes."
+    End If
+
+    suma = 0
+
+    For n = 0 To 4
+
+        If Not IsNumeric(Trim$(partes(n))) Then
+            Err.Raise vbObjectError + 5433, "CapturarDesgloseExentoSeparacionCFDI", "Importe exento no numerico en posicion " & CStr(n + 1)
+        End If
+
+        importes(n) = CCur(Trim$(partes(n)))
+
+        If importes(n) < 0 Or importes(n) > limites(n) Then
+            Err.Raise vbObjectError + 5434, "CapturarDesgloseExentoSeparacionCFDI", "El exento de la posicion " & CStr(n + 1) & " excede su concepto o es negativo."
+        End If
+
+        suma = suma + importes(n)
+
+    Next n
+
+    If suma <> totalExento Then
+        Err.Raise vbObjectError + 5435, "CapturarDesgloseExentoSeparacionCFDI", "El desglose exento no coincide con los " & Format$(totalExento, "#,##0.00") & " capturados en la nomina."
+    End If
+
+    exAntig = importes(0)
+    exIndem = importes(1)
+    exAgui = importes(2)
+    exPV = importes(3)
+    exOtras = importes(4)
+
+End Sub
 
 Private Sub MdAbr_1SeparacionNueva()
     On Error GoTo ErrorNueva
@@ -1582,25 +1695,29 @@ Private Sub MdAbr_1SeparacionNueva()
     brutoBono = LeerCFDINueva(GridOrigen, C_LQ_BONO)
     brutoOtras = LeerCFDINueva(GridOrigen, C_OTRAS)
 
-    ' Regla automatica de DESGLOSE en memoria. Se conserva el exento
-    ' que capturo el contador, sin recalcularlo ni duplicar ingresos.
-    exentoRestante = CCur(t_ext)
-    exAntig = MenorCFDI(exentoRestante, brutoAntig)
-    exentoRestante = exentoRestante - exAntig
-    exIndem = MenorCFDI(exentoRestante, brutoIndem)
-    exentoRestante = exentoRestante - exIndem
-    exAgui = MenorCFDI(exentoRestante, brutoAguinaldo)
-    exentoRestante = exentoRestante - exAgui
-    exPV = MenorCFDI(exentoRestante, brutoPrimaVac)
-    exentoRestante = exentoRestante - exPV
-    exOtras = MenorCFDI(exentoRestante, brutoOtras)
-    exentoRestante = exentoRestante - exOtras
+    ' Regla automatica de DESGLOSE en memoria. Se conserva el exento que capturo el contador, sin recalcularlo ni duplicar ingresos.
+    
+'Desglose fiscal de percepciones exentas.
+'
+'No distribuir automaticamente por prioridad.
+'Conservar el total capturado y solicitar su
+'asignacion real por concepto al contador.
+'
+'No modificar los importes de Form8 ni el NOM.
 
-    If exentoRestante <> 0 Then
-        Err.Raise vbObjectError + 403, "MdAbr_1SeparacionNueva", _
-                  "No es posible distribuir toda la Perc.exenta entre " & _
-                  "los conceptos que tienen campo exento en esta plantilla."
-    End If
+CapturarDesgloseExentoSeparacionCFDI _
+    CCur(t_ext), _
+    brutoAntig, _
+    brutoIndem, _
+    brutoAguinaldo, _
+    brutoPrimaVac, _
+    brutoOtras, _
+    exAntig, _
+    exIndem, _
+    exAgui, _
+    exPV, _
+    exOtras
+
 
     totalSeparacion = brutoComp + brutoAntig + brutoIndem
     sepTotal = totalSeparacion
@@ -1613,23 +1730,23 @@ Private Sub MdAbr_1SeparacionNueva()
     '3 4 NOMBRE
         Get 2, NumerodePersonal, personal:
         MiFechaAlta = Trim(personal.fal)
-        Nombrey = UCase(Trim(personal.nom) + " " + Trim(personal.ape1) + " " + Trim(personal.ape2))
+        Nombrey = Trim(personal.nom) + " " + Trim(personal.ape1) + " " + Trim(personal.ape2)
         NOMCF2.NOMCF.TextMatrix(I7, 2) = Nombrey:
         Get 7, NumerodePersonal, Empleado_1
     '4 5 DIRECCION
-        NOMCF2.NOMCF.TextMatrix(I7, 3) = UCase(Trim(Empleado_1.Direccion)):
+        NOMCF2.NOMCF.TextMatrix(I7, 3) = Trim(Empleado_1.Direccion):
     '5 6 COLONIA
-        NOMCF2.NOMCF.TextMatrix(I7, 4) = UCase(Trim(Empleado_1.Colonia)):
+        NOMCF2.NOMCF.TextMatrix(I7, 4) = Trim(Empleado_1.Colonia):
     '6 7 CIUDAD
-        NOMCF2.NOMCF.TextMatrix(I7, 5) = UCase(Trim(Empleado_1.Ciudad)):
+        NOMCF2.NOMCF.TextMatrix(I7, 5) = Trim(Empleado_1.Ciudad):
     '7 8 ESTADO
-        NOMCF2.NOMCF.TextMatrix(I7, 6) = UCase(Trim(Empleado_1.Estado)):
+        NOMCF2.NOMCF.TextMatrix(I7, 6) = Trim(Empleado_1.Estado):
     '8 9 DELEGACION
-        NOMCF2.NOMCF.TextMatrix(I7, 7) = UCase(Trim(Empleado_1.Delegacion)):
+        NOMCF2.NOMCF.TextMatrix(I7, 7) = Trim(Empleado_1.Delegacion):
     '9 10 CP
         NOMCF2.NOMCF.TextMatrix(I7, 8) = Trim(Empleado_1.Cpostal):
     '10 11 RFC
-        NOMCF2.NOMCF.TextMatrix(I7, 9) = UCase(Trim(personal.RFC)):
+        NOMCF2.NOMCF.TextMatrix(I7, 9) = Trim(personal.RFC):
     '11 12 PAIS
         NOMCF2.NOMCF.TextMatrix(I7, 10) = "MEXICO":
     '12 13 CORREO
@@ -1701,7 +1818,7 @@ Private Sub MdAbr_1SeparacionNueva()
         NOMCF2.NOMCF.TextMatrix(I7, 39) = NumerodePersonal
     '40 41 CURP
         Get 9, NumerodePersonal, Otros_Rgtros
-        NOMCF2.NOMCF.TextMatrix(I7, 40) = UCase(Trim(Otros_Rgtros.curp))
+        NOMCF2.NOMCF.TextMatrix(I7, 40) = Trim(Otros_Rgtros.curp)
     '41 42 TIPOREGIMEN
         NOMCF2.NOMCF.TextMatrix(I7, 41) = "02 Sueldos"
     '42 43 NUMSEGURIDADSOCIAL
@@ -1711,8 +1828,7 @@ Private Sub MdAbr_1SeparacionNueva()
     '44 45 FECHAINICIALPAGO
         NOMCF2.NOMCF.TextMatrix(I7, 44) = FechaCFDI_FormatoISO(FechaInicialCFDI)
     '45 46 FECHAFINALPAGO
-        NOMCF2.NOMCF.TextMatrix(I7, 45) = FechaCFDI_FormatoISO(FechaFinalCFDI)
-
+        NOMCF2.NOMCF.TextMatrix(I7, 45) = FechaCFDI_FormatoISO(FechaPagoCFDI)
     Rem *****************   MODIFICADO CON PARCHE DEL 6/6/17
     '46 47 NUMDIASPAGADOS
         NOMCF2.NOMCF.TextMatrix(I7, 46) = DiasPagadosCFDI(GridOrigen)
@@ -1722,13 +1838,10 @@ Private Sub MdAbr_1SeparacionNueva()
         NOMCF2.NOMCF.TextMatrix(I7, 48) = ""
     '49 50 BANCO
         NOMCF2.NOMCF.TextMatrix(I7, 49) = "002"
-    
     '50 51 FECHAINICIORELLABORAL
         NOMCF2.NOMCF.TextMatrix(I7, 50) = FechaCFDI_FormatoISO(FechaCFDI_InterpretarDMY(Trim$(personal.fal)))
-    
-    '51 52 ANTIGUEDAD
+    '51 52 ANTIGUEDAD Utilizar el mismo formato CFDI de semanas o dias que ya funciona en las nominas ordinarias.
         NOMCF2.NOMCF.TextMatrix(I7, 51) = AntiguedadSemanasCFDI(Trim$(personal.fal), FechaFinalCFDI)
-
     '52 53 PUESTO
         NOMCF2.NOMCF.TextMatrix(I7, 52) = "Administracion"
     '53 54 TIPOCONTRATO
@@ -1737,20 +1850,15 @@ Private Sub MdAbr_1SeparacionNueva()
         NOMCF2.NOMCF.TextMatrix(I7, 54) = "01 Diurna"
     '55 56 PERIODICIDADPAGO
         NOMCF2.NOMCF.TextMatrix(I7, 55) = "99 OTRA PERIODICIDAD"
-    
-    '56 57 SALARIOBASECOTAPOR
-    If personal.integrado <= 0 Then
-        Err.Raise vbObjectError + 5301, "NOMCF2", "El empleado " & CStr(NumerodePersonal) & " no tiene salario integrado valido."
-    End If
-    
-    NOMCF2.NOMCF.TextMatrix(I7, 56) = Format$(personal.integrado, "#,##0.00")
-    
+    '56 57 SALARIOBASECOTAPOR Utilizar el salario diario integrado registrado en el archivo de personal.
+        If personal.integrado <= 0 Then
+            Err.Raise vbObjectError + 5301, "MdAbr_1SeparacionNueva", "El empleado " & CStr(NumerodePersonal) & " no tiene salario integrado valido."
+        End If
+        NOMCF2.NOMCF.TextMatrix(I7, 56) = Format$(personal.integrado, "#,##0.00")
     '57 58 RIESGOPUESTO
-    NOMCF2.NOMCF.TextMatrix(I7, 57) = RiesgoImss
-    
-    '58 59 SALARIODIARIOINTEGRADO
-    NOMCF2.NOMCF.TextMatrix(I7, 58) = NOMCF2.NOMCF.TextMatrix(I7, 56)
-
+        NOMCF2.NOMCF.TextMatrix(I7, 57) = RiesgoImss
+    '58 59 SALARIODIARIOINTEGRADO Debe provenir del mismo SDI del empleado.
+        NOMCF2.NOMCF.TextMatrix(I7, 58) = Format$(personal.integrado, "#,##0.00")
     '59 60 ENTIDADFEDERATIVA
         NOMCF2.NOMCF.TextMatrix(I7, 59) = "CMX"
     '60 61 RFCLABORA
@@ -1891,23 +1999,26 @@ ErrorNueva:
     Err.Raise Err.Number, "MdAbr_1SeparacionNueva", Err.Description
 End Sub
 
-
 Private Sub SDI_Click(Index As Integer)
 
 On Error GoTo Gestionaerror
 
+Dim f As Long
+
 Close 19
 Open "C:\salarioDI\Archivo.cg" For Random As 19 Len = Len(salarioDI)
-For f = 1 To NOMCF.Rows - 3
+For f = 1 To mCFDIUltimaFila
     Get 19, f, salarioDI
     NOMCF2.NOMCF.TextMatrix(f, 58) = Format(salarioDI.Salario, "#,##0.00")
 Next f
 Close 19
+Exit Sub
 
 Gestionaerror:
         If Err.Number <> 0 Then
             MsgBox "Se ha producido un error. Tipo de error = " & Err.Number & ". Descripción: " & Err.Description & Chr(13) & "Debes verificar que tengas el directorio C:\salarioDI\Archivo.cg", vbOKOnly, "C:\salarioDI\Archivo.cg"
         End If
+        Close 19
 End Sub
 
 Private Function CopiarAlPortapapeles(ByVal texto As String) As Boolean
@@ -2085,3 +2196,489 @@ Private Sub PrepararPeriodoCFDIAutomatico()
 
 End Sub
 
+Private Sub ValidarCamposPrioritariosCFDI(ByVal GridOrigen As Object, ByVal ultimaFila As Long)
+
+    Dim f As Long
+    Dim idEmpleado As String
+    Dim antiguedad As String
+    Dim totalEmpleados As Long
+
+    If NOMCF.Cols <> 296 Then
+        Err.Raise vbObjectError + 5361, "ValidarCamposPrioritariosCFDI", "La plantilla CFDI no contiene 296 columnas."
+    End If
+
+    For f = 1 To ultimaFila
+
+        idEmpleado = Trim$(GridOrigen.TextMatrix(f, C_NUM))
+
+        If Len(idEmpleado) > 0 Then
+
+            If Not IsNumeric(idEmpleado) Then
+                Err.Raise vbObjectError + 5362, "ValidarCamposPrioritariosCFDI", "Numero de empleado no valido en fila " & CStr(f)
+            End If
+
+            If CLng(idEmpleado) <= 0 Then
+                Err.Raise vbObjectError + 5363, "ValidarCamposPrioritariosCFDI", "Numero de empleado no valido en fila " & CStr(f)
+            End If
+
+            totalEmpleados = totalEmpleados + 1
+
+            'Folio
+            If Len(Trim$(NOMCF.TextMatrix(f, 0))) = 0 Then
+                Err.Raise vbObjectError + 5364, "ValidarCamposPrioritariosCFDI", "Falta Folio. Empleado " & idEmpleado
+            End If
+            
+            '==================================================
+            ' VALIDAR FOLIO CONTRA LA ASIGNACION TEMPORAL
+            '==================================================
+            Dim claveFolio As String
+            
+            claveFolio = CStr(CLng(idEmpleado))
+            
+            If Not IsNumeric(NOMCF.TextMatrix(f, 0)) Then
+                Err.Raise vbObjectError + 5410, "ValidarCamposPrioritariosCFDI", "Folio no numerico. Empleado " & idEmpleado
+            End If
+            
+            If mFoliosPorEmpleado Is Nothing Then
+                Err.Raise vbObjectError + 5411, "ValidarCamposPrioritariosCFDI", "No se inicializo el control temporal de folios."
+            End If
+            
+            If Not mFoliosPorEmpleado.Exists(claveFolio) Then
+                Err.Raise vbObjectError + 5412, "ValidarCamposPrioritariosCFDI", "El empleado " & idEmpleado & " no tiene folio asignado."
+            End If
+            
+            If CLng(NOMCF.TextMatrix(f, 0)) <> CLng(mFoliosPorEmpleado(claveFolio)) Then
+                Err.Raise vbObjectError + 5413, "ValidarCamposPrioritariosCFDI", "El folio generado no coincide con el folio reservado del empleado " & idEmpleado
+            End If
+            
+            'FechaPago
+            If NOMCF.TextMatrix(f, 43) <> _
+               FechaCFDI_FormatoISO(FechaPagoCFDI) Then
+
+                Err.Raise vbObjectError + 5365, "ValidarCamposPrioritariosCFDI", "FechaPago incorrecta. Empleado " & idEmpleado
+            End If
+
+            'FechaInicialPago
+            If NOMCF.TextMatrix(f, 44) <> _
+               FechaCFDI_FormatoISO(FechaInicialCFDI) Then
+
+                Err.Raise vbObjectError + 5366, "ValidarCamposPrioritariosCFDI", "FechaInicialPago incorrecta. Empleado " & idEmpleado
+            End If
+
+            'FechaFinalPago
+            If NOMCF.TextMatrix(f, 45) <> FechaCFDI_FormatoISO(FechaFinalCFDI) Then
+
+                Err.Raise vbObjectError + 5367, "ValidarCamposPrioritariosCFDI", "FechaFinalPago incorrecta. Empleado " & idEmpleado
+            End If
+
+            'NumDiasPagados
+            If Not IsNumeric(NOMCF.TextMatrix(f, 46)) Then
+                Err.Raise vbObjectError + 5368, "ValidarCamposPrioritariosCFDI", "NumDiasPagados no valido. Empleado " & idEmpleado
+            End If
+
+            If CCur(NOMCF.TextMatrix(f, 46)) <= 0 Then
+                Err.Raise vbObjectError + 5369, "ValidarCamposPrioritariosCFDI", "NumDiasPagados debe ser mayor que cero. Empleado " & idEmpleado
+            End If
+
+            'Antiguedad
+            antiguedad = Trim$(NOMCF.TextMatrix(f, 51))
+
+            If Len(antiguedad) < 3 Or _
+               Left$(antiguedad, 1) <> "P" Then
+
+                Err.Raise vbObjectError + 5370, "ValidarCamposPrioritariosCFDI", "Antiguedad no valida. Empleado " & idEmpleado
+            End If
+
+            'SalarioBaseCotApor y SalarioDiarioIntegrado
+            If Len(Trim$(NOMCF.TextMatrix(f, 56))) = 0 Or Len(Trim$(NOMCF.TextMatrix(f, 58))) = 0 Then
+
+                Err.Raise vbObjectError + 5371, "ValidarCamposPrioritariosCFDI", "Faltan datos de salario integrado. Empleado " & idEmpleado
+            End If
+
+            If NOMCF.TextMatrix(f, 56) <> NOMCF.TextMatrix(f, 58) Then
+
+                Err.Raise vbObjectError + 5372, "ValidarCamposPrioritariosCFDI", "SalarioBaseCotApor y SDI no coinciden. Empleado " & idEmpleado
+            End If
+        End If
+    Next f
+
+    If totalEmpleados = 0 Then
+        Err.Raise vbObjectError + 5373, "ValidarCamposPrioritariosCFDI", "No se encontraron empleados validos."
+    End If
+End Sub
+
+'================================================
+' IDENTIFICACION DE NOMINA
+'================================================
+Private Function IdentidadNominaCFDI(ByVal ruta As String) As String
+
+    ruta = Trim$(Replace$(ruta, "/", "\"))
+
+    If Len(ruta) = 0 Then
+        Err.Raise vbObjectError + 5400, "IdentidadNominaCFDI", "No se identifico la nomina CFDI."
+    End If
+
+    'Normalizar rutas relativas y completas.
+    If InStr(1, ruta, ":\") = 0 And Left$(ruta, 2) <> "\\" Then
+        ruta = CurDir$ & "\" & ruta
+
+    End If
+
+    IdentidadNominaCFDI = UCase$(ruta)
+
+End Function
+
+
+'================================================
+' LEER ASIGNACIONES TEMPORALES
+'================================================
+Private Function LeerFoliosTemporales(ByVal identidad As String, ByVal serieActual As String) As Boolean
+
+    Dim n As Integer
+    Dim cabecera As String
+    Dim rutaGuardada As String
+    Dim serieGuardada As String
+    Dim linea As String
+    Dim partes() As String
+    Dim Empleado As Long
+    Dim folioLeido As Long
+    Dim foliosEncontrados As Object
+    Dim numeroError As Long
+    Dim descripcionError As String
+
+    LeerFoliosTemporales = False
+
+    If Len(Dir$(ARCHIVO_FOLIOS_TEMP)) = 0 Then
+        Exit Function
+    End If
+
+    Set foliosEncontrados = CreateObject("Scripting.Dictionary")
+
+    n = FreeFile
+    On Error GoTo ErrorLectura
+
+    Open ARCHIVO_FOLIOS_TEMP For Input As #n
+
+    Line Input #n, cabecera
+    Line Input #n, rutaGuardada
+    Line Input #n, serieGuardada
+
+    If cabecera <> "SACMAG-CFDI-FOLIOS-V1" Then
+    Err.Raise vbObjectError + 5401, , "Archivo temporal CFDI no reconocido."
+    End If
+
+    'El archivo pertenece a otra nomina o serie.
+    If StrComp(rutaGuardada, identidad, vbTextCompare) <> 0 Or _
+       StrComp(serieGuardada, serieActual, vbTextCompare) <> 0 Then
+
+        Close #n
+        Exit Function
+
+    End If
+
+    Do While Not EOF(n)
+
+        Line Input #n, linea
+
+        partes = Split(linea, vbTab)
+
+        If UBound(partes) <> 1 Then
+            Err.Raise vbObjectError + 5402, , "Registro temporal CFDI invalido."
+        End If
+
+        If Not IsNumeric(partes(0)) Or Not IsNumeric(partes(1)) Then
+
+            Err.Raise vbObjectError + 5403, , "Empleado o folio no numerico."
+        End If
+
+        Empleado = CLng(partes(0))
+        folioLeido = CLng(partes(1))
+
+        If Empleado <= 0 Or folioLeido <= 0 Then
+            Err.Raise vbObjectError + 5404, , "Empleado o folio fuera de rango."
+        End If
+
+        If mFoliosPorEmpleado.Exists(CStr(Empleado)) Then
+            Err.Raise vbObjectError + 5405, , "Empleado duplicado en folios temporales."
+        End If
+
+        If foliosEncontrados.Exists(CStr(folioLeido)) Then
+            Err.Raise vbObjectError + 5406, , "Folio duplicado en archivo temporal."
+        End If
+
+        mFoliosPorEmpleado.Add CStr(Empleado), folioLeido
+        foliosEncontrados.Add CStr(folioLeido), True
+
+    Loop
+
+    Close #n
+
+    LeerFoliosTemporales = (mFoliosPorEmpleado.Count > 0)
+
+    Exit Function
+
+ErrorLectura:
+
+    numeroError = Err.Number
+    descripcionError = Err.Description
+
+    On Error Resume Next
+    Close #n
+    On Error GoTo 0
+
+    Err.Raise numeroError, "LeerFoliosTemporales", descripcionError
+
+End Function
+
+'================================================
+' PREPARAR REUTILIZACION O NUEVOS FOLIOS
+'================================================
+Private Sub PrepararFoliosTemporales( _
+    ByVal folioAnterior As Long)
+
+    Dim Clave As Variant
+    Dim respuesta As VbMsgBoxResult
+
+    Set mFoliosPorEmpleado = CreateObject("Scripting.Dictionary")
+    Set mEmpleadosProcesados = CreateObject("Scripting.Dictionary")
+
+    mIdentidadNomina = IdentidadNominaCFDI(g_RutaNominaCFDI2026)
+
+    'El valor indicado en el InputBox original sigue controlando los nuevos consecutivos.
+    mFolioSiguiente = Folio
+
+    'Si el usuario cambio el folio inicial, no recuperamos la asignacion anterior.
+    If Folio <> folioAnterior Then
+        Exit Sub
+    End If
+
+    If LeerFoliosTemporales(mIdentidadNomina, Trim$(serie)) Then
+
+        respuesta = MsgBox("Se encontraron folios anteriores para esta misma nomina." & vbCrLf & vbCrLf & "¿Confirmas que los CFDI que se van a regenerar siguen SIN TIMBRAR?" & vbCrLf & vbCrLf & _
+        "Si: conservar los folios." & vbCrLf & "No: cancelar la generacion.", vbYesNo + vbQuestion, "Recuperar folios CFDI")
+
+        If respuesta <> vbYes Then
+            Err.Raise vbObjectError + 5407, "PrepararFoliosTemporales", "Regeneracion cancelada. No se reutilizaron folios."
+        End If
+
+        'Nunca consumir un folio ya reservado.
+        For Each Clave In mFoliosPorEmpleado.Keys
+
+            If CLng(mFoliosPorEmpleado(Clave)) > mFolioSiguiente Then
+                mFolioSiguiente = CLng(mFoliosPorEmpleado(Clave))
+
+            End If
+
+        Next Clave
+
+    End If
+
+End Sub
+
+
+'================================================
+' ASIGNAR FOLIO A UN EMPLEADO
+'================================================
+Private Sub AsignarFolioEmpleadoCFDI( _
+    ByVal numeroEmpleado As Long)
+
+    Dim Clave As String
+
+    Clave = CStr(numeroEmpleado)
+
+    If mEmpleadosProcesados.Exists(Clave) Then
+        Err.Raise vbObjectError + 5408, "AsignarFolioEmpleadoCFDI", "Empleado duplicado en la plantilla: " & Clave
+    End If
+
+    mEmpleadosProcesados.Add Clave, True
+    If mFoliosPorEmpleado.Exists(Clave) Then
+
+        'Recuperar folio previamente reservado.
+        Folio = CLng(mFoliosPorEmpleado(Clave))
+
+    Else
+        'Empleado nuevo: asignar el siguiente.
+        If mFolioSiguiente = 2147483647 Then
+            Err.Raise vbObjectError + 5409, "AsignarFolioEmpleadoCFDI", "Se alcanzo el limite de folios."
+        End If
+
+        mFolioSiguiente = mFolioSiguiente + 1
+        Folio = mFolioSiguiente
+
+        mFoliosPorEmpleado.Add Clave, Folio
+
+    End If
+
+End Sub
+
+'================================================
+' GUARDAR ASIGNACIONES TEMPORALES
+'================================================
+Private Sub GuardarFoliosTemporales()
+
+    Dim n As Integer
+    Dim Clave As Variant
+    Dim numeroError As Long
+    Dim descripcionError As String
+
+    If mFoliosPorEmpleado Is Nothing Then
+        Exit Sub
+    End If
+
+    If mEmpleadosProcesados.Count = 0 Then
+        Exit Sub
+    End If
+
+    On Error GoTo ErrorGuardado
+
+    If Len(Dir$("C:\GconTA", vbDirectory)) = 0 Then
+        MkDir "C:\GconTA"
+    End If
+
+    n = FreeFile
+
+    Open ARCHIVO_FOLIOS_TEMP For Output As #n
+
+    Print #n, "SACMAG-CFDI-FOLIOS-V1"
+    Print #n, mIdentidadNomina
+    Print #n, UCase$(Trim$(serie))
+
+    For Each Clave In mFoliosPorEmpleado.Keys
+        Print #n, CStr(Clave) & vbTab & CStr(mFoliosPorEmpleado(Clave))
+
+    Next Clave
+
+    Close #n
+    Exit Sub
+
+ErrorGuardado:
+
+    numeroError = Err.Number
+    descripcionError = Err.Description
+
+    On Error Resume Next
+    If n <> 0 Then Close #n
+    On Error GoTo 0
+
+    Err.Raise numeroError, "GuardarFoliosTemporales", descripcionError
+
+End Sub
+
+
+'===========================================================
+' COPIADO SEGURO DE PLANTILLAS CFDI
+'===========================================================
+Private Sub CopiarRangoPlantillaCFDI(ByVal columnaInicial As Long, ByVal columnaFinal As Long, ByVal conservarTexto As Boolean)
+
+    Dim i As Long
+    Dim c As Long
+    Dim empleados As Long
+    Dim contenido As String
+    Dim linea As String
+    Dim valor As String
+
+    On Error GoTo ErrorCopiado
+
+    If Not mCFDIListaParaCopiar Then
+        Err.Raise vbObjectError + 5420, "CopiarRangoPlantillaCFDI", "La plantilla CFDI no esta lista para copiar."
+
+    End If
+
+    If NOMCF.Cols <> 296 Then
+        Err.Raise vbObjectError + 5421, "CopiarRangoPlantillaCFDI", "La plantilla debe contener 296 columnas."
+
+    End If
+
+    If mCFDIUltimaFila < 1 Or _
+       mCFDIUltimaFila >= NOMCF.Rows Then
+
+        Err.Raise vbObjectError + 5422, "CopiarRangoPlantillaCFDI", "El numero de filas CFDI no es valido."
+    End If
+
+    Screen.MousePointer = vbHourglass
+
+    contenido = ""
+    empleados = 0
+
+    For i = 1 To mCFDIUltimaFila
+
+        'Solo copiar empleados que tengan CFDI generado.
+        If Len(Trim$(NOMCF.TextMatrix(i, 0))) > 0 Then
+            If Not IsNumeric(NOMCF.TextMatrix(i, 39)) Then
+                Err.Raise vbObjectError + 5423, "CopiarRangoPlantillaCFDI", "Numero de empleado invalido en fila " & CStr(i)
+
+            End If
+
+            empleados = empleados + 1
+            linea = ""
+
+            For c = columnaInicial To columnaFinal
+
+                valor = NOMCF.TextMatrix(i, c)
+
+                If conservarTexto Then
+                    valor = TxtCelda(c, valor)
+                End If
+
+                linea = linea & valor
+
+                If c < columnaFinal Then
+                    linea = linea & vbTab
+                End If
+
+            Next c
+            contenido = contenido & linea & vbCrLf
+
+        End If
+    Next i
+
+    If empleados = 0 Then
+        Err.Raise vbObjectError + 5424, "CopiarRangoPlantillaCFDI", "No existen empleados para copiar."
+    End If
+
+    'Conservar el mecanismo existente de portapapeles.
+    Call CopiarAlPortapapeles(contenido)
+    Screen.MousePointer = vbDefault
+    Exit Sub
+
+ErrorCopiado:
+
+    Screen.MousePointer = vbDefault
+    MsgBox "No se pudo copiar la plantilla CFDI." & vbCrLf & "Error " & CStr(Err.Number) & ": " & Err.Description, vbCritical, "CFDI"
+
+End Sub
+
+Private Function NombresColumnasCFDI() As String()
+    Dim s As String
+    s = "FOLIO,SERIE,NOMBRE,DIRECCION,COLONIA,CIUDAD,ESTADO,DELEGACION,CP,RFC,"
+    s = s & "PAIS,CORREO,OBSERVACIONES,MONEDA,TIPOCAMBIO,TOTAL,SUBTOTAL,DESCUENTO,TOTALGRAVADOPERCEPCIONES,TOTALEXENTOPERCEPCIONES,"
+    s = s & "TOTALPERCEPCIONES,TOTALDEDUCCIONES,TOTALOTROSPAGOS,TOTALSUELDOS,TOTALSEPARACIONINDEMNIZACION,TOTALJUBILACIONPENSIONRETIRO,TOTALOTRASDEDUCCIONES,TOTALIMPUESTOSRETENIDOS,VALORUNITARIO,IMPORTE,"
+    s = s & "TOTALCONLETRA,TIPODENOMINA,SINDICALIZADO,FORMAPAGO,LUGAREXPEDICION,REGIMEN,USOCFDI,NUMCTAPAG,REGISTROPATRONAL,NUMEMPLEADO,"
+    s = s & "CURP,TIPOREGIMEN,NUMSEGURIDADSOCIAL,FECHAPAGO,FECHAINICIALPAGO,FECHAFINALPAGO,NUMDIASPAGADOS,DEPARTAMENTO,CLABE,BANCO,"
+    s = s & "FECHAINICIORELLABORAL,ANTIGUEDAD,PUESTO,TIPOCONTRATO,TIPOJORNADA,PERIODICIDADPAGO,SALARIOBASECOTAPOR,RIESGOPUESTO,SALARIODIARIOINTEGRADO,ENTIDADFEDERATIVA,"
+    s = s & "RFCLABORA,PORCENTAJETIEMPO,DINCAPACIDADR,DINCAPACIDADI,DINCAPACIDADM,DINCAPACIDADC,P014DINCAR,P014DINCAI,P014DINCAM,P014DINCAC,"
+    s = s & "DIASDOM,DIASHE,HORASDOBLES,DIASHETRIPLES,HORASTRIPLES,DIASHESIMPLES,HORASSIMPLES,AT_VMERCADO,AT_POTORGARSE,JB_TEXHIBICION,"
+    s = s & "JB_TPARCIAL,JB_MDIARIO,JB_IACUM,JB_INOACUM,SI_TPAGADO,SI_ASERVICIO,SI_USUELDO,SI_IACUM,SI_INOACUM,CSF_SALFAV,"
+    s = s & "CSF_ANIO,CSF_RSFAV,SE_SCAUSADO,UUID_DOCREL,H2TOT,H3TOT,HSTOT,BANDERA,RFC,P001G,"
+    s = s & "P002G,P002E,P003G,P003E,P004G,P004E,P005G,P005E,P006G,P006E,"
+    s = s & "P009G,P010G,P011G,P011E,P012G,P012E,P013G,P014R,P014I,P014M,"
+    s = s & "P014C,P015E,P019G,P019E,P020G,P020E,P021G,P021E,P022G,P022E,"
+    s = s & "P023G,P024G,P024E,P025G,P025E,P026G,P026E,P027E,P028G,P029E,"
+    s = s & "P030E,P031E,P032E,P033E,P034E,P035E,P036E,P037E,P038G,P038E,"
+    s = s & "P039E,P044E,P045E,P046G,P047G,P047E,P048G,P048E,P049G,P050G,"
+    s = s & "P050E,P051G,P051E,P052G,P052E,P053G,P053E,P054G,P054E,P055G,"
+    s = s & "P055E,D001,D002,D003,D004,D005,D006R,D006I,D006M,D006C,"
+    s = s & "D007,D008,D009,D010,D011,D012,D013,D014,D015,D016,"
+    s = s & "D017,D018,D019,D020,D021,D022,D023,D024,D025,D026,"
+    s = s & "D027,D028,D029,D030,D031,D032,D033,D034,D035,D036,"
+    s = s & "D037,D038,D039,D040,D041,D042,D043,D044,D045,D046,"
+    s = s & "D047,D048,D049,D050,D051,D052,D053,D054,D055,D056,"
+    s = s & "D057,D058,D059,D060,D061,D062,D063,D064,D065,D066,"
+    s = s & "D067,D068,D069,D070,D071,D072,D073,D074,D075,D076,"
+    s = s & "D077,D078,D079,D080,D081,D082,D083,D084,D085,D086,"
+    s = s & "D087,D088,D089,D090,D091,D092,D093,D094,D095,D096,"
+    s = s & "D097,D098,D099,D100,D101,D102,D103,D104,D105,D106,"
+    s = s & "D107,D108,D109,D110,D111,OP001,OP002,OP003,OP004,OP005,"
+    s = s & "OP006,OP007,OP008,OP009,OP999,BANDERA"
+    NombresColumnasCFDI = Split(s, ",")
+End Function
