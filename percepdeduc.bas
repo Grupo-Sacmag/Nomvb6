@@ -83,7 +83,50 @@ Dim GridOrigen As Object
         rengSeparacionNueva GridOrigen
         Exit Sub
     End If
+    
+    '=========================================================
+    ' CFDI - NOMINA ESPECIAL AGUINALDO
+    '
+    ' Se utiliza una rutina independiente para evitar:
+    ' - Mezclar exento de aguinaldo con prima vacacional
+    ' - Crear un ISR artificial de $0.01
+    ' - Omitir o duplicar percepciones
+    '
+    ' No afecta nomina normal, PTU, Bono ni separaciones.
+    '=========================================================
 
+    If g_TipoNominaActiva = tnAguinaldo Then
+        If GridOrigen Is Nothing Then
+            Err.Raise vbObjectError + 5700, "percepdeduc.reng", "No se encontro el grid de captura CFDI."
+        End If
+        rengAguinaldoCFDI GridOrigen
+        Exit Sub
+    End If
+    
+    
+    '=========================================================
+    ' CFDI - NOMINAS ESPECIALES PTU Y BONO
+    '
+    ' Cada modalidad utiliza solamente:
+    '
+    ' PTU:
+    '   C_CONC6  = PTU gravada
+    '   C_EXENTA = PTU exenta
+    '
+    ' BONO:
+    '   C_CONC7  = Bono gravado
+    '   C_EXENTA = sin importe para P038E en 2026
+    '
+    ' Se conservan las deducciones capturadas.
+    ' No se modifica la nomina ordinaria ni AGUINALDO.
+    '=========================================================
+
+    Select Case g_TipoNominaActiva
+        Case tnPTU, tnBonoPremio
+            rengPTUBonoCFDI GridOrigen
+            Exit Sub
+    End Select
+    
     If GridOrigen Is Nothing Then
         MsgBox "GridOrigen es Nothing" & vbCrLf & _
                "OrigenCFDI = " & OrigenCFDI
@@ -627,4 +670,642 @@ ErrorSeparacion:
     Err.Raise Err.Number, "rengSeparacionNueva", Err.Description
 End Sub
 
+Public Sub rengAguinaldoCFDI(ByVal gr As Object)
 
+    Dim brutoAguinaldoCFDI As Currency
+    Dim horasSinClasificar As Currency
+    Dim ptuSinClasificar As Currency
+    Dim subsidioCapturado As Currency
+
+    Dim totalConceptos As Currency
+    Dim totalIngresosGrid As Currency
+    Dim totalDeduccionesGrid As Currency
+    Dim netoGrid As Currency
+
+    Dim registroEmpleado As Long
+    Dim tamanoCMP As Long
+    Dim errorCMP As Long
+    Dim descripcionCMP As String
+
+    '=========================================================
+    ' 1. VALIDAR LA FILA DE CAPTURA
+    '=========================================================
+
+    If I7 < 1 Or I7 >= gr.Rows Then
+        Err.Raise vbObjectError + 5701, "rengAguinaldoCFDI", "Fila de empleado fuera de rango."
+
+    End If
+
+    If gr.Cols <= C_NETO Then
+        Err.Raise vbObjectError + 5702, "rengAguinaldoCFDI", "El grid no contiene todas las columnas de AGUINALDO."
+
+    End If
+
+    If Not IsNumeric(gr.TextMatrix(I7, C_NUM)) Then
+        Err.Raise vbObjectError + 5703, "rengAguinaldoCFDI", "No existe un numero de empleado valido."
+
+    End If
+
+    registroEmpleado = CLng(gr.TextMatrix(I7, C_NUM))
+
+    If registroEmpleado <= 0 Then
+        Err.Raise vbObjectError + 5704, "rengAguinaldoCFDI", "El numero de empleado debe ser positivo."
+
+    End If
+
+    '=========================================================
+    ' 2. REINICIAR VARIABLES GLOBALES CFDI
+    '
+    ' Evitar conservar cantidades del empleado anterior.
+    '=========================================================
+
+    sue3 = 0
+    agui5 = 0
+
+    ptu_1 = 0
+    ptu_2 = 0
+    ptu_3 = 0
+
+    via7 = 0
+    pva8 = 0
+    otr9 = 0
+    pee10 = 0
+
+    sub13 = 0
+    subc13 = 0
+
+    isr12 = 0
+    ims14 = 0
+    pre15 = 0
+    fon16 = 0
+    pea17 = 0
+    ifv18 = 0
+
+    t_per = 0
+    t_ded = 0
+    T_neto = 0
+
+    t_grav = 0
+    t_ext = 0
+
+    t_gravded = 0
+    t_extded = 0
+    t_oded = 0
+    t_oi = 0
+
+    
+    '=========================================================
+    ' 3. LEER LAS PERCEPCIONES DE AGUINALDO
+    '
+    ' REGLA DE CAPTURA:
+    '
+    ' C_CONC5  = Aguinaldo total
+    ' C_EXENTA = Parte exenta del aguinaldo
+    '
+    ' REGLA CFDI:
+    '
+    ' agui5 = Aguinaldo gravado
+    ' pee10 = Aguinaldo exento
+    '
+    ' El exento forma parte del total capturado.
+    '=========================================================
+
+    sue3 = ImporteCFDINuevo(gr, I7, C_SUELDO)
+    horasSinClasificar = ImporteCFDINuevo(gr, I7, C_CONC4)
+
+    '---------------------------------------------------------
+    ' AGUINALDO BRUTO
+    '
+    ' Leer el importe completo de la columna Aguinaldo.
+    '---------------------------------------------------------
+
+    brutoAguinaldoCFDI = ImporteCFDINuevo(gr, I7, C_CONC5)
+
+    '---------------------------------------------------------
+    ' PTU CAPTURADA EN AGUINALDO
+    '
+    ' Conservar la validacion posterior existente.
+    '---------------------------------------------------------
+
+    ptuSinClasificar = ImporteCFDINuevo(gr, I7, C_CONC6)
+
+    '---------------------------------------------------------
+    ' OTROS CONCEPTOS
+    '
+    ' Conservar las lecturas existentes.
+    '---------------------------------------------------------
+    
+    via7 = ImporteCFDINuevo(gr, I7, C_CONC7)
+    pva8 = ImporteCFDINuevo(gr, I7, C_CONC8)
+    otr9 = ImporteCFDINuevo(gr, I7, C_OTRAS)
+
+    '---------------------------------------------------------
+    ' AGUINALDO EXENTO
+    '
+    ' No es una percepcion adicional al bruto.
+    '---------------------------------------------------------
+
+    pee10 = ImporteCFDINuevo(gr, I7, C_EXENTA)
+
+    '=========================================================
+    ' 4. VALIDAR EL DESGLOSE
+    '=========================================================
+
+    If brutoAguinaldoCFDI < 0 Then
+        Err.Raise vbObjectError + 5902, "rengAguinaldoCFDI", "El aguinaldo total no puede ser negativo."
+    End If
+
+    If pee10 < 0 Then
+        Err.Raise vbObjectError + 5903, "rengAguinaldoCFDI", "La percepcion exenta no puede ser negativa."
+
+    End If
+
+    If pee10 > brutoAguinaldoCFDI Then
+        Err.Raise vbObjectError + 5904, "rengAguinaldoCFDI", "La percepcion exenta supera el aguinaldo total del empleado " & CStr(registroEmpleado)
+    End If
+
+    '=========================================================
+    ' 5. DETERMINAR AGUINALDO GRAVADO
+    '
+    ' Ejemplo:
+    '
+    ' Bruto:   5000
+    ' Exento:  1500
+    ' Gravado: 3500
+    '
+    ' Este importe se utiliza para P002G.
+    '=========================================================
+
+    agui5 = brutoAguinaldoCFDI - pee10
+
+    'No modificar la columna Aguinaldo del grid.
+    'No modificar la percepcion exenta del grid.
+    'No volver a restar la exencion de agui5.
+
+    '=========================================================
+    ' 4. VALIDAR CONCEPTOS SIN DESGLOSE FISCAL
+    '
+    ' No inventar destinos ni exenciones.
+    '=========================================================
+
+    If horasSinClasificar <> 0 Then
+        Err.Raise vbObjectError + 5705, "rengAguinaldoCFDI", "Empleado " & CStr(registroEmpleado) & ": existe importe en hs.Norm." & vbCrLf & "No hay un desglose fiscal confirmado para timbrar esta columna en AGUINALDO."
+
+    End If
+
+    If ptuSinClasificar <> 0 Then
+
+        Err.Raise vbObjectError + 5706, "rengAguinaldoCFDI", "Empleado " & CStr(registroEmpleado) & ": existe PTU dentro de AGUINALDO." & vbCrLf & "La columna Perc.exenta. se utiliza " & "para el aguinaldo." & vbCrLf & _
+            "No es posible determinar que parte " & "de la PTU es gravada o exenta." & vbCrLf & "Debe identificarse su desglose fiscal."
+
+    End If
+
+    '=========================================================
+    ' 5. VALIDAR IMPORTES NEGATIVOS
+    '
+    ' Las percepciones reportadas en estos destinos
+    ' no deben generar importes negativos.
+    '=========================================================
+
+    If sue3 < 0 Or agui5 < 0 Or via7 < 0 _
+       Or pva8 < 0 Or otr9 < 0 Or pee10 < 0 Then
+        Err.Raise vbObjectError + 5707, "rengAguinaldoCFDI", "Empleado " & CStr(registroEmpleado) & ": existen percepciones negativas."
+
+    End If
+
+    '=========================================================
+    ' 6. TOTAL DE PERCEPCIONES
+    '
+    ' La captura ya separo:
+    '
+    ' C5  = aguinaldo gravado
+    ' C10 = aguinaldo exento
+    '
+    ' NO volver a calcular la exencion.
+    ' NO utilizar el tope de prima vacacional.
+    '=========================================================
+
+    totalConceptos = sue3 + agui5 + via7 + pva8 + otr9 + pee10
+    t_per = totalConceptos
+    t_ext = pee10
+    t_grav = t_per - t_ext
+
+    totalIngresosGrid = _
+        ImporteCFDINuevo(gr, I7, C_TOTING)
+
+    If Abs(t_per - totalIngresosGrid) > CCur(0.01) Then
+        Err.Raise vbObjectError + 5708, "rengAguinaldoCFDI", "Empleado " & CStr(registroEmpleado) & ": las percepciones no coinciden." & vbCrLf & "Captura: " & Format$(totalIngresosGrid, "#,##0.00") & vbCrLf & "CFDI: " & Format$(t_per, "#,##0.00")
+    End If
+
+    If t_ext > t_per Then
+        Err.Raise vbObjectError + 5709, "rengAguinaldoCFDI", "El importe exento supera las percepciones."
+
+    End If
+
+    If t_per <= 0 Then
+        Err.Raise vbObjectError + 5710, "rengAguinaldoCFDI", "No existen percepciones para el CFDI."
+
+    End If
+
+    '=========================================================
+    ' 7. LEER DEDUCCIONES EXACTAMENTE COMO SE CAPTURARON
+    '
+    ' No crear una retencion de ISR de $0.01.
+    '=========================================================
+
+    isr12 = ImporteCFDINuevo(gr, I7, C_ISPT)
+    ims14 = ImporteCFDINuevo(gr, I7, C_IMSS)
+    pre15 = ImporteCFDINuevo(gr, I7, C_PRESTAMOS)
+    fon16 = ImporteCFDINuevo(gr, I7, C_FONACOT)
+    pea17 = ImporteCFDINuevo(gr, I7, C_PENSION)
+    ifv18 = ImporteCFDINuevo(gr, I7, C_INFONAVIT)
+
+    If isr12 < 0 Or ims14 < 0 Or pre15 < 0 Or fon16 < 0 Or pea17 < 0 Or ifv18 < 0 Then
+
+        Err.Raise vbObjectError + 5711, "rengAguinaldoCFDI", "Existen deducciones negativas en el empleado " & CStr(registroEmpleado)
+
+    End If
+
+    t_ded = isr12 + ims14 + pre15 + fon16 + pea17 + ifv18
+    t_oded = t_ded - isr12
+    t_extded = t_oded
+
+    '=========================================================
+    ' 8. SUBSIDIO AL EMPLEO
+    '
+    ' Convencion existente del sistema:
+    '
+    ' C_SUBEMP negativo = subsidio a favor del empleado
+    '
+    ' El importe positivo se envia a OP002.
+    '=========================================================
+
+    subsidioCapturado = ImporteCFDINuevo(gr, I7, C_SUBEMP)
+
+    If subsidioCapturado > 0 Then
+
+        Err.Raise vbObjectError + 5712, "rengAguinaldoCFDI", "Empleado " & CStr(registroEmpleado) & ": Sub.P/Empl. contiene un importe positivo." & vbCrLf & "No se puede clasificar como OP002 sin revisar el signo y su tratamiento."
+
+    End If
+
+    If subsidioCapturado < 0 Then
+        sub13 = -subsidioCapturado
+    Else
+        sub13 = 0
+    End If
+
+    'El subsidio no se suma a las percepciones.
+    'El subsidio pagado incrementa el neto.
+
+    T_neto = t_per + sub13 - t_ded
+
+    '=========================================================
+    ' 9. COMPARAR CONTRA TOTALES DE LA CAPTURA
+    '
+    ' La columna Tot.Deduc. incluye el signo que
+    ' utiliza C_SUBEMP en el grid original.
+    '=========================================================
+
+    totalDeduccionesGrid = ImporteCFDINuevo(gr, I7, C_TOTDED)
+    netoGrid = ImporteCFDINuevo(gr, I7, C_NETO)
+
+    If Abs((t_ded - sub13) - totalDeduccionesGrid) > CCur(0.01) Then
+
+        Err.Raise vbObjectError + 5713, "rengAguinaldoCFDI", "Empleado " & CStr(registroEmpleado) & ": Tot.Deduc. no coincide con el CFDI." & vbCrLf & "Captura: " & Format$(totalDeduccionesGrid, "#,##0.00") & _
+            vbCrLf & "Calculado: " & Format$(t_ded - sub13, "#,##0.00")
+
+    End If
+
+    If Abs(T_neto - netoGrid) > CCur(0.01) Then
+        Err.Raise vbObjectError + 5714, "rengAguinaldoCFDI", "Empleado " & CStr(registroEmpleado) & ": el neto del CFDI no coincide." & vbCrLf & "Captura: " & Format$(netoGrid, "#,##0.00") & vbCrLf & "CFDI: " & Format$(T_neto, "#,##0.00")
+
+    End If
+
+    '=========================================================
+    ' 10. RECUPERAR SUBSIDIO CAUSADO DEL CMP
+    '
+    ' Conservar el mismo origen utilizado por reng().
+    '=========================================================
+
+    Err.Clear
+    On Error Resume Next
+
+    tamanoCMP = LOF(14)
+    errorCMP = Err.Number
+    descripcionCMP = Err.Description
+
+    On Error GoTo 0
+
+    If errorCMP <> 0 Then
+
+        Err.Raise vbObjectError + 5715, "rengAguinaldoCFDI", "No fue posible consultar el CMP. " & descripcionCMP
+    End If
+
+    If registroEmpleado > (tamanoCMP \ Len(nom_com)) Then
+        Err.Raise vbObjectError + 5716, "rengAguinaldoCFDI", "No existe el registro CMP del empleado " & CStr(registroEmpleado)
+    End If
+
+    Get #14, registroEmpleado, nom_com
+
+    subc13 = nom_com.subdio
+
+End Sub
+
+Public Sub rengPTUBonoCFDI(ByVal gr As Object)
+
+    Dim columnaPrincipal As Long
+    Dim nombreConcepto As String
+    Dim columna As Long
+
+    Dim importeGravado As Currency
+    Dim importeExento As Currency
+    Dim importeIngresos As Currency
+
+    Dim totalDeduccionesGrid As Currency
+    Dim netoGrid As Currency
+    Dim subsidioCapturado As Currency
+
+    Dim registroEmpleado As Long
+    Dim tamanoCMP As Long
+    Dim numeroErrorCMP As Long
+    Dim descripcionErrorCMP As String
+
+    '=========================================================
+    ' 1. IDENTIFICAR LA MODALIDAD
+    '=========================================================
+
+    Select Case g_TipoNominaActiva
+
+        Case tnPTU
+            columnaPrincipal = C_CONC6
+            nombreConcepto = "PTU"
+
+        Case tnBonoPremio
+            columnaPrincipal = C_CONC7
+            nombreConcepto = "BONO"
+
+        Case Else
+            Err.Raise vbObjectError + 5800, "rengPTUBonoCFDI", "La modalidad no es PTU ni BONO."
+
+    End Select
+
+    If gr Is Nothing Then
+        Err.Raise vbObjectError + 5801, "rengPTUBonoCFDI", "No existe el grid de origen."
+    End If
+
+    If I7 < 1 Or I7 >= gr.Rows Then
+        Err.Raise vbObjectError + 5802, "rengPTUBonoCFDI", "Fila de empleado fuera de rango."
+    End If
+
+    If gr.Cols <= C_NETO Then
+        Err.Raise vbObjectError + 5803, "rengPTUBonoCFDI", "Faltan columnas en la captura."
+    End If
+
+    If Not IsNumeric(gr.TextMatrix(I7, C_NUM)) Then
+        Err.Raise vbObjectError + 5804, "rengPTUBonoCFDI", "Numero de empleado no valido."
+    End If
+
+    registroEmpleado = CLng(gr.TextMatrix(I7, C_NUM))
+
+    If registroEmpleado <= 0 Then
+        Err.Raise vbObjectError + 5805, "rengPTUBonoCFDI", "Numero de empleado incorrecto."
+    End If
+
+    '=========================================================
+    ' 2. REINICIAR VARIABLES DEL CFDI
+    '
+    ' Evitar cantidades heredadas del empleado anterior.
+    '=========================================================
+
+    sue3 = 0
+    agui5 = 0
+
+    ptu_1 = 0
+    ptu_2 = 0
+    ptu_3 = 0
+
+    via7 = 0
+    pva8 = 0
+    otr9 = 0
+    pee10 = 0
+
+    isr12 = 0
+    ims14 = 0
+    pre15 = 0
+    fon16 = 0
+    pea17 = 0
+    ifv18 = 0
+
+    sub13 = 0
+    subc13 = 0
+
+    t_per = 0
+    t_ded = 0
+    T_neto = 0
+
+    t_grav = 0
+    t_ext = 0
+
+    t_oded = 0
+    t_oi = 0
+    t_gravded = 0
+    t_extded = 0
+
+    '=========================================================
+    ' 3. VALIDAR LAS COLUMNAS DE PERCEPCIONES
+    '
+    ' PTU: solamente columna 6 y columna 10.
+    ' BONO: solamente columna 7 y columna 10.
+    '
+    ' No borrar importes de otras columnas.
+    ' Si existen, impedir un CFDI con importes omitidos.
+    '
+    ' Las deducciones siguen permitidas.
+    '=========================================================
+
+    For columna = C_SUELDO To C_OTRAS
+
+        If columna <> columnaPrincipal Then
+
+            If ImporteCFDINuevo(gr, I7, columna) <> 0 Then
+
+                Err.Raise vbObjectError + 5806, "rengPTUBonoCFDI", "Empleado " & CStr(registroEmpleado) & " - " & nombreConcepto & vbCrLf & "Existe un importe en la columna " & gr.TextMatrix(0, columna) & "." & vbCrLf & _
+                    "Esta nomina especial solamente permite el concepto " & nombreConcepto & " y su percepcion exenta."
+            End If
+        End If
+    Next columna
+
+    '=========================================================
+    ' 4. LEER CONCEPTO GRAVADO Y PERCEPCION EXENTA
+    '
+    ' No recalcular exenciones en el CFDI.
+    ' La captura ya contiene los importes definitivos.
+    '=========================================================
+
+    importeGravado = ImporteCFDINuevo(gr, I7, columnaPrincipal)
+    importeExento = ImporteCFDINuevo(gr, I7, C_EXENTA)
+
+    If importeGravado < 0 Or importeExento < 0 Then
+        Err.Raise vbObjectError + 5807, "rengPTUBonoCFDI", "Empleado " & CStr(registroEmpleado) & ": no se permiten percepciones negativas."
+
+    End If
+
+    '=========================================================
+    ' 5. DISTRIBUCION POR MODALIDAD
+    '=========================================================
+
+    Select Case g_TipoNominaActiva
+
+        Case tnPTU
+
+            'La columna 6 ya contiene la PTU gravada.
+            'La columna 10 contiene la PTU exenta.
+            'No volver a aplicar el limite de exencion.
+
+            ptu_1 = importeGravado
+            ptu_2 = importeExento
+            ptu_3 = ptu_1 + ptu_2
+
+            pee10 = ptu_2
+
+        Case tnBonoPremio
+
+            'Para 2026, P038 es totalmente gravado.
+            'No transformar ni perder una exencion
+            'capturada sin clasificacion fiscal valida.
+
+            If importeExento <> 0 Then
+
+                Err.Raise vbObjectError + 5808, "rengPTUBonoCFDI", "Empleado " & CStr(registroEmpleado) & ": BONO contiene " & Format$(importeExento, "#,##0.00") & " en Perc.exenta." & vbCrLf & "La clave SAT 038 debe ser " & _
+                    "totalmente gravada en 2026." & vbCrLf & "El contador debe confirmar la clasificacion de este importe."
+            End If
+
+            via7 = importeGravado
+            pee10 = 0
+
+    End Select
+
+    '=========================================================
+    ' 6. TOTALES DE PERCEPCIONES
+    '=========================================================
+
+    t_per = importeGravado + importeExento
+
+    t_ext = importeExento
+    t_grav = importeGravado
+
+    If t_per <= 0 Then
+        Err.Raise vbObjectError + 5809, "rengPTUBonoCFDI", "Empleado " & CStr(registroEmpleado) & ": no existe importe de " & nombreConcepto & " para generar su CFDI."
+    End If
+
+    importeIngresos = ImporteCFDINuevo(gr, I7, C_TOTING)
+
+    If Abs(t_per - importeIngresos) > CCur(0.01) Then
+        Err.Raise vbObjectError + 5810, "rengPTUBonoCFDI", "Empleado " & CStr(registroEmpleado) & ": Tot.Ingr. no coincide con " & nombreConcepto & "." & vbCrLf & "Captura: " & Format$(importeIngresos, "#,##0.00") & _
+            vbCrLf & "CFDI: " & Format$(t_per, "#,##0.00")
+
+    End If
+
+    '=========================================================
+    ' 7. LEER DEDUCCIONES DEL EMPLEADO
+    '
+    ' No inventar ISR de $0.01.
+    ' Utilizar los importes existentes de la captura.
+    '=========================================================
+
+    isr12 = ImporteCFDINuevo(gr, I7, C_ISPT)
+    ims14 = ImporteCFDINuevo(gr, I7, C_IMSS)
+
+    pre15 = ImporteCFDINuevo(gr, I7, C_PRESTAMOS)
+    fon16 = ImporteCFDINuevo(gr, I7, C_FONACOT)
+
+    pea17 = ImporteCFDINuevo(gr, I7, C_PENSION)
+    ifv18 = ImporteCFDINuevo(gr, I7, C_INFONAVIT)
+
+    If isr12 < 0 Or ims14 < 0 Or pre15 < 0 _
+       Or fon16 < 0 Or pea17 < 0 Or ifv18 < 0 Then
+        Err.Raise vbObjectError + 5811, "rengPTUBonoCFDI", "Empleado " & CStr(registroEmpleado) & ": existen deducciones negativas."
+
+    End If
+
+    t_ded = isr12 + ims14 + pre15 + fon16 + pea17 + ifv18
+    t_oded = t_ded - isr12
+    t_extded = t_oded
+
+    '=========================================================
+    ' 8. SUBSIDIO AL EMPLEO
+    '
+    ' Se conserva la convencion existente:
+    ' Subsidio negativo en grid = pago al trabajador.
+    '=========================================================
+
+    subsidioCapturado = ImporteCFDINuevo(gr, I7, C_SUBEMP)
+
+    If subsidioCapturado > 0 Then
+        Err.Raise vbObjectError + 5812, "rengPTUBonoCFDI", "Empleado " & CStr(registroEmpleado) & ": Sub.P/Empl. contiene un importe positivo." & vbCrLf & "Revise su tratamiento antes del CFDI."
+
+    End If
+
+    If subsidioCapturado < 0 Then
+        sub13 = -subsidioCapturado
+    Else
+        sub13 = 0
+    End If
+
+    T_neto = t_per + sub13 - t_ded
+
+    '=========================================================
+    ' 9. VALIDAR DEDUCCIONES Y NETO
+    '
+    ' En el grid, el subsidio negativo reduce
+    ' Tot.Deduc. e incrementa el neto.
+    '=========================================================
+
+    totalDeduccionesGrid = ImporteCFDINuevo(gr, I7, C_TOTDED)
+
+    netoGrid = ImporteCFDINuevo(gr, I7, C_NETO)
+
+    If Abs((t_ded - sub13) - totalDeduccionesGrid) > CCur(0.01) Then
+
+        Err.Raise vbObjectError + 5813, "rengPTUBonoCFDI", "Empleado " & CStr(registroEmpleado) & ": las deducciones no coinciden." & vbCrLf & "Captura: " & Format$(totalDeduccionesGrid, "#,##0.00") & _
+            vbCrLf & "CFDI: " & Format$(t_ded - sub13, "#,##0.00")
+
+    End If
+
+    If Abs(T_neto - netoGrid) > CCur(0.01) Then
+
+        Err.Raise vbObjectError + 5814, "rengPTUBonoCFDI", "Empleado " & CStr(registroEmpleado) & ": el neto no coincide con la captura." & vbCrLf & "Captura: " & Format$(netoGrid, "#,##0.00") & vbCrLf & _
+            "CFDI: " & Format$(T_neto, "#,##0.00")
+
+    End If
+
+    '=========================================================
+    ' 10. OBTENER SUBSIDIO CAUSADO DEL CMP
+    '
+    ' Mantener el origen original de reng().
+    '=========================================================
+
+    Err.Clear
+    On Error Resume Next
+
+    tamanoCMP = LOF(14)
+    numeroErrorCMP = Err.Number
+    descripcionErrorCMP = Err.Description
+
+    On Error GoTo 0
+
+    If numeroErrorCMP <> 0 Then
+        Err.Raise vbObjectError + 5815, "rengPTUBonoCFDI", "No se pudo leer el CMP del empleado " & CStr(registroEmpleado) & ". " & descripcionErrorCMP
+
+    End If
+
+    If registroEmpleado > (tamanoCMP \ Len(nom_com)) Then
+        Err.Raise vbObjectError + 5816, "rengPTUBonoCFDI", "No existe el CMP del empleado " & CStr(registroEmpleado)
+
+    End If
+
+    Get #14, registroEmpleado, nom_com
+
+    subc13 = nom_com.subdio
+
+End Sub

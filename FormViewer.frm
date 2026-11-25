@@ -952,31 +952,82 @@ Sub carganom()
             PonCel liLocal, C_LQ_PRIMAVAC, nomina.pvac
             ingresosLocal = ingresosLocal + nomina.pvac
         End If
+   
     Else
-        ' Logica anterior de ordinarias y especiales no-separacion.
+
+        '=====================================================
+        ' CARGA DE PERCEPCIONES DEL VIEWER
+        '
+        ' Nomina ordinaria y especiales no-separacion.
+        '=====================================================
+
         PonCel liLocal, C_CONC4, nomina.hs_nor
         ingresosLocal = ingresosLocal + nomina.hs_nor
+
+        '=====================================================
+        ' COLUMNA 5 - AGUINALDO
+        '=====================================================
+
         If N_ormal = 1 Then
-            PonCel liLocal, C_CONC5, nomina.aguin
+            If g_TipoNominaActiva = tnAguinaldo Then
+
+                'El usuario debe visualizar el importe bruto.
+                'La exenta ya esta dentro de ese importe.
+
+                PonCel liLocal, C_CONC5, nomina.aguin + nomina.exentos
+
+            Else
+
+                'Resto de especiales:
+                'mantener comportamiento anterior.
+
+                PonCel liLocal, C_CONC5, nomina.aguin
+            End If
             ingresosLocal = ingresosLocal + nomina.aguin
+
         Else
+            'Nomina ordinaria.
             PonCel liLocal, C_CONC5, nomina.hs_dbl
             ingresosLocal = ingresosLocal + nomina.hs_dbl
+
         End If
+
+        '=====================================================
+        ' COLUMNA 6 - COMPORTAMIENTO ORIGINAL
+        '=====================================================
+        '=========================================================
+        ' VIEWER - PTU ESPECIAL
+        '
+        ' El archivo NOM guarda:
+        '   nomina.ptu     = Gravado
+        '   nomina.exentos = Exento
+        '
+        ' El Viewer muestra el TOTAL de PTU.
+        '=========================================================
+    
         If N_ormal = 1 Then
-            PonCel liLocal, C_CONC6, nomina.ptu
+            If g_TipoNominaActiva = tnPTU Then
+                PonCel liLocal, C_CONC6, nomina.ptu + nomina.exentos
+            Else
+                PonCel liLocal, C_CONC6, nomina.ptu
+            End If
             ingresosLocal = ingresosLocal + nomina.ptu
         Else
             PonCel liLocal, C_CONC6, nomina.hs_tri
             ingresosLocal = ingresosLocal + nomina.hs_tri
         End If
+
         PonCel liLocal, C_CONC7, nomina.viaticos
         PonCel liLocal, C_CONC8, nomina.pvac
-        ' IMPORTANTE: formula original sin cambios (incluye campos
-        ' historicos aun cuando no sean visibles en este tipo).
-        ingresosLocal = nomina.sueldo + nomina.hs_nor + nomina.hs_dbl + _
-                        nomina.hs_tri + nomina.aguin + nomina.ptu + _
-                        nomina.viaticos + nomina.pvac
+
+        '=====================================================
+        ' RECONSTRUIR INGRESOS DESDE EL REGISTRO NOM
+        '
+        ' Conservar la formula original.
+        ' nomina.exentos se sumara despues, una sola vez.
+        '=====================================================
+
+        ingresosLocal = nomina.sueldo + nomina.hs_nor + nomina.hs_dbl + nomina.hs_tri + nomina.aguin + nomina.ptu + nomina.viaticos + nomina.pvac
     End If
 
     PonCel liLocal, C_OTRAS, nomina.otras
@@ -1011,22 +1062,39 @@ Sub carganom()
     deducciones = deduccionesLocal
     neto = netoLocal
 
+  
+    '=========================================================
+    ' BANDERAS DEL VIEWER
+    '
+    ' Conservar el comportamiento de la version original.
+    '=========================================================
+
     ConNom1.TextMatrix(liLocal, C_FLAG_ISR) = "0"
     ConNom1.TextMatrix(liLocal, C_FLAG_IMSS) = "0"
+
     If N_ormal = 1 Then
         ConNom1.TextMatrix(liLocal, C_FLAG_ESP) = "1"
     Else
         ConNom1.TextMatrix(liLocal, C_FLAG_ESP) = "0"
+
     End If
 
-    ' El numero de empleado corresponde al numero del registro NOM.
+    '=========================================================
+    ' DATOS BANCARIOS
+    '
+    ' No condicionar la consulta a que sea Aguinaldo.
+    '=========================================================
+
     If regtro > 0 And regtro <= LOF(12) / Len(Clbnx) Then
         Get #12, regtro, Clbnx
         ConNom1.TextMatrix(liLocal, C_BANAMEX) = " " & Clbnx.Q1
+
     Else
         ConNom1.TextMatrix(liLocal, C_BANAMEX) = ""
     End If
+
 End Sub
+
 
 Sub define()
     ' FORMVIEWER - los indices siempre proceden de modColumnas.

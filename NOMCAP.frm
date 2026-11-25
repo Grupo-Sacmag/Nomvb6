@@ -148,63 +148,127 @@ Private mCFDIListaParaCopiar As Boolean
 Private mCFDIUltimaFila As Long
     
 Public Sub IniCols()
-On Error GoTo ErrorHandler
+
+    On Error GoTo ErrorHandler
 
     Dim I_7 As Long
     Dim cm As Long
+    Dim totalFilas As Long
+    Dim nombres() As String
+    Dim anchoColumna As Long
 
-    cm = 296   ' 288 + 8 columnas nuevas
+    cm = 296
 
-    'NOMCF.Clear
-    'NOMCF.FixedCols = 0
-    'NOMCF.FixedRows = 1
-    NOMCF.Cols = cm
+    '=========================================================
+    ' 1. DETERMINAR ORIGEN DEL CFDI
+    '    1 = VISUALIZACION
+    '    OTRO = CAPTURA DE NOMINA
+    '=========================================================
 
     If OrigenCFDI = 1 Then
 
-    If FormViewer.ConNom1.Rows < 2 Then
-        NOMCF.Rows = 2
+        totalFilas = FormViewer.ConNom1.Rows
+
     Else
-        NOMCF.Rows = FormViewer.ConNom1.Rows
+
+        totalFilas = Form8.ConNom1.Rows
+
     End If
 
-Else
-
-    If Form8.ConNom1.Rows < 2 Then
-        NOMCF.Rows = 2
-    Else
-        NOMCF.Rows = Form8.ConNom1.Rows
+    If totalFilas < 2 Then
+        totalFilas = 2
     End If
 
-End If
+    '=========================================================
+    ' 2. CONFIGURAR LAS 296 COLUMNAS
+    '=========================================================
 
-       NOMCF.Row = 0
+    With NOMCF
 
-    Dim nombres() As String
+        .Redraw = False
+
+        .FixedRows = 0
+        .FixedCols = 0
+
+        .Cols = cm
+        .Rows = totalFilas
+
+        .FixedRows = 1
+
+        .Font.name = "Arial"
+        .Font.Size = 9
+
+        .RowHeight(0) = 450
+
+        .AllowUserResizing = 3
+
+    End With
+
+    '=========================================================
+    ' 3. OBTENER ENCABEZADOS OFICIALES
+    '
+    '    PLANTILLA 1: COLUMNAS 0 A 97
+    '    PLANTILLA 2: COLUMNAS 98 A 295
+    '=========================================================
+
     nombres = NombresColumnasCFDI()
 
-    For I_7 = 0 To cm - 1
-        NOMCF.col = I_7
-        NOMCF.CellAlignment = 4
-        NOMCF.ColWidth(I_7) = 1200
-        NOMCF.Text = nombres(I_7)
-    Next I_7
+    If UBound(nombres) - LBound(nombres) + 1 <> cm Then
+        Err.Raise vbObjectError + 5500, "NOMCF2.IniCols", "La lista de encabezados CFDI no contiene 296 columnas."
+    End If
 
-    Close 7
-    
-        With NOMCF2.NOMCF
-            If .Cols < cm Then
-                .Cols = cm
+    'Fuente utilizada para medir el texto.
+    Me.FontName = "Arial"
+    Me.FontSize = 9
+    Me.FontBold = True
+
+    '=========================================================
+    ' 4. COLOCAR ENCABEZADOS
+    '    - MISMO NOMBRE QUE EXCEL
+    '    - MISMO ORDEN
+    '    - NEGRITAS
+    '    - CENTRADOS
+    '    - ANCHO AUTOMATICO SEGUN EL TEXTO
+    '=========================================================
+
+    With NOMCF
+
+        For I_7 = 0 To cm - 1
+
+            .Row = 0
+            .col = I_7
+
+            .Text = nombres(I_7)
+
+            .CellAlignment = 4
+            .CellFontBold = True
+
+            anchoColumna = Me.TextWidth(nombres(I_7)) + 480
+
+            'Ancho minimo para encabezados cortos.
+            If anchoColumna < 1200 Then
+                anchoColumna = 1200
             End If
-        End With
 
-    
+            .ColWidth(I_7) = anchoColumna
+
+        Next I_7
+
+        .Row = 0
+        .col = 0
+
+        .Redraw = True
+
+    End With
+    Close 7
     Exit Sub
 
 ErrorHandler:
-    Close 7
-    MsgBox "Aún no capturas una nómina.", vbExclamation
+    NOMCF.Redraw = True
+    MsgBox "No fue posible configurar los encabezados CFDI." & vbCrLf & Err.Description, vbExclamation, "NOMCF2"
+
 End Sub
+
 
 Private Sub EdFij_Click()
   NOMCF.FixedRows = 1
@@ -1522,24 +1586,73 @@ End If
     '193 BANDERA
         NOMCF2.NOMCF.TextMatrix(I7, 295) = 1
         
-        '--- BLINDAJE FINAL P054 / P055 ---
-        NOMCF2.NOMCF.TextMatrix(I7, 70) = Format(0, "#,##0.00")
-        NOMCF2.NOMCF.TextMatrix(I7, 71) = Format(0, "#,##0.00")
-        NOMCF2.NOMCF.TextMatrix(I7, 72) = Format(0, "#,##0.00")
-        NOMCF2.NOMCF.TextMatrix(I7, 73) = Format(0, "#,##0.00")
+    '=========================================================
+    ' BLINDAJE FINAL P054 / P055
+    '=========================================================
 
+    NOMCF2.NOMCF.TextMatrix(I7, 70) = "0.00"
+    NOMCF2.NOMCF.TextMatrix(I7, 71) = "0.00"
+    NOMCF2.NOMCF.TextMatrix(I7, 72) = "0.00"
+    NOMCF2.NOMCF.TextMatrix(I7, 73) = "0.00"
 
-Exit Sub
+    
+    '=========================================================
+    ' MAPEO FINAL SEGUN LA MODALIDAD ESPECIAL
+    '
+    ' Se ejecuta despues del llenado general del CFDI.
+    ' Evita que las asignaciones antiguas vuelvan
+    ' a sobrescribir los destinos corregidos.
+    '=========================================================
 
+    Select Case g_TipoNominaActiva
+        Case tnAguinaldo
+            AplicarMapeoAguinaldoCFDI GridOrigen
+
+        Case tnPTU, tnBonoPremio
+            AplicarMapeoPTUBonoCFDI GridOrigen
+
+    End Select
+
+    Exit Sub
+
+    
 ErrorHandler:
 
-    Debug.Print "Error en MdAbr_1"
+    Debug.Print "=================================="
+    Debug.Print "ERROR EN MAPEO CFDI"
     Debug.Print "Empleado: "; NumerodePersonal
+    Debug.Print "Fila: "; I7
+    Debug.Print "Tipo de nomina: "; g_TipoNominaActiva
     Debug.Print "Error: "; Err.Number
     Debug.Print "Descripcion: "; Err.Description
+    Debug.Print "=================================="
+
+    '=========================================================
+    ' PROPAGAR ERRORES DE NOMINAS ESPECIALES
+    '
+    ' Aguinaldo, PTU y Bono utilizan mapeo controlado.
+    '
+    ' Si una cantidad no coincide o se encuentra
+    ' en una columna incorrecta, se impide copiar
+    ' una plantilla CFDI incompleta.
+    '=========================================================
+
+    Select Case g_TipoNominaActiva
+
+        Case tnAguinaldo, tnPTU, tnBonoPremio
+
+            Debug.Print "ERROR CFDI ESPECIAL"
+            Debug.Print "Empleado: "; NumerodePersonal
+            Debug.Print "Tipo: "; g_TipoNominaActiva
+            Debug.Print "Numero de error: "; Err.Number
+            Debug.Print "Descripcion: "; Err.Description
+
+            Err.Raise Err.Number, "NOMCF2.MdAbr_1_ESPECIAL", Err.Description
+
+    End Select
+
 
 End Sub
-
 
 '==========================================================================
 ' NOMCF2 - Solo nueva Liquidacion / Finiquito formato 2026.
@@ -2682,3 +2795,500 @@ Private Function NombresColumnasCFDI() As String()
     s = s & "OP006,OP007,OP008,OP009,OP999,BANDERA"
     NombresColumnasCFDI = Split(s, ",")
 End Function
+
+
+Private Sub AplicarMapeoAguinaldoCFDI(ByVal gr As Object)
+
+    Dim totalConceptos As Currency
+    Dim totalOtrosPagos As Currency
+    Dim subtotalCFDI As Currency
+    Dim totalCFDI As Currency
+
+    Dim totalMapeado As Currency
+    Dim exentoMapeado As Currency
+    Dim gravadoMapeado As Currency
+
+    '=========================================================
+    ' 1. REVISAR EL TIPO DE NOMINA
+    '=========================================================
+
+    If g_TipoNominaActiva <> tnAguinaldo Then
+        Exit Sub
+    End If
+
+    '=========================================================
+    ' 2. OBTENER LOS TOTALES PREPARADOS POR rengAguinaldoCFDI
+    '=========================================================
+
+    totalConceptos = t_per
+    totalOtrosPagos = sub13
+    subtotalCFDI = totalConceptos + totalOtrosPagos
+    totalCFDI = subtotalCFDI - t_ded
+
+    '=========================================================
+    ' 3. PLANTILLA 1 - TOTALES CFDI
+    '
+    ' Indices:
+    '
+    ' 15 = TOTAL
+    ' 16 = SUBTOTAL
+    ' 17 = DESCUENTO
+    ' 18 = TOTALGRAVADOPERCEPCIONES
+    ' 19 = TOTALEXENTOPERCEPCIONES
+    ' 20 = TOTALPERCEPCIONES
+    ' 21 = TOTALDEDUCCIONES
+    ' 22 = TOTALOTROSPAGOS
+    ' 23 = TOTALSUELDOS
+    '=========================================================
+
+    With NOMCF2.NOMCF
+
+        .TextMatrix(I7, 15) = Format$(totalCFDI, "#,##0.00")
+        .TextMatrix(I7, 16) = Format$(subtotalCFDI, "#,##0.00")
+        .TextMatrix(I7, 17) = Format$(t_ded, "#,##0.00")
+        .TextMatrix(I7, 18) = Format$(t_grav, "#,##0.00")
+        .TextMatrix(I7, 19) = Format$(t_ext, "#,##0.00")
+        .TextMatrix(I7, 20) = Format$(totalConceptos, "#,##0.00")
+        .TextMatrix(I7, 21) = Format$(t_ded, "#,##0.00")
+        .TextMatrix(I7, 22) = Format$(totalOtrosPagos, "#,##0.00")
+        .TextMatrix(I7, 23) = Format$(totalConceptos, "#,##0.00")
+
+        'No corresponde separacion ni jubilacion.
+
+        .TextMatrix(I7, 24) = "0.00"
+        .TextMatrix(I7, 25) = "0.00"
+
+        'Total de otras deducciones.
+
+        .TextMatrix(I7, 26) = Format$(t_oded, "#,##0.00")
+
+        'Impuestos retenidos.
+
+        .TextMatrix(I7, 27) = Format$(isr12, "#,##0.00")
+
+        'Valor unitario e importe del CFDI.
+        'Incluyen percepciones y otros pagos.
+
+        .TextMatrix(I7, 28) = Format$(subtotalCFDI, "#,##0.00")
+        .TextMatrix(I7, 29) = Format$(subtotalCFDI, "#,##0.00")
+
+    End With
+
+    '=========================================================
+    ' 4. PLANTILLA 2 - PERCEPCIONES
+    '
+    ' Se utilizan las posiciones exactas del Excel.
+    '=========================================================
+
+    With NOMCF2.NOMCF
+
+        '-----------------------------------------------------
+        ' P001G - SUELDO GRAVADO
+        ' Origen: columna 3 de captura
+        '-----------------------------------------------------
+
+        .TextMatrix(I7, 99) = Format$(sue3, "#,##0.00")
+
+        '-----------------------------------------------------
+        ' P002G - AGUINALDO GRAVADO
+        ' Origen: columna 5 de captura
+        '-----------------------------------------------------
+
+        .TextMatrix(I7, 100) = Format$(agui5, "#,##0.00")
+
+        '-----------------------------------------------------
+        ' P002E - AGUINALDO EXENTO
+        ' Origen: columna 10 de captura
+        '-----------------------------------------------------
+
+        .TextMatrix(I7, 101) = Format$(pee10, "#,##0.00")
+
+        '-----------------------------------------------------
+        ' P003G / P003E - PTU
+        '
+        ' En AGUINALDO no se distribuye una PTU
+        ' sin conocer sus importes gravado y exento.
+        '
+        ' rengAguinaldoCFDI ya impide el caso ambiguo.
+        '-----------------------------------------------------
+
+        .TextMatrix(I7, 102) = "0.00"
+        .TextMatrix(I7, 103) = "0.00"
+
+        '-----------------------------------------------------
+        ' P004G / P004E
+        '
+        ' Reembolso de gastos medicos.
+        '
+        ' NO CORRESPONDE AL AGUINALDO NI AL BONO.
+        '
+        ' El codigo anterior enviaba C7 + C10 a P004G.
+        ' Se elimina exclusivamente para AGUINALDO.
+        '-----------------------------------------------------
+
+        .TextMatrix(I7, 104) = "0.00"
+        .TextMatrix(I7, 105) = "0.00"
+
+        '-----------------------------------------------------
+        ' P019G / P019E - HORAS EXTRAS
+        '
+        ' No hay horas con importe permitido por
+        ' rengAguinaldoCFDI sin desglose fiscal.
+        '-----------------------------------------------------
+
+        .TextMatrix(I7, 122) = "0.00"
+        .TextMatrix(I7, 123) = "0.00"
+
+        '-----------------------------------------------------
+        ' P021G - PRIMA VACACIONAL GRAVADA
+        ' Origen: columna 8 de captura
+        '
+        ' P021E - PRIMA VACACIONAL EXENTA
+        '
+        ' La columna exenta 10 pertenece a AGUINALDO.
+        ' No se utiliza para prima vacacional.
+        '-----------------------------------------------------
+
+        .TextMatrix(I7, 126) = Format$(pva8, "#,##0.00")
+
+        .TextMatrix(I7, 127) = "0.00"
+
+        '-----------------------------------------------------
+        ' P038G - OTROS INGRESOS POR SALARIOS
+        '
+        ' Origen:
+        ' C7 = Bono generico
+        ' C9 = Otras percepciones
+        '
+        ' P038E no tiene exencion clasificada.
+        '-----------------------------------------------------
+
+        .TextMatrix(I7, 148) = Format$(via7 + otr9, "#,##0.00")
+        .TextMatrix(I7, 149) = "0.00"
+
+    End With
+
+    '=========================================================
+    ' 5. PLANTILLA 2 - DEDUCCIONES
+    '
+    ' Conservar exactamente las cantidades capturadas.
+    '=========================================================
+
+    With NOMCF2.NOMCF
+
+        'D001 - IMSS
+        .TextMatrix(I7, 171) = Format$(ims14, "#,##0.00")
+        
+        'D002 - ISR
+        .TextMatrix(I7, 172) = Format$(isr12, "#,##0.00")
+
+        'D004 - Otras deducciones / prestamos
+        .TextMatrix(I7, 174) = Format$(pre15, "#,##0.00")
+
+        'D007 - Pension alimenticia
+        .TextMatrix(I7, 180) = Format$(pea17, "#,##0.00")
+
+        'D010 - Infonavit
+        .TextMatrix(I7, 183) = Format$(ifv18, "#,##0.00")
+
+        'D011 - Fonacot
+        .TextMatrix(I7, 184) = Format$(fon16, "#,##0.00")
+
+        '-----------------------------------------------------
+        ' OP002 - SUBSIDIO AL EMPLEO EFECTIVAMENTE PAGADO
+        '-----------------------------------------------------
+
+        .TextMatrix(I7, 286) = Format$(sub13, "#,##0.00")
+
+        '-----------------------------------------------------
+        ' SE_SCAUSADO
+        '
+        ' Conservar el valor leido del CMP.
+        '-----------------------------------------------------
+
+        .TextMatrix(I7, 92) = Format$(subc13, "#,##0.00")
+
+    End With
+
+    '=========================================================
+    ' 6. VALIDAR QUE LAS PERCEPCIONES NO ESTEN DUPLICADAS
+    '
+    ' Solo se suman los destinos de percepcion
+    ' utilizados por AGUINALDO.
+    '=========================================================
+
+    With NOMCF2.NOMCF
+
+        totalMapeado = CCur(.TextMatrix(I7, 99)) + CCur(.TextMatrix(I7, 100)) + CCur(.TextMatrix(I7, 101)) + CCur(.TextMatrix(I7, 126)) + CCur(.TextMatrix(I7, 148))
+        exentoMapeado = CCur(.TextMatrix(I7, 101))
+
+    End With
+
+    gravadoMapeado = totalMapeado - exentoMapeado
+
+    If Abs(totalMapeado - t_per) > CCur(0.01) Then
+        Err.Raise vbObjectError + 5720, "AplicarMapeoAguinaldoCFDI", "El total de percepciones mapeadas no coincide con la captura." & vbCrLf & "Empleado: " & CStr(NumerodePersonal)
+
+    End If
+
+    If Abs(exentoMapeado - t_ext) > CCur(0.01) Then
+        Err.Raise vbObjectError + 5721, "AplicarMapeoAguinaldoCFDI", "El total exento no coincide con la captura."
+
+    End If
+
+    If Abs(gravadoMapeado - t_grav) > CCur(0.01) Then
+        Err.Raise vbObjectError + 5722, "AplicarMapeoAguinaldoCFDI", "El total gravado no coincide con la captura."
+
+    End If
+
+    If Abs(totalCFDI - T_neto) > CCur(0.01) Then
+        Err.Raise vbObjectError + 5723, "AplicarMapeoAguinaldoCFDI", "El TOTAL del CFDI no coincide con el neto."
+
+    End If
+
+End Sub
+
+Private Sub AplicarMapeoPTUBonoCFDI(ByVal gr As Object)
+    Dim totalPercepciones As Currency
+    Dim totalOtrosPagos As Currency
+    Dim subtotalCFDI As Currency
+    Dim totalCFDI As Currency
+
+    Dim importeGravado As Currency
+    Dim importeExento As Currency
+
+    Dim totalMapeado As Currency
+    Dim gravadoMapeado As Currency
+    Dim exentoMapeado As Currency
+
+    '=========================================================
+    ' 1. VALIDAR LA MODALIDAD
+    '=========================================================
+
+    If g_TipoNominaActiva <> tnPTU And _
+       g_TipoNominaActiva <> tnBonoPremio Then
+
+        Exit Sub
+
+    End If
+
+    '=========================================================
+    ' 2. OBTENER LOS TOTALES YA PREPARADOS POR reng()
+    '
+    ' No recalcular ISR, PTU, exenciones ni deducciones.
+    '=========================================================
+
+    totalPercepciones = t_per
+    totalOtrosPagos = sub13
+
+    subtotalCFDI = totalPercepciones + totalOtrosPagos
+    totalCFDI = subtotalCFDI - t_ded
+
+    '=========================================================
+    ' 3. PLANTILLA 1 - TOTALES
+    '
+    ' 15 TOTAL
+    ' 16 SUBTOTAL
+    ' 17 DESCUENTO
+    ' 18 TOTALGRAVADOPERCEPCIONES
+    ' 19 TOTALEXENTOPERCEPCIONES
+    ' 20 TOTALPERCEPCIONES
+    ' 21 TOTALDEDUCCIONES
+    ' 22 TOTALOTROSPAGOS
+    ' 23 TOTALSUELDOS
+    '=========================================================
+
+    With NOMCF2.NOMCF
+        .TextMatrix(I7, 15) = Format$(totalCFDI, "#,##0.00")
+        .TextMatrix(I7, 16) = Format$(subtotalCFDI, "#,##0.00")
+        .TextMatrix(I7, 17) = Format$(t_ded, "#,##0.00")
+        .TextMatrix(I7, 18) = Format$(t_grav, "#,##0.00")
+        .TextMatrix(I7, 19) = Format$(t_ext, "#,##0.00")
+        .TextMatrix(I7, 20) = Format$(totalPercepciones, "#,##0.00")
+        .TextMatrix(I7, 21) = Format$(t_ded, "#,##0.00")
+        .TextMatrix(I7, 22) = Format$(totalOtrosPagos, "#,##0.00")
+        .TextMatrix(I7, 23) = Format$(totalPercepciones, "#,##0.00")
+
+        'No corresponden a separacion o jubilacion.
+        .TextMatrix(I7, 24) = "0.00"
+        .TextMatrix(I7, 25) = "0.00"
+
+        'Otras deducciones e ISR.
+        .TextMatrix(I7, 26) = Format$(t_oded, "#,##0.00")
+        .TextMatrix(I7, 27) = Format$(isr12, "#,##0.00")
+
+        'Importes del concepto principal CFDI.
+        .TextMatrix(I7, 28) = Format$(subtotalCFDI, "#,##0.00")
+        .TextMatrix(I7, 29) = Format$(subtotalCFDI, "#,##0.00")
+
+    End With
+
+    '=========================================================
+    ' 4. PLANTILLA 2 - LIMPIAR CONCEPTOS NO APLICABLES
+    '
+    ' Solo los conceptos de PTU o BONO pueden
+    ' contener una percepcion monetaria.
+    '
+    ' No modificar los encabezados del grid.
+    '=========================================================
+
+    With NOMCF2.NOMCF
+
+        'P001G - Sueldo
+        .TextMatrix(I7, 99) = "0.00"
+
+        'P002G / P002E - Aguinaldo
+        .TextMatrix(I7, 100) = "0.00"
+        .TextMatrix(I7, 101) = "0.00"
+
+        'P003G / P003E - PTU
+        .TextMatrix(I7, 102) = "0.00"
+        .TextMatrix(I7, 103) = "0.00"
+
+        'P004G / P004E - Reembolso gastos medicos
+        .TextMatrix(I7, 104) = "0.00"
+        .TextMatrix(I7, 105) = "0.00"
+
+        'P019G / P019E - Horas extras
+        .TextMatrix(I7, 122) = "0.00"
+        .TextMatrix(I7, 123) = "0.00"
+
+        'P021G / P021E - Prima vacacional
+        .TextMatrix(I7, 126) = "0.00"
+        .TextMatrix(I7, 127) = "0.00"
+
+        'P038G / P038E - Otros ingresos por salarios
+        .TextMatrix(I7, 148) = "0.00"
+        .TextMatrix(I7, 149) = "0.00"
+
+    End With
+
+    '=========================================================
+    ' 5. MAPEAR LA PERCEPCION CORRESPONDIENTE
+    '=========================================================
+
+    Select Case g_TipoNominaActiva
+
+        Case tnPTU
+
+            '-------------------------------------------------
+            ' PTU
+            '
+            ' Captura:
+            '   C_CONC6  = PTU gravada
+            '   C_EXENTA = PTU exenta
+            '
+            ' Plantilla 2:
+            '   102 = P003G
+            '   103 = P003E
+            '-------------------------------------------------
+
+            importeGravado = ptu_1
+            importeExento = ptu_2
+
+            NOMCF2.NOMCF.TextMatrix(I7, 102) = Format$(importeGravado, "#,##0.00")
+            NOMCF2.NOMCF.TextMatrix(I7, 103) = Format$(importeExento, "#,##0.00")
+
+        Case tnBonoPremio
+
+            '-------------------------------------------------
+            ' BONO GENERICO
+            '
+            ' Captura:
+            '   C_CONC7 = Bono gravado
+            '
+            ' Plantilla 2:
+            '   148 = P038G
+            '   149 = P038E, debe ser cero en 2026
+            '
+            ' Una exencion distinta de cero fue
+            ' rechazada previamente en rengPTUBonoCFDI.
+            '-------------------------------------------------
+
+            importeGravado = via7
+            importeExento = 0
+
+            NOMCF2.NOMCF.TextMatrix(I7, 148) = Format$(importeGravado, "#,##0.00")
+            NOMCF2.NOMCF.TextMatrix(I7, 149) = "0.00"
+
+    End Select
+
+    '=========================================================
+    ' 6. PLANTILLA 2 - DEDUCCIONES
+    '
+    ' Utilizar las cantidades originales del empleado.
+    '=========================================================
+
+    With NOMCF2.NOMCF
+
+        'D001 - IMSS
+        .TextMatrix(I7, 171) = Format$(ims14, "#,##0.00")
+
+        'D002 - ISR
+        .TextMatrix(I7, 172) = Format$(isr12, "#,##0.00")
+
+        'D004 - Prestamos / Otras deducciones
+        .TextMatrix(I7, 174) = Format$(pre15, "#,##0.00")
+
+        'D007 - Pension alimenticia
+        .TextMatrix(I7, 180) = Format$(pea17, "#,##0.00")
+
+        'D010 - Infonavit
+        .TextMatrix(I7, 183) = Format$(ifv18, "#,##0.00")
+
+        'D011 - Fonacot
+        .TextMatrix(I7, 184) = Format$(fon16, "#,##0.00")
+
+        'OP002 - Subsidio entregado
+        .TextMatrix(I7, 286) = Format$(sub13, "#,##0.00")
+
+        'SE_SCAUSADO - Subsidio causado
+        .TextMatrix(I7, 92) = Format$(subc13, "#,##0.00")
+
+    End With
+
+    '=========================================================
+    ' 7. VALIDAR EL CONCEPTO MAPEADO
+    '
+    ' Se comprueba la columna exacta de cada modalidad.
+    '=========================================================
+
+    Select Case g_TipoNominaActiva
+        Case tnPTU
+            totalMapeado = importeGravado + importeExent
+            gravadoMapeado = CCur(NOMCF2.NOMCF.TextMatrix(I7, 102))
+            exentoMapeado = CCur(NOMCF2.NOMCF.TextMatrix(I7, 103))
+
+        Case tnBonoPremio
+            totalMapeado = importeGravado
+            gravadoMapeado = CCur(NOMCF2.NOMCF.TextMatrix(I7, 148))
+            exentoMapeado = CCur(NOMCF2.NOMCF.TextMatrix(I7, 149))
+
+    End Select
+
+    '=========================================================
+    ' 8. CONCILIAR CONTRA LOS TOTALES DE CAPTURA
+    '=========================================================
+
+    If Abs(totalMapeado - t_per) > CCur(0.01) Then
+        Err.Raise vbObjectError + 5820, "AplicarMapeoPTUBonoCFDI", "Las percepciones mapeadas no coinciden con el total del empleado " & CStr(NumerodePersonal)
+
+    End If
+
+    If Abs(gravadoMapeado - t_grav) > CCur(0.01) Then
+        Err.Raise vbObjectError + 5821, "AplicarMapeoPTUBonoCFDI", "El gravado no coincide con la captura del empleado " & CStr(NumerodePersonal)
+
+    End If
+
+    If Abs(exentoMapeado - t_ext) > CCur(0.01) Then
+        Err.Raise vbObjectError + 5822, "AplicarMapeoPTUBonoCFDI", "El exento no coincide con la captura del empleado " & CStr(NumerodePersonal)
+
+    End If
+
+    If Abs(totalCFDI - T_neto) > CCur(0.01) Then
+        Err.Raise vbObjectError + 5823, "AplicarMapeoPTUBonoCFDI", "El total CFDI no coincide con el neto del empleado " & CStr(NumerodePersonal)
+
+    End If
+
+End Sub
+
