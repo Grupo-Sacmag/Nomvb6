@@ -834,8 +834,20 @@ Private Sub File1_KeyPress(KeyAscii As Integer)
         Exit Sub
     End If
 
-    Me.Hide
-    FormViewer.Show vbModal
+    
+    '=====================================================
+    ' FORMVIEWER - MANTENER LA APLICACION ACCESIBLE
+    '
+    ' Form1 permanece visible como propietario.
+    ' FormViewer conserva su comportamiento modal.
+    '
+    ' Alt + Tab podra seleccionar la ventana principal
+    ' y regresar al formulario modal activo.
+    '=====================================================
+
+    FormViewer.Show vbModal, Me
+
+    'Conservar la instruccion original de retorno.
     Me.Show
 
     File1.Refresh

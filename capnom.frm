@@ -26,24 +26,24 @@ Begin VB.Form Form8
       Height          =   360
       Left            =   5520
       Style           =   2  'Dropdown List
-      TabIndex        =   22
-      Top             =   720
+      TabIndex        =   5
+      Top             =   1440
       Width           =   2295
    End
    Begin VB.TextBox txtPre 
       Height          =   375
       Left            =   5520
       MaxLength       =   4
-      TabIndex        =   20
+      TabIndex        =   4
       Text            =   "Text5"
-      Top             =   1200
+      Top             =   840
       Width           =   2295
    End
    Begin VB.ComboBox cboTipoNominaEspecial 
       Height          =   360
       Left            =   5520
       Style           =   2  'Dropdown List
-      TabIndex        =   19
+      TabIndex        =   3
       Top             =   240
       Width           =   2295
    End
@@ -60,14 +60,14 @@ Begin VB.Form Form8
       EndProperty
       Height          =   360
       Left            =   9720
-      TabIndex        =   16
+      TabIndex        =   19
       Top             =   1200
       Width           =   2295
    End
    Begin MSComctlLib.ProgressBar ProgressBar1 
       Height          =   255
       Left            =   240
-      TabIndex        =   15
+      TabIndex        =   18
       Top             =   7680
       Width           =   2895
       _ExtentX        =   5106
@@ -102,7 +102,7 @@ Begin VB.Form Form8
       EndProperty
       Height          =   360
       Left            =   9720
-      TabIndex        =   13
+      TabIndex        =   16
       Top             =   720
       Width           =   1815
    End
@@ -119,14 +119,14 @@ Begin VB.Form Form8
       EndProperty
       Height          =   360
       Left            =   240
-      TabIndex        =   11
+      TabIndex        =   14
       Top             =   2400
       Width           =   2535
    End
    Begin MSFlexGridLib.MSFlexGrid ConNom1 
       Height          =   4005
       Left            =   240
-      TabIndex        =   10
+      TabIndex        =   6
       Top             =   2880
       Width           =   9495
       _ExtentX        =   16748
@@ -160,7 +160,7 @@ Begin VB.Form Form8
       EndProperty
       Height          =   360
       Left            =   5520
-      TabIndex        =   7
+      TabIndex        =   11
       Top             =   240
       Visible         =   0   'False
       Width           =   2295
@@ -180,8 +180,8 @@ Begin VB.Form Form8
       ItemData        =   "capnom.frx":0442
       Left            =   5520
       List            =   "capnom.frx":0444
-      TabIndex        =   6
-      Top             =   720
+      TabIndex        =   2
+      Top             =   1440
       Width           =   2295
    End
    Begin VB.Frame Frame2 
@@ -197,7 +197,7 @@ Begin VB.Form Form8
       EndProperty
       Height          =   1335
       Left            =   1800
-      TabIndex        =   3
+      TabIndex        =   1
       Top             =   240
       Width           =   1335
       Begin VB.OptionButton Option4 
@@ -213,7 +213,7 @@ Begin VB.Form Form8
          EndProperty
          Height          =   255
          Left            =   120
-         TabIndex        =   5
+         TabIndex        =   10
          Top             =   840
          Width           =   1095
       End
@@ -230,7 +230,7 @@ Begin VB.Form Form8
          EndProperty
          Height          =   255
          Left            =   120
-         TabIndex        =   4
+         TabIndex        =   9
          Top             =   360
          Width           =   1095
       End
@@ -264,7 +264,7 @@ Begin VB.Form Form8
          EndProperty
          Height          =   240
          Left            =   120
-         TabIndex        =   2
+         TabIndex        =   8
          Top             =   840
          Width           =   1095
       End
@@ -281,7 +281,7 @@ Begin VB.Form Form8
          EndProperty
          Height          =   240
          Left            =   120
-         TabIndex        =   1
+         TabIndex        =   7
          Top             =   360
          Width           =   975
       End
@@ -299,7 +299,7 @@ Begin VB.Form Form8
       EndProperty
       Height          =   330
       Left            =   12240
-      TabIndex        =   18
+      TabIndex        =   21
       Top             =   1200
       Visible         =   0   'False
       Width           =   1560
@@ -319,7 +319,7 @@ Begin VB.Form Form8
       Height          =   255
       Left            =   3240
       TabIndex        =   23
-      Top             =   720
+      Top             =   1440
       Width           =   2175
    End
    Begin VB.Label lblNumeroNominaEspecial 
@@ -335,8 +335,8 @@ Begin VB.Form Form8
       EndProperty
       Height          =   255
       Left            =   3960
-      TabIndex        =   21
-      Top             =   1200
+      TabIndex        =   22
+      Top             =   840
       Width           =   1455
    End
    Begin VB.Label Label1 
@@ -352,7 +352,7 @@ Begin VB.Form Form8
       EndProperty
       Height          =   255
       Left            =   8880
-      TabIndex        =   17
+      TabIndex        =   20
       Top             =   1320
       Width           =   735
    End
@@ -360,7 +360,7 @@ Begin VB.Form Form8
       Caption         =   "   Usando tarifas de impuestos : "
       Height          =   255
       Left            =   3000
-      TabIndex        =   14
+      TabIndex        =   17
       Top             =   2400
       Width           =   6495
    End
@@ -377,7 +377,7 @@ Begin VB.Form Form8
       EndProperty
       Height          =   255
       Left            =   8160
-      TabIndex        =   12
+      TabIndex        =   15
       Top             =   840
       Width           =   1455
    End
@@ -394,9 +394,9 @@ Begin VB.Form Form8
          Strikethrough   =   0   'False
       EndProperty
       Height          =   375
-      Left            =   360
-      TabIndex        =   9
-      Top             =   1920
+      Left            =   0
+      TabIndex        =   13
+      Top             =   1800
       Width           =   9375
    End
    Begin VB.Label lblTipoNominaEspecial 
@@ -413,7 +413,7 @@ Begin VB.Form Form8
       EndProperty
       Height          =   255
       Left            =   3240
-      TabIndex        =   8
+      TabIndex        =   12
       Top             =   360
       Width           =   2175
    End
@@ -927,6 +927,7 @@ Dim porc_apli As Currency, p_vacacional As Currency, Detener As Integer, Detener
 Dim PrincIngr As Long, PrincDesc As Long, Color_gris As Long, Nu_mero As Double, M_aximo As Long
 Public subsidioParaElEmpleo As Currency
 Private ActualizandoNombre As Boolean
+Private FocoInicialSelector As Boolean
 
 Private RutaNominaSesion As String
 Private RutaCmpSesion As String
@@ -991,10 +992,27 @@ Private Sub Borrarblancos_Click(Index As Integer)
 End Sub
 
 Private Sub cboTipoNominaEspecial_Click()
+
+    'Actualizar la modalidad seleccionada.
     RefrescarModoNomina
     ActualizarNombreEspecial
 
-    If cboTipoNominaEspecial.ListIndex >= 0 Then
+    'No mover el foco aqui.
+    'El usuario puede recorrer la lista con las flechas.
+
+End Sub
+
+Private Sub cboTipoNominaEspecial_KeyPress(KeyAscii As Integer)
+    If KeyAscii = vbKeyReturn Then
+        KeyAscii = 0
+
+        'Confirmar que haya un concepto seleccionado.
+        If cboTipoNominaEspecial.ListIndex < 0 Then
+            MsgBox "Seleccione el tipo de nomina especial.", vbExclamation, "Nomina"
+            Exit Sub
+        End If
+
+        'Concepto confirmado -> Numero de nomina.
         txtPre.SetFocus
         txtPre.SelStart = Len(txtPre.Text)
     End If
@@ -1073,6 +1091,9 @@ Private Sub Form_Load()
     Text1.Visible = False
     RefrescarModoNomina
     txtPre.Text = ""
+
+    'Preparar el foco inicial del selector de nomina.
+    FocoInicialSelector = True
 
     GoTo sale8
 
@@ -1222,12 +1243,23 @@ Private Sub nomcap_ini_Click(Index As Integer)
             Exit Sub
         End If
 
+        
+        '=====================================================
+        ' VISUALIZADOR ABIERTO DESDE FORM8
+        '
+        ' Mantener Form8 visible como formulario propietario.
+        ' Conservar FormViewer como modal.
+        '
+        ' No modificar el mecanismo existente para
+        ' regresar o solicitar edicion de la nomina.
+        '=====================================================
+    
         FormViewer.HabilitarRetornoEdicionDesdeForm8
-        Me.Hide
-        FormViewer.Show vbModal
-
+        FormViewer.Show vbModal, Me
         solicitarEdicion = FormViewer.SolicitudEdicionNomina
         Unload FormViewer
+    
+        'Conservar el comportamiento original de retorno.
         Me.Show
 
         If solicitarEdicion Then
@@ -2015,29 +2047,61 @@ ErrorCierre:
 
 End Sub
 
-
 Private Sub Form_Unload(Cancel As Integer)
 
     Dim mostrarForm1 As Boolean
 
-    'Guardar la ruta de regreso antes de limpiar.
+    '=====================================================
+    ' CIERRE DEFINITIVO DE FORM8
+    '
+    ' Form_QueryUnload ya debio confirmar la salida.
+    '
+    ' Si el usuario selecciono Cancelar,
+    ' este procedimiento no debe ejecutarse.
+    '=====================================================
+
+    'Conservar la ruta de regreso antes de limpiar.
     mostrarForm1 = Not RegresoModalDesdeVisor
 
-    'El boton Salir puede haber realizado
-    'la limpieza previamente.
-    If Not CerrandoForm8 Then
-        CerrandoForm8 = True
-        FinalizarSalidaNomina
-    End If
+    '=====================================================
+    ' LIMPIAR SIEMPRE LA SESION AL DESCARGAR FORM8
+    '
+    ' No depender del valor previo de CerrandoForm8.
+    '
+    ' FinalizarSalidaNomina:
+    '   - Cierra archivos de captura.
+    '   - Limpia el grid.
+    '   - Ejecuta ReiniciarEstadoSesion.
+    '   - Establece CapturaActivaSesion = False.
+    '
+    ' No elimina archivos de nomina.
+    ' La decision de guardar o descartar ya se tomo
+    ' en ConfirmarSalidaNomina.
+    '=====================================================
 
-    'Solo regresar directamente cuando Form8
-    'no fue abierto modal desde FormViewer.
+    CerrandoForm8 = True
+
+    FinalizarSalidaNomina
+
+    '=====================================================
+    ' RESTABLECER LA BANDERA DE CIERRE
+    '
+    ' Evitar que una instancia reutilizada conserve
+    ' CerrandoForm8 = True.
+    '=====================================================
+
+    CerrandoForm8 = False
+
+    '=====================================================
+    ' REGRESAR AL FORMULARIO CORRESPONDIENTE
+    '
+    ' Mantener la navegacion original.
+    '=====================================================
+
     If mostrarForm1 Then
         Form1.Show
     End If
-
 End Sub
-
 
 Private Sub GenBan_Click(Index As Integer)
     Form9.Show
@@ -3367,11 +3431,47 @@ Sub checar()
             End Select
         End If
          '------------------------------------- O.F./BONO  y  Otras
+         
+         '-----------------------------------------------------
+         ' BONO / OTRAS PERCEPCIONES
+         '-----------------------------------------------------
          Case C_CONC7, C_OTRAS
-              If g_TipoNominaActiva <> tnOrdinaria Or N_ormal <> 0 Then
-                  ' REVISION 2026: PTU/Aguinaldo/Bono/Liq/Finiquito.
-                  ' Conceptos libres; no recalcular ni escribir personal.dno.
+              If g_TipoNominaActiva = tnBonoPremio And ruta = C_CONC7 Then
+
+                  '=============================================
+                  ' BONO ESPECIAL
+                  '
+                  ' C_CONC7 = Bono TOTAL
+                  ' C_EXENTA = Parte exenta del bono
+                  '
+                  ' El bono debe conservar su valor completo.
+                  ' No distribuir automaticamente la exencion.
+                  '=============================================
+
+                  If dato_ent < 0 Or dato_ent < CelCur(ConNom1.Row, C_EXENTA) Then
+                      MsgBox "El bono no puede ser negativo ni menor que su percepcion exenta.", vbExclamation, "Captura de Bono"
+
+                      'Restaurar valor anterior sin perder los separadores de miles.
+
+                      If IsNumeric(valcelant) Then
+                          ConNom1.TextMatrix(ConNom1.Row, C_CONC7) = Format$(CCur(valcelant), z1$)
+                      Else
+                          ConNom1.TextMatrix(ConNom1.Row, C_CONC7) = ""
+                      End If
+                  ElseIf dato_ent = 0 Then
+                      ConNom1.TextMatrix(ConNom1.Row, C_CONC7) = ""
+                  Else
+                      'Conservar importe bruto del bono.
+                      'No modificar C_EXENTA.
+
+                      ConNom1.TextMatrix(ConNom1.Row, C_CONC7) = Format$(dato_ent, z1$)
+                  End If
+              ElseIf g_TipoNominaActiva <> tnOrdinaria Or N_ormal <> 0 Then
+
+                  'Mantener funcionamiento de las otras modalidades especiales.
+
                   ConNom1.col = ruta
+
                   If dato_ent <> 0 Then
                       ConNom1.Text = Format$(dato_ent, z1$)
                   Else
@@ -3541,7 +3641,7 @@ Sub checar()
                         ConNom1.TextMatrix(ConNom1.Row, C_EXENTA) = Format$(dato_ent, z1$)
                     End If
                                     
-                    ElseIf g_TipoNominaActiva = tnPTU Then
+                ElseIf g_TipoNominaActiva = tnPTU Then
                 
                         '=====================================================
                         ' PTU - PERCEPCION EXENTA
@@ -3567,6 +3667,30 @@ Sub checar()
                             ConNom1.TextMatrix(ConNom1.Row, C_EXENTA) = Format$(dato_ent, z1$)
                 
                         End If
+                
+                ElseIf g_TipoNominaActiva = tnBonoPremio Then
+
+                    '=========================================
+                    ' PERCEPCION EXENTA DEL BONO
+                    '
+                    ' La parte exenta esta incluida en
+                    ' el importe total de C_CONC7.
+                    '
+                    ' No es un ingreso adicional.
+                    '=========================================
+
+                    If dato_ent < 0 Or dato_ent > CelCur(ConNom1.Row, C_CONC7) Then
+                        MsgBox "La percepcion exenta no puede ser negativa ni superar el bono total.", vbExclamation, "Captura de Bono"
+                        If IsNumeric(valcelant) Then
+                            ConNom1.TextMatrix(ConNom1.Row, C_EXENTA) = Format$(CCur(valcelant), z1$)
+                        Else
+                            ConNom1.TextMatrix(ConNom1.Row, C_EXENTA) = ""
+                        End If
+                    ElseIf dato_ent = 0 Then
+                        ConNom1.TextMatrix(ConNom1.Row, C_EXENTA) = ""
+                    Else
+                        ConNom1.TextMatrix(ConNom1.Row, C_EXENTA) = Format$(dato_ent, z1$)
+                    End If
 
                 Else 'Otras nominas: mantener comportamiento anterior.
             
@@ -3690,22 +3814,20 @@ Sub sumah(si_impto1 As Integer, si_imss1 As Integer)
     rgtro = ConNom1.TextMatrix(li, C_NUM)
     Acum_Doble
     
-    
     '=========================================================
-    ' BASE GRAVADA DE AGUINALDO Y PTU
+    ' BASE PARA EL CALCULO DE ISR
     '
-    ' Para estas modalidades:
+    ' AGUINALDO, PTU y BONO:
     '
-    ' Columna principal = percepcion TOTAL
-    ' C_EXENTA          = parte exenta del total
+    ' Su columna principal contiene el importe TOTAL.
+    ' La percepcion exenta forma parte de ese importe.
     '
-    ' No modificar sum(1), que representa el bruto.
-    '
-    ' En cualquier otra nomina se conserva sum(1).
+    ' No modificar sum(1).
     '=========================================================
 
     baseISRAguinaldo = sum(1)
-    If g_TipoNominaActiva = tnAguinaldo Or g_TipoNominaActiva = tnPTU Then
+
+    If g_TipoNominaActiva = tnAguinaldo Or g_TipoNominaActiva = tnPTU Or g_TipoNominaActiva = tnBonoPremio Then
         baseISRAguinaldo = sum(1) - CelCur(li, C_EXENTA)
 
         If baseISRAguinaldo < 0 Then
@@ -3907,27 +4029,24 @@ saltaAnual:
             ConNom1.TextMatrix(li, C_IMSS) = ""
         End If
     End If
-    
-    
+
     '=========================================================
-    ' TOTAL DE INGRESOS
+    ' PERCEPCION EXENTA
     '
-    ' AGUINALDO Y PTU:
-    ' La percepcion exenta ya esta incluida en
-    ' el importe bruto de su columna principal.
+    ' En AGUINALDO, PTU y BONO:
+    ' La exenta ya esta incluida en el importe bruto.
     '
-    ' RESTO DE NOMINAS:
-    ' Conservar el comportamiento existente.
+    ' En las otras nominas:
+    ' Conservar la logica anterior.
     '=========================================================
 
     ConNom1.col = C_EXENTA
 
-    If g_TipoNominaActiva <> tnAguinaldo And g_TipoNominaActiva <> tnPTU Then
+    If g_TipoNominaActiva <> tnAguinaldo And g_TipoNominaActiva <> tnPTU And g_TipoNominaActiva <> tnBonoPremio Then
         If ConNom1.TextMatrix(li, C_EXENTA) <> "" Then
             sum(1) = sum(1) + CCur(ConNom1.TextMatrix(li, C_EXENTA))
         End If
     End If
-
     
     If sum(1) <> 0 Then
         ConNom1.TextMatrix(li, C_TOTING) = Format$(sum(1), z1$)
@@ -4104,9 +4223,14 @@ Sub carganom()
             PonCel li, C_CONC6, nomina.hs_tri
         End If
 
-        PonCel li, C_CONC7, nomina.viaticos
-        PonCel li, C_CONC8, nomina.pvac
+         If g_TipoNominaActiva = tnBonoPremio Then
+            PonCel li, C_CONC7, nomina.viaticos + nomina.exentos
+        Else
+            PonCel li, C_CONC7, nomina.viaticos
+        End If
 
+        'Prima vacacional: comportamiento sin cambios.
+        PonCel li, C_CONC8, nomina.pvac
         '=====================================================
         ' TOTAL DE INGRESOS ALMACENADOS
         '
@@ -4212,7 +4336,7 @@ Sub define()
             Encab C_CONC6, "Ptu", 1200
         End If
         If g_TipoNominaActiva = tnBonoPremio Or N_ormal <> 0 Then
-            Encab C_CONC7, "BONO", 1200
+            Encab C_CONC7, "Bono", 1200
         Else
             Encab C_CONC7, "O.F.", 1200
         End If
@@ -4232,12 +4356,197 @@ Sub define()
     Encab C_TOTDED, "Tot.Deduc", 1200
     Encab C_NETO, "Neto", 1200
 
+    
+    '=========================================================
+    ' COLUMNAS INTERNAS DEL SISTEMA
+    '
+    ' Mantener ocultas las banderas originales.
+    '=========================================================
+
     ConNom1.ColWidth(C_FLAG_ISR) = 0
     ConNom1.ColWidth(C_FLAG_IMSS) = 0
     ConNom1.ColWidth(C_FLAG_ESP) = 0
+
+    '=========================================================
+    ' ULTIMA COLUMNA DE LA CAPTURA
+    '=========================================================
+
     Encab C_BANAMEX, "Banamex", 2400
+
+    '=========================================================
+    ' VISIBILIDAD DE COLUMNAS POR TIPO DE NOMINA
+    '
+    ' Solo modifica el ancho visual de las columnas.
+    '
+    ' No elimina columnas.
+    ' No modifica indices.
+    ' No borra importes.
+    ' No altera el guardado del archivo NOM.
+    '=========================================================
+
+    ConfigurarColumnasVisiblesEspeciales
+
 End Sub
 
+Private Sub ConfigurarColumnasVisiblesEspeciales()
+
+    '=========================================================
+    ' CONFIGURACION VISUAL DE NOMINAS ESPECIALES
+    '
+    ' IMPORTANTE:
+    '
+    ' El grid conserva todas sus columnas originales.
+    '
+    ' ColWidth = 0:
+    '   Oculta visualmente una columna.
+    '
+    ' Los indices permanecen sin modificaciones.
+    ' Los valores almacenados permanecen intactos.
+    '
+    ' No afecta el calculo ni el guardado de nomina.
+    '=========================================================
+
+    Select Case g_TipoNominaActiva
+
+        '=====================================================
+        ' AGUINALDO, PTU Y BONO
+        '
+        ' COLUMNAS COMUNES QUE NO SE UTILIZAN:
+        '
+        ' C_CONC4  = hs.Norm.
+        ' C_CONC8  = P.Vacac.
+        ' C_OTRAS  = Otras
+        ' C_SUBEMP = Sub.P/Empl.
+        '=====================================================
+
+        Case tnAguinaldo, tnPTU, tnBonoPremio
+            ConNom1.ColWidth(C_CONC4) = 0
+            ConNom1.ColWidth(C_CONC8) = 0
+            ConNom1.ColWidth(C_OTRAS) = 0
+            ConNom1.ColWidth(C_SUBEMP) = 0
+
+            '=================================================
+            ' COLUMNAS ESPECIFICAS SEGUN EL TIPO DE NOMINA
+            '
+            ' Solamente debe quedar visible la columna
+            ' correspondiente al concepto seleccionado.
+            '
+            ' C_EXENTA permanece visible en todos los casos.
+            '=================================================
+
+            Select Case g_TipoNominaActiva
+
+                '---------------------------------------------
+                ' AGUINALDO
+                '
+                ' MOSTRAR:
+                '   Aguinaldo (C_CONC5)
+                '   Perc.exenta. (C_EXENTA)
+                '
+                ' OCULTAR:
+                '   PTU
+                '   BONO
+                '---------------------------------------------
+
+                Case tnAguinaldo
+                    ConNom1.ColWidth(C_CONC6) = 0
+                    ConNom1.ColWidth(C_CONC7) = 0
+
+                '---------------------------------------------
+                ' PTU
+                '
+                ' MOSTRAR:
+                '   PTU (C_CONC6)
+                '   Perc.exenta. (C_EXENTA)
+                '
+                ' OCULTAR:
+                '   Aguinaldo
+                '   BONO
+                '---------------------------------------------
+
+                Case tnPTU
+                    ConNom1.ColWidth(C_CONC5) = 0
+                    ConNom1.ColWidth(C_CONC7) = 0
+
+                '---------------------------------------------
+                ' BONO
+                '
+                ' MOSTRAR:
+                '   BONO (C_CONC7)
+                '   Perc.exenta. (C_EXENTA)
+                '
+                ' OCULTAR:
+                '   Aguinaldo
+                '   PTU
+                '---------------------------------------------
+
+                Case tnBonoPremio
+                    ConNom1.ColWidth(C_CONC5) = 0
+                    ConNom1.ColWidth(C_CONC6) = 0
+
+            End Select
+
+        '=====================================================
+        ' FINIQUITO Y LIQUIDACION
+        '
+        ' Conservar visibles todos los conceptos propios
+        ' del formato seleccionado.
+        '
+        ' OCULTAR UNICAMENTE:
+        '   Sub.P/Empl.
+        '
+        ' Funciona tanto con los indices del formato
+        ' nuevo como con los del formato anterior.
+        '=====================================================
+
+        Case tnLiquidacionFiniquito
+            ConNom1.ColWidth(C_SUBEMP) = 0
+        
+        '=====================================================
+        ' NOMINA ORDINARIA / NORMAL
+        '
+        ' COLUMNAS QUE SE OCULTAN VISUALMENTE:
+        '
+        ' C_CONC4  = hs.Norm.
+        ' C_CONC5  = hs.Dobles
+        ' C_CONC6  = hs.Triples
+        ' C_SUBEMP = Sub.P/Empl.
+        '
+        ' IMPORTANTE:
+        ' Solamente se modifica el ancho de las columnas.
+        '
+        ' No eliminar columnas del grid.
+        ' No modificar los indices.
+        ' No borrar valores capturados.
+        ' No alterar calculos ni archivos NOM.
+        '=====================================================
+
+        Case tnOrdinaria
+
+            'Horas normales.
+            ConNom1.ColWidth(C_CONC4) = 0
+
+            'Horas dobles.
+            ConNom1.ColWidth(C_CONC5) = 0
+
+            'Horas triples.
+            ConNom1.ColWidth(C_CONC6) = 0
+
+            'Subsidio para el empleo.
+            ConNom1.ColWidth(C_SUBEMP) = 0
+
+        '=====================================================
+        ' OTRAS MODALIDADES NO CONTEMPLADAS
+        '
+        ' Conservar su configuracion visual original.
+        '=====================================================
+
+        Case Else
+
+            'Sin cambios adicionales.
+
+    End Select
+End Sub
 
 Sub genenom(gg)
     Dim cPV As Long
@@ -4413,19 +4722,7 @@ Private Sub GridANomina(ByVal f As Long)
             Else
                 nomina.hs_dbl = CelCur(f, C_CONC5)
             End If
-                    
-            '=========================================================
-            ' GUARDADO PTU
-            '
-            ' PTU especial:
-            '   C_CONC6 = PTU TOTAL
-            '   C_EXENTA = Parte exenta
-            '
-            ' Archivo NOM:
-            '   nomina.ptu = Parte gravada
-            '   nomina.exentos = Parte exenta
-            '=========================================================
-        
+            
             If N_ormal = 1 Then
                 If g_TipoNominaActiva = tnPTU Then
                     nomina.ptu = CelCur(f, C_CONC6) - CelCur(f, C_EXENTA)
@@ -4436,7 +4733,12 @@ Private Sub GridANomina(ByVal f As Long)
                 nomina.hs_tri = CelCur(f, C_CONC6)
             End If
 
-            nomina.viaticos = CelCur(f, C_CONC7)
+            If g_TipoNominaActiva = tnBonoPremio Then
+                nomina.viaticos = CelCur(f, C_CONC7) - CelCur(f, C_EXENTA)
+            Else
+                'Otras modalidades: conservar el guardado.
+                nomina.viaticos = CelCur(f, C_CONC7)
+            End If
             nomina.pvac = CelCur(f, C_CONC8)
         End If
     End If
@@ -4540,16 +4842,69 @@ Private Sub archnom_Click(Index As Integer)
             Exit Sub
         End If
     End If
-
     
+    
+    '=========================================================
+    ' VALIDAR BONO ANTES DE GUARDAR
+    '
+    ' No modifica percepciones ni deducciones.
+    ' Solo impide archivar una captura inconsistente.
+    '=========================================================
+
+    If g_TipoNominaActiva = tnBonoPremio Then
+        If Not ValidarCapturaBono() Then
+            GuardadoFallidoSesion = True
+
+            'No modificar el archivo NOM.
+            Exit Sub
+        End If
+    End If
+    
+    
+    '=========================================================
+    ' VALIDAR FINIQUITO NUEVO ANTES DE ESCRIBIR EL NOM
+    '
+    ' No modifica los valores capturados.
+    ' Si existe una inconsistencia, no guarda.
+    '=========================================================
+
+    If g_TipoNominaActiva = tnLiquidacionFiniquito Then
+        If g_EsFiniquito And EsSeparacionNueva() Then
+            If Not ValidarCapturaFiniquitoNuevo() Then
+                GuardadoFallidoSesion = True
+                Exit Sub
+            End If
+        End If
+    End If
+    
+    
+    
+    '=========================================================
+    ' VALIDAR LIQUIDACION NUEVA ANTES DE GUARDAR
+    '
+    ' No modificar importes de la captura.
+    ' No alterar otros tipos de nomina.
+    '=========================================================
+
+    If g_TipoNominaActiva = tnLiquidacionFiniquito Then
+        If Not g_EsFiniquito And EsSeparacionNueva() Then
+            If Not ValidarCapturaLiquidacionNueva() Then
+                GuardadoFallidoSesion = True
+                Exit Sub
+            End If
+        End If
+    End If
+
     '=========================================================
     ' CONTINUAR CON EL GUARDADO ORIGINAL
     '=========================================================
+
     ' Capturar el formato ANTES de inicializar registros.
     nuevaSeparacion = EsSeparacionNueva()
 
     'Conservar una copia del NOM en memoria.
     Close #6
+
 
     
     hayRespaldo = False
@@ -4821,18 +5176,25 @@ Private Sub capnomnum_Click(Index As Integer)
 End Sub
 
 Private Sub capnosal_Click(Index As Integer)
-    On Error GoTo ErrorSalida
-    If Not ConfirmarSalidaNomina() Then Exit Sub
-    CerrandoForm8 = True
-    FinalizarSalidaNomina
+
+    '=====================================================
+    ' SALIDA DE FORM8
+    '
+    ' Centralizar el cierre en Form_QueryUnload.
+    '
+    ' Form_QueryUnload:
+    '   Pregunta si desea guardar.
+    '   Permite cancelar el cierre.
+    '
+    ' Form_Unload:
+    '   Finaliza y limpia el estado de la captura.
+    '
+    ' No limpiar la sesion antes de confirmar.
+    '=====================================================
+
     Unload Me
-    Exit Sub
-
-ErrorSalida:
-    CerrandoForm8 = False
-    MsgBox "Error al salir de la captura." & vbCrLf & "Error " & Err.Number & ": " & Err.Description, vbCritical, "Nomina"
-
 End Sub
+
 
 
 Private Sub caprecind_Click(Index As Integer)
@@ -4912,11 +5274,24 @@ Private Sub Combo1_dblClick()
 End Sub
 
 Private Sub Combo1_KeyPress(KeyAscii As Integer)
-    If KeyAscii = 13 Then
-       Combo1_Change
-       ConNom1.SetFocus
-       ConNom1.Row = 1
-       ConNom1.col = 2
+    If KeyAscii = vbKeyReturn Then
+        KeyAscii = 0
+        If Not Option1.Value Then Exit Sub
+        If Not Option3.Value And Not Option4.Value Then
+            MsgBox "Seleccione Primera o Segunda quincena.", vbExclamation, "Nomina"
+            Exit Sub
+        End If
+
+        If Combo1.ListIndex < 0 Then
+            MsgBox "Seleccione un mes valido.", vbExclamation, "Nomina"
+            Exit Sub
+        End If
+
+        'Mantener la actualizacion original del mes.
+        Combo1_Change
+        
+        'Ejecutar Captura -> Iniciar captura.
+        IniciarCapturaDesdeTeclado
     End If
 End Sub
 
@@ -4980,7 +5355,7 @@ Private Sub ConNom1_KeyPress(KeyAscii As Integer)
     ' abra el editor de una percepcion no permitida.
     '=========================================================
 
-    If g_TipoNominaActiva = tnAguinaldo Or g_TipoNominaActiva = tnPTU Then
+    If g_TipoNominaActiva = tnAguinaldo Or g_TipoNominaActiva = tnPTU Or g_TipoNominaActiva = tnBonoPremio Then
         If Not EsColumnaNumericaCaptura(ConNom1.col) And ConNom1.col <> C_BANAMEX Then
 
             'Conservar Enter para navegacion.
@@ -5023,6 +5398,58 @@ End Sub
 Public Sub main()
     ' REVISION 2026: no abrir archivos sin registrar la sesion.
     nomcap_ini_Click 1
+End Sub
+
+Private Sub IniciarCapturaDesdeTeclado()
+
+    '=====================================================
+    ' INICIAR CAPTURA MEDIANTE ENTER
+    '
+    ' Utilizar EXACTAMENTE la misma rutina del menu:
+    '
+    ' Captura -> Iniciar captura
+    '
+    ' No duplicar la logica de generacion ni guardado.
+    '=====================================================
+
+    If CapturaActivaSesion Then Exit Sub
+    nomcap_ini_Click 1
+
+    '=====================================================
+    ' SI SE INICIO CORRECTAMENTE LA CAPTURA,
+    ' POSICIONAR EL FOCO EN LA CUADRICULA.
+    '
+    ' Si el archivo ya existia o hubo un error,
+    ' no forzar el foco sobre el grid.
+    '=====================================================
+
+    If CapturaActivaSesion Then
+        If limite > 0 Then
+            ConNom1.Row = 1
+            Select Case g_TipoNominaActiva
+                Case tnAguinaldo
+                    ConNom1.col = C_CONC5
+                Case tnPTU
+                    ConNom1.col = C_CONC6
+                Case tnBonoPremio
+                    ConNom1.col = C_CONC7
+                    
+                Case tnLiquidacionFiniquito
+                    If g_EsFiniquito Then
+                        If C_LQ_SDOVAC >= 0 Then
+                            ConNom1.col = C_LQ_SDOVAC
+                        End If
+                    Else
+                        If C_LQ_COMPENS >= 0 Then
+                            ConNom1.col = C_LQ_COMPENS
+                        End If
+                    End If
+                Case Else
+                    ConNom1.col = C_DIAS
+            End Select
+            ConNom1.SetFocus
+        End If
+    End If
 End Sub
 
 Private Sub generarNominas()
@@ -5431,29 +5858,13 @@ Private Sub nomordeli_Click(Index As Integer)
     End If
 End Sub
 
-
 Private Sub Option1_GotFocus()
 
+    'No avanzar automaticamente al recibir el foco.
+    'Permitir seleccionar Normal o Especial con flechas.
+
     If Option1.Value = True Then
-
         N_ormal = 0
-
-        'No mover el foco mientras Form8 prepara
-        'una nomina existente desde FormViewer.
-        If PreparandoEdicionDesdeVisor Then Exit Sub
-
-        'No mover el foco si el formulario
-        'o el control todavia no estan disponibles.
-        If Not Me.Visible Then Exit Sub
-
-        If Frame2.Visible And Frame2.Enabled Then
-
-            If Option3.Visible And Option3.Enabled Then
-                Option3.SetFocus
-            End If
-
-        End If
-
     End If
 
 End Sub
@@ -5488,15 +5899,7 @@ On Error GoTo ErrorManejador
         cboMesNominaEspecial.ListIndex = Month(Date) - 1
 
         RefrescarModoNomina
-        
-        If Not PreparandoEdicionDesdeVisor Then
-            If Me.Visible And cboTipoNominaEspecial.Visible And cboTipoNominaEspecial.Enabled Then
-        
-                cboTipoNominaEspecial.SetFocus
-            End If
-        End If
     End If
-
 Exit Sub
 ErrorManejador:
     MsgBox Err.Number & " " & Err.Description
@@ -5516,7 +5919,6 @@ Private Sub Option3_Click()
 
         Combo1.Visible = True
         Combo1.Locked = False
-        Combo1.SetFocus
     End If
 End Sub
 
@@ -5525,9 +5927,7 @@ Private Sub Option4_Click()
 
     If Option4 = True Then
         Label7.Caption = "Nomina de la 2a.quincena " + Combo1.Text + Str$(empresa.ao)
-
         dia_pago = dd(meselegido) - 1
-
         If meselegido = 12 Then
             respuesta = MsgBox("Desea hacer Calculo Anual", vbCritical + vbYesNo, "Captura Ultima Nomina")
 
@@ -5539,6 +5939,63 @@ Private Sub Option4_Click()
         End If
 
         Combo1.Visible = True
+    End If
+End Sub
+
+'=========================================================
+' NAVEGACION DEL TIPO DE NOMINA
+'=========================================================
+
+Private Sub Option1_KeyUp(KeyCode As Integer, Shift As Integer)
+    If KeyCode = vbKeyReturn Or KeyCode = vbKeySpace Then
+        KeyCode = 0
+        If Not Option1.Value Then
+            Option1.Value = True
+        End If
+
+        'Normal -> Seleccion de quincena.
+        Option3.SetFocus
+    End If
+End Sub
+
+Private Sub Option2_KeyUp(KeyCode As Integer, Shift As Integer)
+    If KeyCode = vbKeyReturn Or KeyCode = vbKeySpace Then
+        KeyCode = 0
+        If Not Option2.Value Then
+            Option2.Value = True
+        End If
+
+        'Especial -> Seleccionar concepto.
+        If cboTipoNominaEspecial.Visible And cboTipoNominaEspecial.Enabled Then
+            cboTipoNominaEspecial.SetFocus
+        End If
+    End If
+End Sub
+
+'=========================================================
+' NAVEGACION DE QUINCENA
+'=========================================================
+
+Private Sub Option3_KeyUp(KeyCode As Integer, Shift As Integer)
+    If KeyCode = vbKeyReturn Or KeyCode = vbKeySpace Then
+        KeyCode = 0
+        If Not Option3.Value Then
+            Option3.Value = True
+        End If
+
+        'Primera -> Mes.
+        Combo1.SetFocus
+    End If
+End Sub
+
+Private Sub Option4_KeyUp(KeyCode As Integer, Shift As Integer)
+    If KeyCode = vbKeyReturn Or KeyCode = vbKeySpace Then
+        KeyCode = 0
+        If Not Option4.Value Then
+            Option4.Value = True
+        End If
+
+        'Segunda -> Mes.
         Combo1.SetFocus
     End If
 End Sub
@@ -5548,9 +6005,27 @@ Rem    Text1_KeyPress 13
 End Sub
 
 Private Function EsColumnaNumericaCaptura(ByVal columna As Long) As Boolean
-
     EsColumnaNumericaCaptura = False
     
+      '=========================================================
+    ' NOMINA ESPECIAL BONO
+    '
+    ' PERCEPCIONES PERMITIDAS:
+    '   C_CONC7  = Bono total
+    '   C_EXENTA = Parte exenta del bono
+    '
+    ' Se conservan las deducciones.
+    '
+    ' No permitir editar las otras percepciones.
+    '=========================================================
+
+    If g_TipoNominaActiva = tnBonoPremio Then
+        Select Case columna
+            Case C_CONC7, C_EXENTA, C_ISPT, C_SUBEMP, C_IMSS, C_PRESTAMOS, C_FONACOT, C_PENSION, C_INFONAVIT
+                EsColumnaNumericaCaptura = True
+        End Select
+        Exit Function
+    End If
     
     '=========================================================
     ' NOMINA ESPECIAL PTU
@@ -5714,9 +6189,8 @@ Private Sub Text2_KeyPress(KeyAscii As Integer)
     ' BANAMEX conserva su comportamiento anterior.
     '=========================================================
 
-    If g_TipoNominaActiva = tnAguinaldo Or g_TipoNominaActiva = tnPTU Then
-        If Not EsColumnaNumericaCaptura(columna) _
-           And columna <> C_BANAMEX Then
+    If g_TipoNominaActiva = tnAguinaldo Or g_TipoNominaActiva = tnPTU Or g_TipoNominaActiva = tnBonoPremio Then
+        If Not EsColumnaNumericaCaptura(columna) And columna <> C_BANAMEX Then
             If KeyAscii = vbKeyReturn Then
                 KeyAscii = 0
 
@@ -5965,6 +6439,23 @@ Private Sub cboMesNominaEspecial_Click()
     End If
 End Sub
 
+Private Sub cboMesNominaEspecial_KeyPress(KeyAscii As Integer)
+    If KeyAscii = vbKeyReturn Then
+        KeyAscii = 0
+        If Not Option2.Value Then Exit Sub
+        If cboMesNominaEspecial.ListIndex < 0 Then
+            MsgBox "Seleccione el mes de la nomina especial.", vbExclamation, "Nomina"
+            Exit Sub
+        End If
+
+        'Aplicar el nombre con el mes seleccionado.
+        ActualizarNombreEspecial
+
+        'Ejecutar Captura -> Iniciar captura.
+        IniciarCapturaDesdeTeclado
+    End If
+End Sub
+
 Private Sub Text4_KeyPress(KeyAscii As Integer)
     Dim i As Long
     If KeyAscii = 13 Then
@@ -6060,10 +6551,9 @@ Private Function SoloDigitos(ByVal texto As String) As String
     SoloDigitos = resultado
 End Function
 
-' REVISION 2026: solo FINIQUITO y LIQUIDACION llevan sufijo de mes.
 Private Function ConceptoLlevaMes(ByVal concepto As String) As Boolean
     Select Case UCase$(Trim$(concepto))
-        Case "FINIQUITO", "LIQUIDACION"
+        Case "BONO", "FINIQUITO", "LIQUIDACION"
             ConceptoLlevaMes = True
     End Select
 End Function
@@ -6102,31 +6592,61 @@ Private Sub txtPre_Change()
 End Sub
 
 Private Sub txtPre_KeyPress(KeyAscii As Integer)
-
-    If KeyAscii = 13 Then
+    If KeyAscii = vbKeyReturn Then
         KeyAscii = 0
 
-        ActualizarNombreEspecial
+        '=================================================
+        ' VALIDAR TIPO DE NOMINA ESPECIAL
+        '=================================================
 
         If cboTipoNominaEspecial.ListIndex < 0 Then
-            MsgBox "Seleccione un tipo de nómina especial.", vbExclamation, "Nómina"
+            MsgBox "Seleccione un tipo de nomina especial.", vbExclamation, "Nomina"
             cboTipoNominaEspecial.SetFocus
             Exit Sub
         End If
-        
-        If Text3.Visible Then Text3.SetFocus
-        
+
+        '=================================================
+        ' VALIDAR NUMERO DE NOMINA
+        '=================================================
+
+        If Len(Trim$(txtPre.Text)) = 0 Then
+            MsgBox "Ingrese el numero de nomina.", vbExclamation, "Nomina"
+            txtPre.SetFocus
+            Exit Sub
+        End If
+
+        'Actualizar el nombre antes de iniciar.
+        ActualizarNombreEspecial
+
+        '=================================================
+        ' NOMINAS ESPECIALES QUE REQUIEREN MES
+        '
+        ' BONO
+        ' FINIQUITO
+        ' LIQUIDACION
+        '
+        ' AGUINALDO y PTU no requieren seleccionar mes.
+        '=================================================
+
+        If cboMesNominaEspecial.Visible Then
+            cboMesNominaEspecial.SetFocus
+        Else
+
+            'Iniciar directamente desde el teclado.
+            IniciarCapturaDesdeTeclado
+            
+        End If
         Exit Sub
     End If
 
-    ' Permitir Backspace
-    If KeyAscii = 8 Then Exit Sub
+    '=====================================================
+    ' VALIDACION ORIGINAL: SOLAMENTE NUMEROS
+    '=====================================================
 
-    ' Permitir únicamente números
+    If KeyAscii = vbKeyBack Then Exit Sub
     If KeyAscii < 48 Or KeyAscii > 57 Then
         KeyAscii = 0
     End If
-
 End Sub
 
 Private Function EliminarTemporalesSesion() As Boolean
@@ -6179,142 +6699,145 @@ ErrorEliminar:
     MsgBox "No fue posible completar la limpieza de archivos." & vbCrLf & "Error " & Err.Number & ": " & Err.Description & vbCrLf & "Revise los archivos antes de continuar.", vbCritical, "Nomina"
 
 End Function
-
-Private Function ConfirmarSalidaNomina() As Boolean
     
-    Dim numeroErrorCMP As Long
-    Dim descripcionErrorCMP As String
-    Dim responde As VbMsgBoxResult
-    ConfirmarSalidaNomina = False
-
-    ' Evitar procesos de salida simultaneos
-    If CerrandoForm8 Then Exit Function
-
-    ' Si no hay cambios pendientes, permitir salir
-    ' Si no hay captura activa, salir normalmente
-    If Not CapturaActivaSesion Then
-        ConfirmarSalidaNomina = True
-        Exit Function
-    End If
+    Private Function ConfirmarSalidaNomina() As Boolean
+        
+        Dim numeroErrorCMP As Long
+        Dim descripcionErrorCMP As String
+        Dim responde As VbMsgBoxResult
+        ConfirmarSalidaNomina = False
     
-    ' Si ya se archivo y no hay cambios pendientes,
-    ' permitir salir conservando los archivos
-    If NominaArchivadaSesion And archiva_o = 0 Then
-        ConfirmarSalidaNomina = True
-        Exit Function
-    End If
-
-    responde = MsgBox("Desea archivar la nomina antes de salir?" & vbCrLf & vbCrLf & "SI: Guardar y salir." & vbCrLf & "NO: Salir sin guardar." & vbCrLf & "CANCELAR: Continuar capturando.", vbYesNoCancel + vbQuestion + vbDefaultButton3, "Salir de captura")
-
-    Select Case responde
-        Case vbYes
-
-            'Guardar antes de permitir el cierre.
-            GuardandoDuranteCierre = True
+        ' Evitar procesos de salida simultaneos
+        If CerrandoForm8 Then Exit Function
         
-            archnom_Click 1
-        
-            GuardandoDuranteCierre = False
-
-            ' No salir si hubo un error al guardar
-            If GuardadoFallidoSesion Then Exit Function
-
-            If Not NominaArchivadaSesion Then
-                MsgBox "No se confirmo el guardado de la nomina.", vbExclamation, "Nomina"
-                Exit Function
-            End If
-
+        ' Si no hay captura activa, salir normalmente.
+        If Not CapturaActivaSesion Then
             ConfirmarSalidaNomina = True
-
-       
-        Case vbNo
-            'Si estamos editando una nomina existente, descartar exclusivamente los cambios pendientes.
-            If EditandoNominaGuardada Then
-                If FalloRestauracionNom Then
-                    MsgBox "No es seguro descartar los cambios porque fallo una restauracion anterior." & vbCrLf & "Revise los archivos de nomina.", vbCritical, "Proteccion de nomina"
+            Exit Function
+        End If
+    
+        '=====================================================
+        ' CONFIRMAR LA SALIDA DE UNA CAPTURA ACTIVA
+        '
+        ' Preguntar siempre que exista una sesion activa,
+        ' incluso si la nomina fue archivada anteriormente.
+        '
+        ' SI: Guardar y salir.
+        ' NO: Salir sin guardar nuevos cambios.
+        ' CANCELAR: Continuar capturando.
+        '=====================================================
+    
+        responde = MsgBox("Desea archivar la nomina antes de salir?" & vbCrLf & vbCrLf & "SI: Guardar y salir." & vbCrLf & "NO: Salir sin guardar." & vbCrLf & "CANCELAR: Continuar capturando.", vbYesNoCancel + vbQuestion + vbDefaultButton3, "Salir de captura")
+            
+        Select Case responde
+            Case vbYes
+    
+                'Guardar antes de permitir el cierre.
+                GuardandoDuranteCierre = True
+            
+                archnom_Click 1
+            
+                GuardandoDuranteCierre = False
+    
+                ' No salir si hubo un error al guardar
+                If GuardadoFallidoSesion Then Exit Function
+    
+                If Not NominaArchivadaSesion Then
+                    MsgBox "No se confirmo el guardado de la nomina.", vbExclamation, "Nomina"
                     Exit Function
                 End If
-        
-                If Not HayCopiaCmpEdicion Then
-                    MsgBox "No existe una copia del CMP en memoria." & vbCrLf & "No se cerrara la captura.", vbCritical, "Proteccion de nomina"
+    
+                ConfirmarSalidaNomina = True
+    
+           
+            Case vbNo
+                'Si estamos editando una nomina existente, descartar exclusivamente los cambios pendientes.
+                If EditandoNominaGuardada Then
+                    If FalloRestauracionNom Then
+                        MsgBox "No es seguro descartar los cambios porque fallo una restauracion anterior." & vbCrLf & "Revise los archivos de nomina.", vbCritical, "Proteccion de nomina"
+                        Exit Function
+                    End If
+            
+                    If Not HayCopiaCmpEdicion Then
+                        MsgBox "No existe una copia del CMP en memoria." & vbCrLf & "No se cerrara la captura.", vbCritical, "Proteccion de nomina"
+                        Exit Function
+                    End If
+            
+                    On Error GoTo ErrorRestaurarCmp
+            
+                    'Liberar el archivo antes de revisarlo.
+                    Close #14
+            
+                    'Restaurar solamente si el CMP cambio.
+                    If Not ArchivoCoincideConMemoria(RutaCmpSesion, CopiaCmpEdicion) Then
+                        RestaurarBytesArchivo RutaCmpSesion, CopiaCmpEdicion
+                    End If
+            
+                    On Error GoTo 0
+            
+                    'NOM no necesita restauracion aqui:
+                    'solo se escribe al guardar.
+                    ConfirmarSalidaNomina = True
                     Exit Function
                 End If
-        
-                On Error GoTo ErrorRestaurarCmp
-        
-                'Liberar el archivo antes de revisarlo.
-                Close #14
-        
-                'Restaurar solamente si el CMP cambio.
-                If Not ArchivoCoincideConMemoria(RutaCmpSesion, CopiaCmpEdicion) Then
-                    RestaurarBytesArchivo RutaCmpSesion, CopiaCmpEdicion
-                End If
-        
-                On Error GoTo 0
-        
-                'NOM no necesita restauracion aqui:
-                'solo se escribe al guardar.
-                ConfirmarSalidaNomina = True
-                Exit Function
-            End If
-
-            ' Nunca borrar archivos de una sesion no registrada
-            If Not SesionTemporalRegistrada Then
-                MsgBox "La captura no tiene archivos temporales " & "registrados." & vbCrLf & "Se conservaran los archivos y no se " & "cerrara automaticamente la captura.", vbExclamation, "Proteccion de nomina"
-                Exit Function
-            End If
-
-            ' No eliminar archivos despues de un guardado fallido
-            If GuardadoFallidoSesion Then
-                MsgBox "Se produjo un error al guardar." & vbCrLf & "Los archivos deben conservarse para revision.", vbExclamation, "Proteccion de nomina"
-                Exit Function
-            End If
-
-            ' Si ya se archivo anteriormente, nunca eliminar
-            ' sus archivos, aunque existan cambios nuevos.
-            If NominaArchivadaSesion Then
-                ConfirmarSalidaNomina = True
-                Exit Function
-            End If
-
-            ' Descartar archivos nuevos de esta sesion
-            If Not EliminarTemporalesSesion() Then
-                Exit Function
-            End If
-
-            SesionTemporalRegistrada = False
-            NominaNuevaSesion = False
-            CmpNuevoSesion = False
-
-            ConfirmarSalidaNomina = True
-
-        Case vbCancel
-            ' Continuar capturando
-            ConfirmarSalidaNomina = False
-    End Select
     
-    Exit Function
-
+                ' Nunca borrar archivos de una sesion no registrada
+                If Not SesionTemporalRegistrada Then
+                    MsgBox "La captura no tiene archivos temporales " & "registrados." & vbCrLf & "Se conservaran los archivos y no se " & "cerrara automaticamente la captura.", vbExclamation, "Proteccion de nomina"
+                    Exit Function
+                End If
+    
+                ' No eliminar archivos despues de un guardado fallido
+                If GuardadoFallidoSesion Then
+                    MsgBox "Se produjo un error al guardar." & vbCrLf & "Los archivos deben conservarse para revision.", vbExclamation, "Proteccion de nomina"
+                    Exit Function
+                End If
+    
+                ' Si ya se archivo anteriormente, nunca eliminar
+                ' sus archivos, aunque existan cambios nuevos.
+                If NominaArchivadaSesion Then
+                    ConfirmarSalidaNomina = True
+                    Exit Function
+                End If
+    
+                ' Descartar archivos nuevos de esta sesion
+                If Not EliminarTemporalesSesion() Then
+                    Exit Function
+                End If
+    
+                SesionTemporalRegistrada = False
+                NominaNuevaSesion = False
+                CmpNuevoSesion = False
+    
+                ConfirmarSalidaNomina = True
+    
+            Case vbCancel
+                ' Continuar capturando
+                ConfirmarSalidaNomina = False
+        End Select
+        
+        Exit Function
+    
 ErrorRestaurarCmp:
-
-    numeroErrorCMP = Err.Number
-    descripcionErrorCMP = Err.Description
-
-    'Intentar recuperar el acceso al CMP.
-    On Error Resume Next
-
-    Close #14
-
-    If Len(Dir$(RutaCmpSesion, vbNormal Or vbHidden Or vbReadOnly Or vbSystem)) > 0 Then
-        Open RutaCmpSesion For Random As #14 Len = Len(nom_com)
-    End If
-
-    On Error GoTo 0
-
-    MsgBox "No fue posible descartar los cambios." & vbCrLf & "El formulario permanecera abierto." & vbCrLf & "No continue modificando hasta revisar el CMP." & vbCrLf & vbCrLf & "Error " & CStr(numeroErrorCMP) & ": " & _
-           descripcionErrorCMP, vbCritical, "Restauracion de nomina"
-    ConfirmarSalidaNomina = False
-End Function
+    
+        numeroErrorCMP = Err.Number
+        descripcionErrorCMP = Err.Description
+    
+        'Intentar recuperar el acceso al CMP.
+        On Error Resume Next
+    
+        Close #14
+    
+        If Len(Dir$(RutaCmpSesion, vbNormal Or vbHidden Or vbReadOnly Or vbSystem)) > 0 Then
+            Open RutaCmpSesion For Random As #14 Len = Len(nom_com)
+        End If
+    
+        On Error GoTo 0
+    
+        MsgBox "No fue posible descartar los cambios." & vbCrLf & "El formulario permanecera abierto." & vbCrLf & "No continue modificando hasta revisar el CMP." & vbCrLf & vbCrLf & "Error " & CStr(numeroErrorCMP) & ": " & _
+               descripcionErrorCMP, vbCritical, "Restauracion de nomina"
+        ConfirmarSalidaNomina = False
+    End Function
 
 Private Sub BloquearSeleccionNomina(ByVal bloquear As Boolean)
 
@@ -6407,28 +6930,106 @@ Private Sub checarSeparacionNueva()
     valor = CCur(dato_ent)
 
     Select Case ruta
+        
+        '=====================================================
+        ' DIAS DEL PERIODO
+        '
+        ' FINIQUITO NUEVO:
+        ' Los dias son informativos para el periodo.
+        ' No generan automaticamente una percepcion
+        ' en C_SUELDO, que esta reservada.
+        '
+        ' RESTO DE MODALIDADES:
+        ' Conservar la operacion original.
+        '=====================================================
+
+        
+        '=====================================================
+        ' DIAS DEL PERIODO - SEPARACION NUEVA
+        '
+        ' LIQUIDACION:
+        ' Los dias no deben generar automaticamente sueldo.
+        ' C_SUELDO es una columna auxiliar reservada.
+        '
+        ' FINIQUITO:
+        ' Conservar la correccion previamente aplicada.
+        '=====================================================
+
         Case C_DIAS
-            If valor < 0 Then
-                MsgBox "Los dias no pueden ser negativos.", vbExclamation
-                ConNom1.TextMatrix(fila, C_DIAS) = ""
+            If Not g_EsFiniquito And EsSeparacionNueva() Then
+
+                '---------------------------------------------
+                ' LIQUIDACION NUEVA
+                '---------------------------------------------
+
+                If valor < 0 Then
+                    MsgBox "Los dias no pueden ser negativos.", vbExclamation, "Liquidacion"
+                    ConNom1.TextMatrix(fila, C_DIAS) = ""
+                ElseIf valor = 0 Then
+                    ConNom1.TextMatrix(fila, C_DIAS) = ""
+                Else
+                    ConNom1.TextMatrix(fila, C_DIAS) = Format$(valor, "##0.00")
+                End If
+
+                'No crear una percepcion salarial adicional.
+                ConNom1.TextMatrix(fila, C_SUELDO) = ""
+
+            ElseIf g_EsFiniquito And EsSeparacionNueva() Then
+
+                '---------------------------------------------
+                ' FINIQUITO NUEVO
+                ' Mantener el comportamiento ya implementado.
+                '---------------------------------------------
+
+                If valor < 0 Then
+                    MsgBox "Los dias no pueden ser negativos.", vbExclamation, "Finiquito"
+                    ConNom1.TextMatrix(fila, C_DIAS) = ""
+                ElseIf valor = 0 Then
+                    ConNom1.TextMatrix(fila, C_DIAS) = ""
+                Else
+                    ConNom1.TextMatrix(fila, C_DIAS) = Format$(valor, "##0.00")
+                End If
                 ConNom1.TextMatrix(fila, C_SUELDO) = ""
             Else
-                If valor = 0 Then
+
+                '---------------------------------------------
+                ' COMPORTAMIENTO ORIGINAL
+                '---------------------------------------------
+
+                If valor < 0 Then
+                    MsgBox "Los dias no pueden ser negativos.", vbExclamation
                     ConNom1.TextMatrix(fila, C_DIAS) = ""
                     ConNom1.TextMatrix(fila, C_SUELDO) = ""
                 Else
-                    ConNom1.TextMatrix(fila, C_DIAS) = Format$(valor, "##0.00")
-                    ' Calculo original: sueldo diario del personal x dias.
-                    PonCel fila, C_SUELDO, CCur(valor * personal.ingr)
+                    If valor = 0 Then
+                        ConNom1.TextMatrix(fila, C_DIAS) = ""
+                        ConNom1.TextMatrix(fila, C_SUELDO) = ""
+                    Else
+                        ConNom1.TextMatrix(fila, C_DIAS) = Format$(valor, "##0.00")
+                        PonCel fila, C_SUELDO, CCur(valor * personal.ingr)
+                    End If
                 End If
             End If
+            
+        
+        '=====================================================
+        ' COLUMNA SUELDO
+        '
+        ' LIQUIDACION NUEVA:
+        ' C_SUELDO se encuentra reservada.
+        '
+        ' OTRAS RUTAS:
+        ' Conservar el funcionamiento original.
+        '=====================================================
 
         Case C_SUELDO
-            ' No permitir modificar el sueldo desde captura: se obtiene de dias.
-            MsgBox "El sueldo se modifica editando su archivo de personal", _
-                   vbInformation, "Captura de Nomina"
-            PonCel fila, C_SUELDO, _
-                   CCur(CelCur(fila, C_DIAS) * personal.ingr)
+            If Not g_EsFiniquito And EsSeparacionNueva() Then
+                MsgBox "La columna Sueldo no se captura en una Liquidacion nueva." & vbCrLf & "Capture los importes en los conceptos correspondientes.", vbInformation, "Liquidacion"
+                ConNom1.TextMatrix(fila, C_SUELDO) = ""
+            Else
+                MsgBox "El sueldo se modifica editando su archivo de personal", vbInformation, "Captura de Nomina"
+                PonCel fila, C_SUELDO, CCur(CelCur(fila, C_DIAS) * personal.ingr)
+            End If
 
         Case C_ISPT, C_SUBEMP
             respuestaLocal = MsgBox("Si modifica esta celda no se recalculara " & _
@@ -6460,46 +7061,202 @@ Private Sub checarSeparacionNueva()
                 ConNom1.TextMatrix(fila, C_IMSS) = Format$(valor, z1$)
             End If
 
-        Case C_EXENTA
-            ' Sin permitir exentos mayores que los conceptos potencialmente
-            ' exentables: Agui + PV + Antig + Indem.
-            maximoRelacionable = 0
-            If C_LQ_AGUI >= 0 Then maximoRelacionable = _
-                maximoRelacionable + CelCur(fila, C_LQ_AGUI)
-            If C_LQ_PRIMAVAC >= 0 Then maximoRelacionable = _
-                maximoRelacionable + CelCur(fila, C_LQ_PRIMAVAC)
-            If C_LQ_ANTIG >= 0 Then maximoRelacionable = _
-                maximoRelacionable + CelCur(fila, C_LQ_ANTIG)
-            If C_LQ_INDEMN >= 0 Then maximoRelacionable = _
-                maximoRelacionable + CelCur(fila, C_LQ_INDEMN)
+        
+        '=====================================================
+        ' PERCEPCION EXENTA
+        '=====================================================
 
-            If valor < 0 Or valor > maximoRelacionable Then
-                MsgBox "La percepcion exenta no puede ser negativa ni mayor " & _
-                       "que la suma de conceptos potencialmente exentos." & _
-                       vbCrLf & "Revise el desglose fiscal antes de guardar.", _
-                       vbExclamation, "Percepcion exenta"
-                ConNom1.TextMatrix(fila, C_EXENTA) = ""
-            ElseIf valor = 0 Then
-                ConNom1.TextMatrix(fila, C_EXENTA) = ""
+        Case C_EXENTA
+            If g_EsFiniquito And EsSeparacionNueva() Then
+
+                '---------------------------------------------
+                ' FINIQUITO NUEVO
+                '
+                ' La exenta es parte de los conceptos
+                ' capturados. No es ingreso adicional.
+                '
+                ' Ante un dato invalido, restaurar el valor
+                ' anterior en lugar de borrarlo.
+                '---------------------------------------------
+
+                maximoRelacionable = MaximoExentoFiniquitoNuevo(fila)
+
+                If valor < 0 Or valor > maximoRelacionable Then
+                    MsgBox "La percepcion exenta no puede ser negativa ni superar la suma de los conceptos potencialmente exentos del finiquito." & vbCrLf & "Revise Aguinaldo, Prima Vacacional y Prima de Antiguedad.", vbExclamation, "Finiquito"
+
+                    If IsNumeric(valcelant) Then
+                        ConNom1.TextMatrix(fila, C_EXENTA) = Format$(CCur(valcelant), z1$)
+
+                    Else
+                        ConNom1.TextMatrix(fila, C_EXENTA) = ""
+
+                    End If
+                ElseIf valor = 0 Then
+                    ConNom1.TextMatrix(fila, C_EXENTA) = ""
+
+                Else
+                    ConNom1.TextMatrix(fila, C_EXENTA) = Format$(valor, z1$)
+
+                End If
+                
+            
+            ElseIf Not g_EsFiniquito And EsSeparacionNueva() Then
+
+                '=============================================
+                ' LIQUIDACION NUEVA - PERCEPCION EXENTA
+                '
+                ' C_EXENTA representa una parte de los
+                ' conceptos brutos de la liquidacion.
+                '
+                ' NO es un ingreso adicional.
+                ' NO se distribuye automaticamente.
+                '=============================================
+
+                maximoRelacionable = MaximoExentoLiquidacionNueva(fila)
+
+                '---------------------------------------------
+                ' 1. VALIDAR IMPORTE
+                '---------------------------------------------
+
+                If valor < 0 Or _
+                   valor > maximoRelacionable Then
+                    MsgBox "La percepcion exenta no puede ser negativa ni superar los conceptos potencialmente exentos de la Liquidacion." & vbCrLf & "Revise Aguinaldo, Prima Vacacional, Prima de Antiguedad e Indemnizacion.", vbExclamation, "Liquidacion"
+
+                    '-----------------------------------------
+                    ' 2. RECUPERAR EL IMPORTE ANTERIOR
+                    '
+                    ' No borrar automaticamente una
+                    ' percepcion exenta ya capturada.
+                    '-----------------------------------------
+
+                    If IsNumeric(valcelant) Then
+                        ConNom1.TextMatrix(fila, C_EXENTA) = Format$(CCur(valcelant), z1$)
+                    Else
+                        ConNom1.TextMatrix(fila, C_EXENTA) = ""
+                    End If
+                ElseIf valor = 0 Then
+                    ConNom1.TextMatrix(fila, C_EXENTA) = ""
+                Else
+
+                    '-----------------------------------------
+                    ' 3. CONSERVAR LA EXENCION CAPTURADA
+                    '-----------------------------------------
+
+                    ConNom1.TextMatrix(fila, C_EXENTA) = Format$(valor, z1$)
+                End If
             Else
-                ConNom1.TextMatrix(fila, C_EXENTA) = Format$(valor, z1$)
+
+                '---------------------------------------------
+                ' LIQUIDACION Y OTRAS RUTAS
+                '
+                ' Comportamiento original sin cambios.
+                '---------------------------------------------
+
+                maximoRelacionable = 0
+
+                If C_LQ_AGUI >= 0 Then
+                    maximoRelacionable = maximoRelacionable + CelCur(fila, C_LQ_AGUI)
+                End If
+
+                If C_LQ_PRIMAVAC >= 0 Then
+                    maximoRelacionable = maximoRelacionable + CelCur(fila, C_LQ_PRIMAVAC)
+                End If
+
+                If C_LQ_ANTIG >= 0 Then
+                    maximoRelacionable = maximoRelacionable + CelCur(fila, C_LQ_ANTIG)
+                End If
+
+                If C_LQ_INDEMN >= 0 Then
+                    maximoRelacionable = maximoRelacionable + CelCur(fila, C_LQ_INDEMN)
+                End If
+
+                If valor < 0 Or valor > maximoRelacionable Then
+                    MsgBox "La percepcion exenta no puede ser negativa ni mayor que la suma de conceptos potencialmente exentos." & vbCrLf & "Revise el desglose fiscal antes de guardar.", vbExclamation, "Percepcion exenta"
+                    ConNom1.TextMatrix(fila, C_EXENTA) = ""
+                ElseIf valor = 0 Then
+                    ConNom1.TextMatrix(fila, C_EXENTA) = ""
+                Else
+                    ConNom1.TextMatrix(fila, C_EXENTA) = Format$(valor, z1$)
+                End If
             End If
 
-        Case C_TOTING, C_TOTDED, C_NETO, C_FLAG_ISR, _
-             C_FLAG_IMSS, C_FLAG_ESP
+        Case C_TOTING, C_TOTDED, C_NETO, C_FLAG_ISR, C_FLAG_IMSS, C_FLAG_ESP
             MsgBox "Esta columna es calculada o reservada.", vbInformation
             ConNom1.TextMatrix(fila, ruta) = ""
-
+        
         Case Else
-            ' Conceptos permitidos (4 a 9) y deducciones.
+            '=================================================
+            ' CONCEPTOS Y DEDUCCIONES
+            '
+            ' Mantener la validacion original.
+            '=================================================
+
             If valor < 0 Then
-                MsgBox "No se permiten cantidades negativas en este concepto.", _
-                       vbExclamation, "Captura"
+                MsgBox "No se permiten cantidades negativas en este concepto.", vbExclamation, "Captura"
                 ConNom1.TextMatrix(fila, ruta) = ""
             ElseIf valor = 0 Then
                 ConNom1.TextMatrix(fila, ruta) = ""
             Else
                 ConNom1.TextMatrix(fila, ruta) = Format$(valor, z1$)
+            End If
+
+            '=================================================
+            ' PROTECCION EXCLUSIVA DE FINIQUITO NUEVO
+            '
+            ' Si se reduce un concepto por debajo de la
+            ' exencion previamente capturada, recuperar
+            ' el importe anterior de ese concepto.
+            '
+            ' Nunca borrar automaticamente C_EXENTA.
+            '=================================================
+
+            If g_EsFiniquito And EsSeparacionNueva() Then
+                If ruta = C_LQ_AGUI Or ruta = C_LQ_PRIMAVAC Or ruta = C_LQ_ANTIG Then
+                    maximoRelacionable = MaximoExentoFiniquitoNuevo(fila)
+                    If CelCur(fila, C_EXENTA) > maximoRelacionable Then
+                        MsgBox "No es posible reducir este concepto porque la percepcion exenta capturada supera los conceptos potencialmente exentos." & vbCrLf & "Modifique primero Perc.exenta.", vbExclamation, "Finiquito"
+                        If IsNumeric(valcelant) Then
+                            ConNom1.TextMatrix(fila, ruta) = Format$(CCur(valcelant), z1$)
+                        Else
+                            ConNom1.TextMatrix(fila, ruta) = ""
+                        End If
+                    End If
+                End If
+            End If
+            
+            
+            '=================================================
+            ' LIQUIDACION NUEVA
+            '
+            ' Si se reduce una percepcion que respalda
+            ' el exento, comprobar que la nueva cantidad
+            ' siga siendo suficiente.
+            '
+            ' No modificar la percepcion exenta.
+            ' No intervenir en Finiquito.
+            '=================================================
+
+            If Not g_EsFiniquito And EsSeparacionNueva() Then
+                Select Case ruta
+                    Case C_LQ_AGUI, C_LQ_PRIMAVAC, C_LQ_ANTIG, C_LQ_INDEMN
+                        maximoRelacionable = MaximoExentoLiquidacionNueva(fila)
+
+                        If CelCur(fila, C_EXENTA) > maximoRelacionable Then
+                            MsgBox "No es posible reducir este concepto porque la percepcion exenta quedaria por encima de los conceptos que la respaldan." & vbCrLf & "Modifique primero Perc.exenta.", vbExclamation, "Liquidacion"
+
+                            '---------------------------------
+                            ' RESTAURAR LA PERCEPCION ANTERIOR
+                            '
+                            ' No borrar C_EXENTA.
+                            '---------------------------------
+
+                            If IsNumeric(valcelant) Then
+                                ConNom1.TextMatrix(fila, ruta) = Format$(CCur(valcelant), z1$)
+                            Else
+                                ConNom1.TextMatrix(fila, ruta) = ""
+                            End If
+                        End If
+                End Select
             End If
     End Select
 
@@ -6530,12 +7287,89 @@ Private Sub sumahSeparacionNueva(ByVal bloquearISR As Integer, ByVal bloquearIMS
     For columna = C_PERC_INI To C_PERC_FIN
         bruto = bruto + CelCur(li, columna)
     Next columna
+    
+    '=========================================================
+    ' VALIDACION DE PERCEPCION EXENTA
+    '
+    ' FINIQUITO NUEVO:
+    ' No borrar el importe exento al recalcular.
+    '
+    ' LIQUIDACION Y OTRAS RUTAS:
+    ' Conservar el comportamiento anterior.
+    '=========================================================
+
+    
+    '=========================================================
+    ' VALIDACION DEL EXENTO
+    '
+    ' LIQUIDACION NUEVA:
+    ' La exenta es parte de las percepciones brutas.
+    ' Nunca se suma como ingreso adicional.
+    '
+    ' Si el desglose es invalido, no borrar C_EXENTA.
+    '
+    ' FINIQUITO NUEVO:
+    ' Conservar la proteccion que ya implementamos.
+    '=========================================================
+
     exentoFila = CelCur(li, C_EXENTA)
+
     If exentoFila < 0 Or exentoFila > bruto Then
-        MsgBox "Perc.exenta no puede exceder las percepciones.", vbExclamation
-        exentoFila = 0
-        ConNom1.TextMatrix(li, C_EXENTA) = ""
+        If g_EsFiniquito And EsSeparacionNueva() Then
+        
+            '---------------------------------------------
+            ' FINIQUITO - COMPORTAMIENTO YA CORREGIDO
+            '---------------------------------------------
+
+            MsgBox "La percepcion exenta del finiquito no coincide con las percepciones capturadas." & vbCrLf & "Revise los importes antes de continuar.", vbExclamation, "Finiquito"
+
+            ConNom1.col = colAnterior
+            Exit Sub
+
+        ElseIf Not g_EsFiniquito And EsSeparacionNueva() Then
+
+            '---------------------------------------------
+            ' LIQUIDACION NUEVA
+            '---------------------------------------------
+
+            MsgBox "La percepcion exenta de la Liquidacion no coincide con las percepciones capturadas." & vbCrLf & "El importe exento no sera eliminado.", vbExclamation, "Liquidacion"
+
+            ConNom1.col = colAnterior
+            Exit Sub
+        Else
+
+            '---------------------------------------------
+            ' COMPORTAMIENTO ORIGINAL
+            '---------------------------------------------
+
+            MsgBox "Perc.exenta no puede exceder las percepciones.", vbExclamation
+
+            exentoFila = 0
+            
+            ConNom1.TextMatrix(li, C_EXENTA) = ""
+        End If
     End If
+
+    '=========================================================
+    ' COMPROBAR EL LIMITE ESTRUCTURAL DE LIQUIDACION
+    '
+    ' No se esta calculando ninguna exencion fiscal.
+    '=========================================================
+
+    If Not g_EsFiniquito And EsSeparacionNueva() Then
+        If exentoFila > MaximoExentoLiquidacionNueva(li) Then
+            MsgBox "El exento de la Liquidacion supera los conceptos potencialmente exentos." & vbCrLf & "Revise la captura antes de continuar.", vbExclamation, "Liquidacion"
+            ConNom1.col = colAnterior
+            Exit Sub
+        End If
+    End If
+
+    '=========================================================
+    ' DETERMINAR LA PARTE GRAVADA
+    '
+    ' NO modificar el total bruto.
+    '=========================================================
+
     gravado = bruto - exentoFila
 
     ' Las percepciones ya contienen la parte exenta: NO agregarla.
@@ -6643,7 +7477,7 @@ Private Sub Text2_Change()
     ' Se permite mantener la edicion bancaria existente.
     '=========================================================
 
-    If g_TipoNominaActiva = tnAguinaldo Or g_TipoNominaActiva = tnPTU Then
+    If g_TipoNominaActiva = tnAguinaldo Or g_TipoNominaActiva = tnPTU Or g_TipoNominaActiva = tnBonoPremio Then
         If Not EsColumnaNumericaCaptura(ConNom1.col) And ConNom1.col <> C_BANAMEX Then
             Exit Sub
         End If
@@ -6902,7 +7736,24 @@ Private Sub Form_Activate()
     Dim encontrado As Boolean
 
     
-    If Len(RutaEdicionPendienteVisor) = 0 Then Exit Sub
+    
+    '=====================================================
+    ' FOCO INICIAL DE FORM8
+    '
+    ' Solamente al abrir una nueva pantalla de captura.
+    ' No interferir con la edicion desde FormViewer.
+    '=====================================================
+
+    If Len(RutaEdicionPendienteVisor) = 0 Then
+        If FocoInicialSelector And _
+           Not CapturaActivaSesion Then
+            FocoInicialSelector = False
+            If Me.Visible And Option1.Enabled Then
+                Option1.SetFocus
+            End If
+        End If
+        Exit Sub
+    End If
     
     'Activar proteccion de foco durante la preparacion de la nomina.
     PreparandoEdicionDesdeVisor = True
@@ -6992,9 +7843,57 @@ Private Sub Form_Activate()
                 Err.Raise vbObjectError + 2953, , "No se pudo identificar el mes de la separacion."
             End If
 
-        Else
+        
+    ElseIf indiceTipo = 2 Then
 
-            'Aguinaldo, PTU y bono no guardan el mes en el nombre del archivo.
+        '=====================================================
+        ' BONO
+        '
+        ' NUEVO:
+        ' El mes se obtiene del sufijo del archivo.
+        '
+        ' EJEMPLOS:
+        '   1BONOENE.NOM
+        '   1BONOJUN.NOM
+        '   1BONONOV.NOM
+        '
+        ' ANTIGUO:
+        ' Si el archivo no tiene sufijo de mes,
+        ' conservar la solicitud manual del mes.
+        '=====================================================
+
+        For i = 0 To cboMesNominaEspecial.ListCount - 1
+            If UCase$(Left$(cboMesNominaEspecial.List(i), 3)) = UCase$(Right$(nombreBase, 3)) Then
+                mes = i + 1
+                Exit For
+            End If
+        Next i
+
+        '=====================================================
+        ' COMPATIBILIDAD CON BONOS ANTERIORES
+        '=====================================================
+
+        If mes = 0 Then
+            entradaMes = InputBox("Indique el mes fiscal original de esta nomina BONO (del 1 al 12).", "Periodo de nomina especial", CStr(Month(Date)))
+            If Len(Trim$(entradaMes)) = 0 Then
+                Me.Hide
+                Exit Sub
+            End If
+
+            If Not IsNumeric(entradaMes) Then
+                Err.Raise vbObjectError + 2954, , "El mes debe ser numerico."
+
+            End If
+
+            mes = CInt(entradaMes)
+
+            If mes < 1 Or mes > 12 Then
+                Err.Raise vbObjectError + 2955, , "El mes debe estar entre 1 y 12."
+            End If
+        End If
+    Else
+    
+        'AGUINALDO y PTU: Conservar el comportamiento original.
             entradaMes = InputBox("Indique el mes fiscal original de esta nomina (del 1 al 12).", "Periodo de nomina especial", CStr(Month(Date)))
 
             If Len(Trim$(entradaMes)) = 0 Then
@@ -7353,4 +8252,474 @@ Private Function ValidarCapturaPTU() As Boolean
     ValidarCapturaPTU = True
 
 End Function
+
+Private Function ValidarCapturaBono() As Boolean
+
+    Dim fila As Long
+    Dim columna As Long
+    Dim empleado As String
+
+    Dim bonoTotal As Currency
+    Dim bonoExento As Currency
+    Dim totalIngresos As Currency
+    Dim totalDeducciones As Currency
+    Dim netoCapturado As Currency
+
+    ValidarCapturaBono = False
+
+    '=========================================================
+    ' SOLO NOMINA ESPECIAL BONO
+    '=========================================================
+
+    If g_TipoNominaActiva <> tnBonoPremio Then
+        ValidarCapturaBono = True
+        Exit Function
+    End If
+
+    '=========================================================
+    ' VALIDAR CADA EMPLEADO
+    '=========================================================
+
+    For fila = 1 To limite
+        empleado = Trim$(ConNom1.TextMatrix(fila, C_NUM))
+        If Val(empleado) > 0 Then
+
+            '-------------------------------------------------
+            ' 1. VERIFICAR QUE NO EXISTAN OTRAS PERCEPCIONES
+            '-------------------------------------------------
+
+            For columna = C_PERC_INI To C_PERC_FIN
+                If columna <> C_CONC7 Then
+                    If CelCur(fila, columna) <> 0 Then
+                        MsgBox "Empleado: " & empleado & vbCrLf & vbCrLf & "Existe un importe en: " & ConNom1.TextMatrix(0, columna) & vbCrLf & "Esta nomina solamente permite BONO y su percepcion exenta.", vbExclamation, "Validacion BONO"
+                        Exit Function
+                    End If
+                End If
+            Next columna
+
+            '-------------------------------------------------
+            ' 2. OBTENER BONO TOTAL Y EXENTO
+            '-------------------------------------------------
+
+            bonoTotal = CelCur(fila, C_CONC7)
+            bonoExento = CelCur(fila, C_EXENTA)
+
+            If bonoTotal < 0 Or bonoExento < 0 Then
+                MsgBox "Empleado: " & empleado & vbCrLf & "El bono y su percepcion exenta no pueden ser negativos.", vbExclamation, "Validacion BONO"
+                Exit Function
+            End If
+
+            If bonoExento > bonoTotal Then
+                MsgBox "Empleado: " & empleado & vbCrLf & "La percepcion exenta supera el importe total del bono.", vbExclamation, "Validacion BONO"
+                Exit Function
+            End If
+
+            '-------------------------------------------------
+            ' 3. CONCILIAR TOTAL DE INGRESOS
+            '
+            ' La parte exenta ya esta dentro del bono.
+            '-------------------------------------------------
+
+            totalIngresos = CelCur(fila, C_TOTING)
+            
+            If Abs(totalIngresos - bonoTotal) > CCur(0.01) Then
+                MsgBox "Empleado: " & empleado & vbCrLf & "El total de ingresos no coincide." & vbCrLf & "BONO: " & Format$(bonoTotal, "#,##0.00") & vbCrLf & "Tot.Ingr.: " & Format$(totalIngresos, "#,##0.00"), vbExclamation, "Validacion BONO"
+                Exit Function
+            End If
+
+            '-------------------------------------------------
+            ' 4. CONCILIAR EL NETO
+            '-------------------------------------------------
+
+            totalDeducciones = CelCur(fila, C_TOTDED)
+            netoCapturado = CelCur(fila, C_NETO)
+
+            If Abs(netoCapturado - (totalIngresos - totalDeducciones)) > CCur(0.01) Then
+                MsgBox "Empleado: " & empleado & vbCrLf & "El neto no coincide con ingresos menos deducciones.", vbExclamation, "Validacion BONO"
+                Exit Function
+            End If
+        End If
+    Next fila
+    ValidarCapturaBono = True
+End Function
+
+Private Function MaximoExentoFiniquitoNuevo(ByVal fila As Long) As Currency
+
+    Dim total As Currency
+    
+    total = 0
+
+    '=====================================================
+    ' CONCEPTOS POTENCIALMENTE EXENTOS
+    '
+    ' Se conserva el mismo criterio que actualmente
+    ' utiliza checarSeparacionNueva().
+    '
+    ' No calcula limites fiscales.
+    ' No distribuye el importe exento por concepto.
+    '=====================================================
+
+    If C_LQ_AGUI >= 0 Then
+        total = total + CelCur(fila, C_LQ_AGUI)
+    End If
+
+    If C_LQ_PRIMAVAC >= 0 Then
+        total = total + CelCur(fila, C_LQ_PRIMAVAC)
+    End If
+
+    If C_LQ_ANTIG >= 0 Then
+        total = total + CelCur(fila, C_LQ_ANTIG)
+    End If
+
+    If C_LQ_INDEMN >= 0 Then
+        total = total + CelCur(fila, C_LQ_INDEMN)
+    End If
+
+    MaximoExentoFiniquitoNuevo = total
+
+End Function
+
+Private Function ValidarCapturaFiniquitoNuevo() As Boolean
+
+    Dim fila As Long
+    Dim columna As Long
+    Dim empleado As String
+
+    Dim totalPercepciones As Currency
+    Dim totalExento As Currency
+    Dim totalIngresos As Currency
+    Dim totalDeducciones As Currency
+    Dim totalNeto As Currency
+
+    ValidarCapturaFiniquitoNuevo = False
+
+    '=========================================================
+    ' SOLO FINIQUITO DE FORMATO NUEVO
+    '=========================================================
+
+    If g_TipoNominaActiva <> tnLiquidacionFiniquito Then
+        ValidarCapturaFiniquitoNuevo = True
+        Exit Function
+
+    End If
+
+    If Not g_EsFiniquito Then
+        ValidarCapturaFiniquitoNuevo = True
+        Exit Function
+
+    End If
+
+    If Not EsSeparacionNueva() Then
+        ValidarCapturaFiniquitoNuevo = True
+        Exit Function
+
+    End If
+
+    '=========================================================
+    ' RECORRER LOS EMPLEADOS
+    '=========================================================
+
+    For fila = 1 To limite
+        empleado = Trim$(ConNom1.TextMatrix(fila, C_NUM))
+        If Val(empleado) > 0 Then
+
+            '-------------------------------------------------
+            ' 1. COMPROBAR SUELDO AUXILIAR
+            '
+            ' En esta estructura, C_SUELDO esta reservado.
+            '-------------------------------------------------
+
+            If CelCur(fila, C_SUELDO) <> 0 Then
+                MsgBox "Empleado: " & empleado & vbCrLf & "La columna Sueldo contiene un importe en el finiquito nuevo." & vbCrLf & "Revise la captura de dias.", vbExclamation, "Validacion Finiquito"
+                Exit Function
+            End If
+
+            '-------------------------------------------------
+            ' 2. SUMAR PERCEPCIONES
+            '
+            ' C_EXENTA no se suma.
+            ' Es una parte del total bruto.
+            '-------------------------------------------------
+
+            totalPercepciones = 0
+
+            For columna = C_PERC_INI To C_PERC_FIN
+                If CelCur(fila, columna) < 0 Then
+                    MsgBox "Empleado: " & empleado & vbCrLf & "La columna " & ConNom1.TextMatrix(0, columna) & " contiene una percepcion negativa.", vbExclamation, "Validacion Finiquito"
+                    Exit Function
+                End If
+
+                totalPercepciones = totalPercepciones + CelCur(fila, columna)
+            Next columna
+
+            '-------------------------------------------------
+            ' 3. VALIDAR PERCEPCION EXENTA
+            '-------------------------------------------------
+
+            totalExento = CelCur(fila, C_EXENTA)
+
+            If totalExento < 0 Or totalExento > totalPercepciones Then
+                MsgBox "Empleado: " & empleado & vbCrLf & "La percepcion exenta supera el importe de las percepciones.", vbExclamation, "Validacion Finiquito"
+                Exit Function
+            End If
+
+            If totalExento > MaximoExentoFiniquitoNuevo(fila) Then
+
+                MsgBox "Empleado: " & empleado & vbCrLf & "La percepcion exenta es mayor que los conceptos potencialmente exentos registrados.", vbExclamation, "Validacion Finiquito"
+                Exit Function
+            End If
+
+            '-------------------------------------------------
+            ' 4. VALIDAR TOTAL DE INGRESOS
+            '-------------------------------------------------
+
+            totalIngresos = CelCur(fila, C_TOTING)
+            
+            If Abs(totalIngresos - totalPercepciones) > CCur(0.01) Then
+                MsgBox "Empleado: " & empleado & vbCrLf & "El Total de Ingresos no coincide." & vbCrLf & "Conceptos: " & Format$(totalPercepciones, "#,##0.00") & vbCrLf & "Tot.Ingr.: " & Format$(totalIngresos, "#,##0.00"), vbExclamation, "Validacion Finiquito"
+                Exit Function
+            End If
+
+            '-------------------------------------------------
+            ' 5. VALIDAR DEDUCCIONES
+            '-------------------------------------------------
+
+            totalDeducciones = 0
+
+            For columna = C_DED_INI To C_DED_FIN
+                totalDeducciones = totalDeducciones + CelCur(fila, columna)
+            Next columna
+
+            If Abs(totalDeducciones - CelCur(fila, C_TOTDED)) > CCur(0.01) Then
+                MsgBox "Empleado: " & empleado & vbCrLf & "El total de deducciones no coincide.", vbExclamation, "Validacion Finiquito"
+                Exit Function
+
+            End If
+
+            '-------------------------------------------------
+            ' 6. VALIDAR NETO
+            '-------------------------------------------------
+
+            totalNeto = totalPercepciones - totalDeducciones
+
+            If Abs(totalNeto - CelCur(fila, C_NETO)) > CCur(0.01) Then
+                MsgBox "Empleado: " & empleado & vbCrLf & "El neto calculado no coincide." & vbCrLf & "Calculado: " & Format$(totalNeto, "#,##0.00") & vbCrLf & "Capturado: " & Format$(CelCur(fila, C_NETO), "#,##0.00"), vbExclamation, "Validacion Finiquito"
+                Exit Function
+            End If
+        End If
+    Next fila
+
+    ValidarCapturaFiniquitoNuevo = True
+
+End Function
+
+Private Function MaximoExentoLiquidacionNueva(ByVal fila As Long) As Currency
+
+    Dim total As Currency
+
+    total = 0
+
+    '=====================================================
+    ' LIQUIDACION NUEVA
+    '
+    ' Conceptos que actualmente utiliza el proyecto
+    ' para limitar la percepcion exenta capturada.
+    '
+    ' No determina limites fiscales del SAT.
+    ' No distribuye la exencion entre conceptos.
+    '=====================================================
+
+    If g_TipoNominaActiva <> tnLiquidacionFiniquito Then
+        Exit Function
+    End If
+
+    If g_EsFiniquito Then
+        Exit Function
+    End If
+
+    If Not EsSeparacionNueva() Then
+        Exit Function
+    End If
+
+    '-----------------------------------------------------
+    ' AGUINALDO
+    '-----------------------------------------------------
+
+    If C_LQ_AGUI >= 0 Then
+        total = total + CelCur(fila, C_LQ_AGUI)
+    End If
+
+    '-----------------------------------------------------
+    ' PRIMA VACACIONAL
+    '-----------------------------------------------------
+
+    If C_LQ_PRIMAVAC >= 0 Then
+        total = total + CelCur(fila, C_LQ_PRIMAVAC)
+    End If
+
+    '-----------------------------------------------------
+    ' PRIMA DE ANTIGUEDAD
+    '-----------------------------------------------------
+
+    If C_LQ_ANTIG >= 0 Then
+        total = total + CelCur(fila, C_LQ_ANTIG)
+    End If
+
+    '-----------------------------------------------------
+    ' INDEMNIZACION
+    '-----------------------------------------------------
+
+    If C_LQ_INDEMN >= 0 Then
+        total = total + CelCur(fila, C_LQ_INDEMN)
+
+    End If
+
+    MaximoExentoLiquidacionNueva = total
+
+End Function
+
+Private Function ValidarCapturaLiquidacionNueva() As Boolean
+
+    Dim fila As Long
+    Dim columna As Long
+    Dim empleado As String
+
+    Dim totalPercepciones As Currency
+    Dim totalExento As Currency
+    Dim totalIngresos As Currency
+    Dim totalDeducciones As Currency
+    Dim totalNeto As Currency
+
+    ValidarCapturaLiquidacionNueva = False
+
+    '=========================================================
+    ' 1. IDENTIFICAR LIQUIDACION NUEVA
+    '
+    ' No aplicar a:
+    ' - Nomina ordinaria
+    ' - Aguinaldo
+    ' - PTU
+    ' - Bono
+    ' - Finiquito
+    ' - Liquidaciones antiguas
+    '=========================================================
+
+    If g_TipoNominaActiva <> tnLiquidacionFiniquito Then
+        ValidarCapturaLiquidacionNueva = True
+        Exit Function
+    End If
+
+    If g_EsFiniquito Then
+        ValidarCapturaLiquidacionNueva = True
+        Exit Function
+    End If
+
+    If Not EsSeparacionNueva() Then
+        ValidarCapturaLiquidacionNueva = True
+        Exit Function
+    End If
+
+    '=========================================================
+    ' 2. RECORRER EMPLEADOS
+    '=========================================================
+
+    For fila = 1 To limite
+        empleado = Trim$(ConNom1.TextMatrix(fila, C_NUM))
+        If Val(empleado) > 0 Then
+
+            '-------------------------------------------------
+            ' 3. VALIDAR SUELDO AUXILIAR
+            '-------------------------------------------------
+
+            If CelCur(fila, C_SUELDO) <> 0 Then
+                MsgBox "Empleado: " & empleado & vbCrLf & "La columna Sueldo contiene un importe que no corresponde a la Liquidacion nueva.", vbExclamation, "Validacion Liquidacion"
+
+                Exit Function
+
+            End If
+
+            '-------------------------------------------------
+            ' 4. SUMAR PERCEPCIONES
+            '
+            ' Columnas 4 a 9 contienen conceptos brutos.
+            ' C_EXENTA no se suma nuevamente.
+            '-------------------------------------------------
+
+            totalPercepciones = 0
+
+            For columna = C_PERC_INI To C_PERC_FIN
+                If CelCur(fila, columna) < 0 Then
+                    MsgBox "Empleado: " & empleado & vbCrLf & "Existe una percepcion negativa en la columna: " & ConNom1.TextMatrix(0, columna), vbExclamation, "Validacion Liquidacion"
+                    Exit Function
+                End If
+                totalPercepciones = totalPercepciones + CelCur(fila, columna)
+
+            Next columna
+
+            '-------------------------------------------------
+            ' 5. VALIDAR EXENTO
+            '
+            ' Es parte de las percepciones, no adicional.
+            '-------------------------------------------------
+
+            totalExento = CelCur(fila, C_EXENTA)
+
+            If totalExento < 0 Or totalExento > totalPercepciones Then
+                MsgBox "Empleado: " & empleado & vbCrLf & "La percepcion exenta es invalida para el total de la Liquidacion.", vbExclamation, "Validacion Liquidacion"
+                Exit Function
+            End If
+
+            If totalExento > _
+               MaximoExentoLiquidacionNueva(fila) Then
+
+                MsgBox "Empleado: " & empleado & vbCrLf & "La percepcion exenta supera los conceptos potencialmente exentos de la Liquidacion.", vbExclamation, "Validacion Liquidacion"
+                Exit Function
+            End If
+
+            '-------------------------------------------------
+            ' 6. VALIDAR TOTAL DE INGRESOS
+            '-------------------------------------------------
+
+            totalIngresos = CelCur(fila, C_TOTING)
+
+            If Abs(totalIngresos - totalPercepciones) > CCur(0.01) Then
+                MsgBox "Empleado: " & empleado & vbCrLf & "El total de ingresos no coincide." & vbCrLf & "Conceptos: " & Format$(totalPercepciones, "#,##0.00") & vbCrLf & "Tot.Ingr.: " & Format$(totalIngresos, "#,##0.00"), vbExclamation, "Validacion Liquidacion"
+                Exit Function
+            End If
+
+            '-------------------------------------------------
+            ' 7. VALIDAR DEDUCCIONES
+            '
+            ' Respetar los signos utilizados por el grid.
+            '-------------------------------------------------
+
+            totalDeducciones = 0
+
+            For columna = C_DED_INI To C_DED_FIN
+                totalDeducciones = totalDeducciones + CelCur(fila, columna)
+
+            Next columna
+
+            If Abs(totalDeducciones - CelCur(fila, C_TOTDED)) > CCur(0.01) Then
+
+                MsgBox "Empleado: " & empleado & vbCrLf & "El total de deducciones no coincide.", vbExclamation, "Validacion Liquidacion"
+                Exit Function
+            End If
+
+            '-------------------------------------------------
+            ' 8. VALIDAR NETO
+            '-------------------------------------------------
+
+            totalNeto = totalIngresos - totalDeducciones
+
+            If Abs(totalNeto - CelCur(fila, C_NETO)) > CCur(0.01) Then
+                MsgBox "Empleado: " & empleado & vbCrLf & "El neto calculado no coincide." & vbCrLf & "Calculado: " & Format$(totalNeto, "#,##0.00") & vbCrLf & "Captura: " & Format$(CelCur(fila, C_NETO), "#,##0.00"), vbExclamation, "Validacion Liquidacion"
+
+                Exit Function
+            End If
+        End If
+    Next fila
+    ValidarCapturaLiquidacionNueva = True
+End Function
+
 
