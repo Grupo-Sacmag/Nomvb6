@@ -893,19 +893,6 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
-' ===========================================================================
-' FORM8 / capnom.frm - REVISION CONSERVADORA DE CAPTURA (16/10/2026)
-' ORIGEN: Form8.txt compartido por el usuario; codigo completo del modulo.
-' SOLO CODIGO: No incluye bloque de diseno del formulario (.frm).
-' Cambios localizados, descritos con comentario "REVISION 2026".
-' NOTA: NO se ha compilado en VB6 ni ejecutado contra nominas reales.
-' IMPORTANTE: Guardar respaldo de capnom.frm, personal.dno, .NOM y .cmp.
-' PTU automatica: usa empresa.sm * 15 como base configurable; verificar
-' que empresa.sm corresponda al salario minimo aplicable al ejercicio y
-' region y verificar exenciones PTU ya usadas durante el mismo ano.
-' Los codigos y validaciones de NOMCF2/percepdeduc no se sustituyen aqui.
-' ===========================================================================
-
 Dim sum(23) As Currency, sumv(29) As Currency, meselegido As Integer, diat As Currency
 Dim integrado As Currency, seguro As Currency, diaseg As Currency
 Dim limite As Integer, valcelant, hs_ext As Currency
@@ -918,7 +905,7 @@ Dim empieza As Integer, termina As Integer, fpago As Integer
 Dim MiDía, qna As Integer, dia_pago As Integer
 Dim impto1 As Integer, imss1 As Integer, f As Long, ii As Long, ii1 As Long
 Dim exento As Currency, archiva_o, cuentaobra As Integer
-Dim requisito As Integer, comp_ti As String, Clave As Integer
+Dim requisito As Integer, comp_ti As String, clave As Integer
 Dim si_hay As Integer, operacion, lim_conta As Integer
 Dim fi_nm As Integer, anchopapel As Long, largopapel As Long
 Dim Entrada As String * 32, abre, caso, Salida, numerillo As Integer, lincam As Currency
@@ -948,11 +935,12 @@ Private CapturaActivaSesion As Boolean
 
 Private EditandoNominaGuardada As Boolean
 
-'Respaldo del CMP en memoria, no en disco.
+Private mSoloConsulta As Boolean
+Private mDetalleConsulta As String
+
 Private CopiaCmpEdicion() As Byte
 Private HayCopiaCmpEdicion As Boolean
 
-'Evita continuar si falla una restauracion.
 Private FalloRestauracionNom As Boolean
 Private BloqueoPorPlazoEdicion As Boolean
 Private RutaEdicionPendienteVisor As String
@@ -963,64 +951,46 @@ Private Sub Borrarblancos_Click(Index As Integer)
     Dim i As Integer
     Dim vacia As Boolean
 
-    ' Validar que ConNom1 tiene filas suficientes
+    If Not AutorizarCambioNominaForm8() Then
+        Exit Sub
+    End If
+
     If ConNom1.Rows <= 1 Then
         MsgBox "No hay filas suficientes para procesar.", vbExclamation, "Error"
         Exit Sub
     End If
 
-    ' Recorremos las filas de abajo hacia arriba
     For i = ConNom1.Rows - 1 To 1 Step -1
         vacia = True
-
-        ' Verificar las columnas 4, 5, 6 y 7 (Índices 3, 4, 5, 6 porque en VB6 son base 0)
-        Rem If Trim(ConNom1.TextMatrix(i, 3)) <> "" Then vacia = False
-        Rem If Trim(ConNom1.TextMatrix(i, 4)) <> "" Then vacia = False
+        
         If Trim(ConNom1.TextMatrix(i, 5)) <> "" Then vacia = False
         If Trim(ConNom1.TextMatrix(i, 6)) <> "" Then vacia = False
         If Trim(ConNom1.TextMatrix(i, 7)) <> "" Then vacia = False
         If Trim(ConNom1.TextMatrix(i, 8)) <> "" Then vacia = False
-        Rem If Trim(ConNom1.TextMatrix(i, 9)) <> "" Then vacia = False
-    
-
-        ' Si está vacía, eliminar la fila
         If vacia Then
             ConNom1.RemoveItem i
         End If
     Next i
-
 End Sub
 
 Private Sub cboTipoNominaEspecial_Click()
-
-    'Actualizar la modalidad seleccionada.
     RefrescarModoNomina
     ActualizarNombreEspecial
-
-    'No mover el foco aqui.
-    'El usuario puede recorrer la lista con las flechas.
-
 End Sub
 
 Private Sub cboTipoNominaEspecial_KeyPress(KeyAscii As Integer)
     If KeyAscii = vbKeyReturn Then
         KeyAscii = 0
-
-        'Confirmar que haya un concepto seleccionado.
         If cboTipoNominaEspecial.ListIndex < 0 Then
             MsgBox "Seleccione el tipo de nomina especial.", vbExclamation, "Nomina"
             Exit Sub
         End If
-
-        'Concepto confirmado -> Numero de nomina.
         txtPre.SetFocus
         txtPre.SelStart = Len(txtPre.Text)
     End If
 End Sub
 
 Private Sub Form_Load()
-
-    ' REVISION 2026: restablecer tipo base al crear una nueva instancia.
     g_TipoNominaActiva = tnOrdinaria
     N_ormal = 0
     InicializarColumnas tnOrdinaria
@@ -1086,13 +1056,11 @@ Private Sub Form_Load()
     For i = 1 To 12
         cboMesNominaEspecial.AddItem RTrim$(mm(i))
     Next i
-    cboMesNominaEspecial.ListIndex = Month(Date) - 1   ' mes actual por defecto
+    cboMesNominaEspecial.ListIndex = Month(Date) - 1
 
     Text1.Visible = False
     RefrescarModoNomina
     txtPre.Text = ""
-
-    'Preparar el foco inicial del selector de nomina.
     FocoInicialSelector = True
 
     GoTo sale8
@@ -1113,27 +1081,13 @@ Private Sub nomcap_ini_Click(Index As Integer)
     Dim tamArchivo As Long
     Dim registrosArchivo As Long
     Dim solicitarEdicion As Boolean
-    
-    '=======================================================
-    ' IMPEDIR OTRA CAPTURA MIENTRAS HAY UNA ACTIVA
-    '=======================================================
-    
+
     If CapturaActivaSesion Then
-    
-        MsgBox "Ya existe una nomina en captura." & vbCrLf & vbCrLf & "Para iniciar otra nomina, primero debe " & "salir de la captura actual." & vbCrLf & vbCrLf & _
-               "Puede guardar, salir sin guardar " & "o cancelar la salida.", vbExclamation, "Captura activa"
-    
+        MsgBox "Ya existe una nomina en captura." & vbCrLf & vbCrLf & "Para iniciar otra nomina, primero debe " & "salir de la captura actual." & vbCrLf & vbCrLf & "Puede guardar, salir sin guardar " & "o cancelar la salida.", vbExclamation, "Captura activa"
         Exit Sub
-    
     End If
-
-    '=======================================================
-    ' 1. CONSTRUIR EL NOMBRE DE LA NOMINA
-    '=======================================================
-
+    
     If Option1.Value = True Then
-        ' NOMINA NORMAL
-
         If Option3.Value = True Then
             Arch = UCase$(mID$(Combo1.Text, 1, 3)) & "1" & LTrim$(Str$(empresa.ao)) & ".NOM"
         ElseIf Option4.Value = True Then
@@ -1143,8 +1097,6 @@ Private Sub nomcap_ini_Click(Index As Integer)
             Exit Sub
         End If
     ElseIf Option2.Value = True Then
-
-        ' NOMINA ESPECIAL
         If cboTipoNominaEspecial.ListIndex < 0 Then
             MsgBox "Seleccione el tipo de nomina especial.", vbExclamation, "Nomina"
             Exit Sub
@@ -1155,29 +1107,19 @@ Private Sub nomcap_ini_Click(Index As Integer)
         If Len(Trim$(Text1.Text)) = 0 Then
             MsgBox "Indique el nombre de la nomina especial.", vbExclamation, "Nomina"
             Exit Sub
-
         End If
 
         Arch = Trim$(Text1.Text) & ".NOM"
-
     Else
         MsgBox "Seleccione el tipo de nomina.", vbExclamation, "Nomina"
         Exit Sub
     End If
-
-    '=======================================================
-    ' 2. OBTENER RUTA COMPLETA
-    '=======================================================
-
+    
     rutaNominas = Trim$(CStr(Form1.Dir1))
 
     If Len(rutaNominas) = 0 Then
-
-        MsgBox "No se ha seleccionado un directorio de nominas.", _
-               vbExclamation, "Nomina"
-
+        MsgBox "No se ha seleccionado un directorio de nominas.", vbExclamation, "Nomina"
         Exit Sub
-
     End If
 
     If Right$(rutaNominas, 1) <> "\" Then
@@ -1186,111 +1128,39 @@ Private Sub nomcap_ini_Click(Index As Integer)
 
     fullArchPath = rutaNominas & Arch
     
-    '=======================================================
-    ' 2.5 ARCHIVO VACIO: RESTO DE UNA CAPTURA NO GUARDADA
-    '=======================================================
     If Len(Dir$(fullArchPath)) > 0 Then
         If FileLen(fullArchPath) = 0 Then
-            If MsgBox("Existe un archivo vacio con este nombre:" & vbCrLf & Arch & vbCrLf & vbCrLf & "Normalmente es el resto de una captura que se cerro sin guardar." & vbCrLf & _
-                      "No contiene datos. Desea eliminarlo e iniciar la captura?", _
-                      vbYesNo + vbQuestion + vbDefaultButton2, "Archivo vacio") = vbNo Then
+            If MsgBox("Existe un archivo vacio con este nombre:" & vbCrLf & Arch & vbCrLf & vbCrLf & "Normalmente es el resto de una captura que se cerro sin guardar." & vbCrLf & "No contiene datos. Desea eliminarlo e iniciar la captura?", vbYesNo + vbQuestion + vbDefaultButton2, "Archivo vacio") = vbNo Then
                 Exit Sub
             End If
             Kill fullArchPath
         End If
     End If
-
-
-    '=======================================================
-    ' 3. SI YA EXISTE, NO VOLVER A GENERARLA
-    '=======================================================
-
+    
     If Len(Dir$(fullArchPath)) > 0 Then
 
         tamArchivo = FileLen(fullArchPath)
-
-        Debug.Print "Archivo existente"
-        Debug.Print "Bytes: "; tamArchivo
-
-        ' Archivo vacio
         If tamArchivo = 0 Then
-            MsgBox "Ya existe un archivo con ese nombre, " & "pero esta vacio." & vbCrLf & vbCrLf & Arch & vbCrLf & vbCrLf & "No se iniciara otra captura para evitar " & "sobrescribirlo." & vbCrLf & _
-                   "Revise el archivo antes de continuar.", vbExclamation, "Archivo vacio"
+            MsgBox "Ya existe un archivo con ese nombre, " & "pero esta vacio." & vbCrLf & vbCrLf & Arch & vbCrLf & vbCrLf & "No se iniciara otra captura para evitar " & "sobrescribirlo." & vbCrLf & "Revise el archivo antes de continuar.", vbExclamation, "Archivo vacio"
             Exit Sub
         End If
-
-        ' Archivo con longitud incompatible
+        
         If tamArchivo Mod Len(nomina) <> 0 Then
             MsgBox "El archivo de nomina existe, pero su " & "tamano no corresponde a registros completos." & vbCrLf & vbCrLf & Arch & vbCrLf & "No se modificara el archivo.", vbCritical, "Nomina"
             Exit Sub
         End If
 
         registrosArchivo = tamArchivo \ Len(nomina)
+        AbrirNominaGuardadaParaEditar fullArchPath
 
-        Debug.Print "Registros existentes: "; registrosArchivo
-
-        '===================================================
-        ' 4. ABRIR LA NOMINA EXISTENTE EN FORMVIEWER
-        '===================================================
-
-        MsgBox "Esta nomina ya existe:" & vbCrLf & Arch & vbCrLf & vbCrLf & "Se abrira en el visualizador." & vbCrLf & "No se iniciara una nueva captura.", vbInformation, "Nomina existente"
-        Load FormViewer
-        FormViewer.LoadPayroll fullArchPath
-
-        If Not FormViewer.CargaCorrecta Then
-            Unload FormViewer
-            MsgBox "No fue posible cargar la nomina existente." & vbCrLf & "No se modifico el archivo.", vbExclamation, "Nomina"
-            Exit Sub
-        End If
-
-        
-        '=====================================================
-        ' VISUALIZADOR ABIERTO DESDE FORM8
-        '
-        ' Mantener Form8 visible como formulario propietario.
-        ' Conservar FormViewer como modal.
-        '
-        ' No modificar el mecanismo existente para
-        ' regresar o solicitar edicion de la nomina.
-        '=====================================================
-    
-        FormViewer.HabilitarRetornoEdicionDesdeForm8
-        FormViewer.Show vbModal, Me
-        solicitarEdicion = FormViewer.SolicitudEdicionNomina
-        Unload FormViewer
-    
-        'Conservar el comportamiento original de retorno.
-        Me.Show
-
-        If solicitarEdicion Then
-            AbrirNominaGuardadaParaEditar fullArchPath
-        Else
-            'FormViewer cerro los numeros #2 y #8 que usa Form8.
-            Close #2
-            Close #8
-            Open "personal.dno" For Random As #2 Len = Len(personal)
-            Dm = LOF(2) / Len(personal)
-            Open "maestro.dno" For Random As #8 Len = Len(maestro)
-        End If
         Exit Sub
-
     End If
-
-    '=======================================================
-    ' 5. NOMINA NUEVA
-    '=======================================================
-
-
-    ' generarNominas usa nombres relativos.
-    ' No iniciar si la ruta activa es diferente.
-
+    
     If StrComp(CurDir$, Left$(rutaNominas, Len(rutaNominas) - 1), vbTextCompare) <> 0 Then
-        MsgBox "El directorio de trabajo no coincide " & "con el directorio seleccionado." & vbCrLf & vbCrLf & "Directorio activo: " & CurDir$ & vbCrLf & "Directorio seleccionado: " & rutaNominas & _
-               vbCrLf & vbCrLf & "No se iniciara la captura para evitar " & "crear archivos en una ubicacion incorrecta.", vbExclamation, "Verificar directorio"
+        MsgBox "El directorio de trabajo no coincide " & "con el directorio seleccionado." & vbCrLf & vbCrLf & "Directorio activo: " & CurDir$ & vbCrLf & "Directorio seleccionado: " & rutaNominas & vbCrLf & vbCrLf & "No se iniciara la captura para evitar " & "crear archivos en una ubicacion incorrecta.", vbExclamation, "Verificar directorio"
         Exit Sub
     End If
     
-    ' La retencion de la 2a quincena toma como base la 1a.
     If Option1.Value = True And Option4.Value = True Then
         Dim primeraQna As String
         Dim faltaPrimera As Boolean
@@ -1298,31 +1168,19 @@ Private Sub nomcap_ini_Click(Index As Integer)
         faltaPrimera = (Len(Dir$(primeraQna)) = 0)
         If Not faltaPrimera Then faltaPrimera = (FileLen(primeraQna) = 0)
         If faltaPrimera Then
-            If MsgBox("No existe (o esta vacia) la nomina de la 1a quincena:" & vbCrLf & UCase$(mID$(Combo1.Text, 1, 3)) & "1" & LTrim$(Str$(empresa.ao)) & ".NOM" & vbCrLf & vbCrLf & _
-                "La retencion de la 2a quincena depende de ella. Desea continuar?", vbYesNo + vbExclamation + vbDefaultButton2, "Falta 1a quincena") = vbNo Then
+            If MsgBox("No existe (o esta vacia) la nomina de la 1a quincena:" & vbCrLf & UCase$(mID$(Combo1.Text, 1, 3)) & "1" & LTrim$(Str$(empresa.ao)) & ".NOM" & vbCrLf & vbCrLf & "La retencion de la 2a quincena depende de ella. Desea continuar?", vbYesNo + vbExclamation + vbDefaultButton2, "Falta 1a quincena") = vbNo Then
                 Exit Sub
             End If
         End If
     End If
         
-    '=======================================================
-    ' 6. CLASIFICAR E INICIALIZAR COLUMNAS
-    '=======================================================
-
     AplicarTipoNomina Arch
 
-    ' REVISION 2026: para PTU el exento se calcula al capturar C_CONC6;
-    ' en los demas tipos, Text3 mantiene el comportamiento original.
     Text3.Locked = (g_TipoNominaActiva = tnPTU)
     If g_TipoNominaActiva = tnPTU Then
         Text3.Text = ""
         exento = 0
     End If
-
-    
-    '=======================================================
-    ' 7. CONTINUAR / REGISTRAR ARCHIVOS DE ESTA SESION
-    '=======================================================
     
     RutaNominaSesion = fullArchPath
     RutaCmpSesion = Left$(fullArchPath, Len(fullArchPath) - 4) & ".cmp"
@@ -1336,49 +1194,13 @@ Private Sub nomcap_ini_Click(Index As Integer)
     NominaArchivadaSesion = False
     GuardadoFallidoSesion = False
     
-    
-    
 generarNominas
-
-If limite > 0 Then
-    Debug.Print "========== ISPT ANTES =========="
-    Debug.Print "Empleado: "; _
-        ConNom1.TextMatrix(1, C_NUM)
-    Debug.Print "Ingreso: "; _
-        ConNom1.TextMatrix(1, C_TOTING)
-    Debug.Print "ISPT: [" & _
-        ConNom1.TextMatrix(1, C_ISPT) & "]"
-    Debug.Print "================================"
-End If
-
 FuncionImpuesto
 
-If limite > 0 Then
-    Debug.Print "========== ISPT DESPUES =========="
-    Debug.Print "Empleado: "; _
-        ConNom1.TextMatrix(1, C_NUM)
-    Debug.Print "Ingreso: "; _
-        ConNom1.TextMatrix(1, C_TOTING)
-    Debug.Print "ISPT: [" & _
-        ConNom1.TextMatrix(1, C_ISPT) & "]"
-    Debug.Print "Bandera ISR: [" & _
-        ConNom1.TextMatrix(1, C_FLAG_ISR) & "]"
-    Debug.Print "=================================="
-End If
-
 BloquearSeleccionNomina True
-
-
     Exit Sub
-
-    '=======================================================
-    ' ERROR
-    '=======================================================
-
 ErrorManejador:
-
     MsgBox "No fue posible iniciar o consultar la nomina." & vbCrLf & "Error " & Err.Number & ": " & Err.Description, vbCritical, "Nomina"
-
 End Sub
 Private Sub ReleaseObjects(o_Excel As Object, o_Libro As Object, o_Hoja As Object)
     If Not o_Excel Is Nothing Then Set o_Excel = Nothing
@@ -1394,16 +1216,13 @@ Public Function Exportar_Excel(sOutputPath As String, FlexGrid As Object) As Boo
     Dim o_Hoja As Object
     Dim fila As Long
     Dim columna As Long
-    
-    ' -- Crea el objeto Excel, el objeto workBook y el objeto sheet
+
     Set o_Excel = CreateObject("Excel.Application")
     Set o_Libro = o_Excel.Workbooks.Add
     Set o_Hoja = o_Libro.Worksheets.Add
-      
-    ' -- Bucle para Exportar los datos
+    
     With FlexGrid
         For fila = 1 To .Rows - 1
-            'For Columna = 0 To .Cols - 1
             For columna = 0 To 1
                 o_Hoja.Cells(fila, columna + 1).Value = .TextMatrix(fila, columna)
             Next
@@ -1411,16 +1230,12 @@ Public Function Exportar_Excel(sOutputPath As String, FlexGrid As Object) As Boo
     End With
     
     o_Libro.Close True, sOutputPath
-    ' -- Cerrar Excel
     o_Excel.Quit
-    ' -- Terminar instancias
     Call ReleaseObjects(o_Excel, o_Libro, o_Hoja)
     Exportar_Excel = True
 Exit Function
-  
-' -- Controlador de Errores
+
 Error_Handler:
-    ' -- Cierra la hoja y el la aplicación Excel
     If Not o_Libro Is Nothing Then: o_Libro.Close False
     If Not o_Excel Is Nothing Then: o_Excel.Quit
     Call ReleaseObjects(o_Excel, o_Libro, o_Hoja)
@@ -1428,27 +1243,23 @@ Error_Handler:
 End Function
 
 Sub DibujaLinea()
-   
    For r1 = 3 To 10
        If ConNom1.TextMatrix(ConNom1.Row, r1) <> "" Then
            Primera = r1
            r1 = 10
        End If
    Next r1
-   
    For r1 = 15 To 19
       If ConNom1.TextMatrix(ConNom1.Row, r1) <> "" Then
            Primera1 = r1
            r1 = 19
        End If
    Next r1
-
 End Sub
 Sub depura()
    caso = ""
     For t = 1 To Len(Entrada)
         If (mID(Entrada, t, 1) >= Chr(48) And mID(Entrada, t, 1) <= Chr(57)) And (t < 4) Then
-            Rem nada
         Else
             caso = caso + mID(Entrada, t, 1)
         End If
@@ -1480,7 +1291,6 @@ SALE_LEER:
      
    Close 9
 End Sub
-
 
 Private Sub CapArch_Click(Index As Integer)
     Dim Impte_Tr As Currency, Siguiente As Integer
@@ -1639,15 +1449,13 @@ Private Sub CapArch_Click(Index As Integer)
             mID(Label7.Caption, 1, 7) & Chr(9) & _
             "Mismo dia" & Chr(9) & _
             Format(Siguiente, "####0")
-           
 nuevo:
-     
     Next r1
     
     slinca$ = "":
     LINARCH$ = "4001"
-    Slincam = Int((Slinimpte - Int(Slinimpte)) * 100) ' Se determina la fraccion
-    slinca$ = Trim(Str(Slincam)) ' Se considera el simbolo
+    Slincam = Int((Slinimpte - Int(Slinimpte)) * 100)
+    slinca$ = Trim(Str(Slincam))
     
     If Slincam <= 0 Then slinca$ = "00"
     
@@ -1700,14 +1508,9 @@ Sub TituloCompl()
 
 End Sub
 
-
 Private Sub Capcf_Click()
-    'Utilizar el mismo proceso CFDI del menu principal.
-    'No abrir NOMCF2 sin preparar antes el periodo.
     CFDI2_Click
-
 End Sub
-
 
 Private Sub CapDetImp_Click()
     For i = 2 To 7: sumv(i) = 0: Next i
@@ -1779,6 +1582,7 @@ Private Sub CapDetImp_Click()
     SumasCompl
     Printer.EndDoc
 End Sub
+
 Sub SumasCompl()
    For g = 2 To 7
         pone = 0: colocar pone, Format(sumv(g), z1$), z1$
@@ -1786,13 +1590,11 @@ Sub SumasCompl()
         Printer.CurrentX = Printer.CurrentX + pone
         Printer.Print Format(sumv(g), z1$);
     Next g
-    
     Printer.Print
     Printer.Print Tab(55); String(100, "=")
     Printer.CurrentY = Printer.Height - 1600
     Printer.CurrentX = Printer.Width / 2  '
-    Printer.Print "-  " & Printer.Page & "  -"   ' Imprimir.
-
+    Printer.Print "-  " & Printer.Page & "  -"
 End Sub
 Private Sub CapDis_Click()
     final = limite
@@ -1801,11 +1603,6 @@ End Sub
 
 Private Sub CapInrt_Click()
     CapArch_Click 2
-                'If IsNumeric(ConNom1.TextMatrix(1, 0)) Then
-                    'CnvNom.Show
-                    'Else
-                    'MsgBox "SELECCIONE LA NOMINA QUE SE CAPTURA"
-                'End If
 End Sub
 
 Private Sub capturaGeneral_Click()
@@ -1815,53 +1612,44 @@ End Sub
 Private Sub CFDI2_Click()
 
     Dim nombreNomina As String
-
     On Error GoTo ErrorCFDI
+        
+    If Not AutorizarCambioNominaForm8() Then
+        MsgBox "No se permite iniciar el CFDI desde una nomina con el plazo vencido o abierta en solo consulta.", vbExclamation, "CFDI"
+        Exit Sub
+
+    End If
 
     OrigenCFDI = 0
     g_QuincenaCFDI2026 = 0
     g_FechaPagoCFDI2026 = ""
 
-    'Debe existir una sesion de nomina identificada.
     If Len(Trim$(RutaNominaSesion)) = 0 Then
     Err.Raise vbObjectError + 5221, "Form8.CFDI2_Click", "No hay una nomina activa para generar CFDI."
     End If
     
-    'Identificar la nomina para recuperar folios.
     g_RutaNominaCFDI2026 = RutaNominaSesion
     
     nombreNomina = NombreBaseNomina(RutaNominaSesion)
 
     If EsNominaNormal(RutaNominaSesion) Then
-
-        'Nomina ordinaria: identificar periodo directamente desde el archivo correspondiente a la sesion.
         g_QuincenaCFDI2026 = CInt(mID$(nombreNomina, 4, 1))
-
-        'Misma fecha programada que usa FormViewer.
         g_FechaPagoCFDI2026 = FechaCFDI_PagoOrdinariaLegacy(RutaNominaSesion)
-
     Else
-
-        'Nomina extraordinaria: conservar la fecha original de captura.
         g_QuincenaCFDI2026 = 0
-
         g_FechaPagoCFDI2026 = FechaCFDI_FormatoDMY(FechaCFDI_InterpretarDMY(CStr(MiFecha)))
-
     End If
 
     NOMCF2.Show
     Exit Sub
 
 ErrorCFDI:
-
     MsgBox "No fue posible preparar el CFDI." & vbCrLf & "Error " & CStr(Err.Number) & ": " & Err.Description, vbCritical, "CFDI"
-
 End Sub
 
 Private Sub cheajte_Click(Index As Integer)
    Load AJTECH
    AJTECH.Show 1
-   
 End Sub
 
 Private Sub cheind_Click(Index As Integer)
@@ -1881,7 +1669,6 @@ Private Sub cheind_Click(Index As Integer)
 End Sub
 
 Private Sub cheobra_Click(Index As Integer)
-    
     CommonDialog1.CancelError = True
     On Error GoTo ErrHandler
      CommonDialog1.FileName = "CATAUX*.*"
@@ -1894,9 +1681,7 @@ Private Sub cheobra_Click(Index As Integer)
      Close #7
     Exit Sub
 ErrHandler:
-    ' El usuario ha hecho clic en el botón Cancelar
     Exit Sub
-
 End Sub
 
 Private Sub chetot_Click(Index As Integer)
@@ -1914,10 +1699,12 @@ Private Sub chetot_Click(Index As Integer)
      Else
         MsgBox "Necesita Capturar Nomina para Imprimirla"
     End If
-
 End Sub
 
 Private Sub edicionPersonalCaptura_Click()
+    If Not AutorizarCambioNominaForm8() Then
+        Exit Sub
+    End If
     Form4.Show
 End Sub
 
@@ -1932,35 +1719,22 @@ End Sub
 Private Sub EdNomCopiar_Click()
     Dim textoSeleccionado As String
     Dim i As Integer, j As Integer
-
-    ' Limpiar el portapapeles
+    
     Clipboard.Clear
-
-    ' Inicializar la cadena que contendrá el texto seleccionado
+    
     textoSeleccionado = ""
-
-    ' Iterar sobre las filas seleccionadas
     For i = ConNom1.Row To ConNom1.RowSel
-        ' Iterar sobre las columnas seleccionadas
         For j = ConNom1.col To ConNom1.ColSel
-            ' Añadir el texto de la celda a la cadena
             textoSeleccionado = textoSeleccionado & ConNom1.TextMatrix(i, j)
-            
-            ' Añadir un tabulador si no es la última columna seleccionada
             If j < ConNom1.ColSel Then
                 textoSeleccionado = textoSeleccionado & vbTab
             End If
         Next j
-        
-        ' Añadir una nueva línea si no es la última fila seleccionada
         If i < ConNom1.RowSel Then
             textoSeleccionado = textoSeleccionado & vbCrLf
         End If
     Next i
-
-    ' Colocar el texto seleccionado en el portapapeles
     Clipboard.SetText textoSeleccionado
-    
 End Sub
 
 Private Sub exportar_Click(Index As Integer)
@@ -1977,8 +1751,7 @@ Public Sub FlexGrid_To_Excel(TheFlexgrid As MSFlexGrid, Optional GridStyle As In
     Dim j As Long
 
     On Error GoTo ErrHandler
-
-    'Crear la instancia de Excel
+    
     Set objXL = CreateObject("Excel.Application")
 
     objXL.Visible = True
@@ -1986,12 +1759,10 @@ Public Sub FlexGrid_To_Excel(TheFlexgrid As MSFlexGrid, Optional GridStyle As In
     Set wbXL = objXL.Workbooks.Add
     Set wsXL = objXL.ActiveSheet
 
-    'Nombre de la hoja
     If WorkSheetName <> "" Then
         wsXL.name = WorkSheetName
     End If
 
-    'Exportar datos
     For intRow = 1 To TheFlexgrid.Rows - 1
         j = 1
         For intCol = 0 To 1
@@ -1999,15 +1770,11 @@ Public Sub FlexGrid_To_Excel(TheFlexgrid As MSFlexGrid, Optional GridStyle As In
             j = j + 1
         Next intCol
     Next intRow
-
     Exit Sub
 
 ErrHandler:
-    MsgBox "Necesitas tener instalado Microsoft Excel en tu equipo." & vbCrLf & _
-           "Detalle: " & Err.Description, _
-           vbExclamation, _
-           "Exportar a Excel"
-
+    MsgBox "Necesitas tener instalado Microsoft Excel en tu equipo." & vbCrLf & "Detalle: " & Err.Description, vbExclamation, "Exportar a Excel"
+    
     Set wsXL = Nothing
     Set wbXL = Nothing
 
@@ -2016,8 +1783,8 @@ ErrHandler:
     End If
 
     Set objXL = Nothing
-
 End Sub
+
 Private Sub Form_Resize()
     ConNom1.Height = Form8.Height * 0.645
     ConNom1.Width = Form8.Width * 0.975
@@ -2026,78 +1793,24 @@ End Sub
 Private Sub Form_QueryUnload(Cancel As Integer, UnloadMode As Integer)
 
     On Error GoTo ErrorCierre
-
-    'Si el cierre ya fue confirmado desde el menu,
-    'no volver a preguntar.
     If CerrandoForm8 Then Exit Sub
-
-    'Preguntar ANTES de descargar el formulario.
     If Not ConfirmarSalidaNomina() Then
         Cancel = 1
     End If
-
     Exit Sub
-
 ErrorCierre:
-
     Cancel = 1
     GuardandoDuranteCierre = False
-
     MsgBox "No fue posible completar la salida." & vbCrLf & "Error " & Err.Number & ": " & Err.Description, vbExclamation, "Nomina"
-
 End Sub
 
 Private Sub Form_Unload(Cancel As Integer)
-
     Dim mostrarForm1 As Boolean
-
-    '=====================================================
-    ' CIERRE DEFINITIVO DE FORM8
-    '
-    ' Form_QueryUnload ya debio confirmar la salida.
-    '
-    ' Si el usuario selecciono Cancelar,
-    ' este procedimiento no debe ejecutarse.
-    '=====================================================
-
-    'Conservar la ruta de regreso antes de limpiar.
+    
     mostrarForm1 = Not RegresoModalDesdeVisor
-
-    '=====================================================
-    ' LIMPIAR SIEMPRE LA SESION AL DESCARGAR FORM8
-    '
-    ' No depender del valor previo de CerrandoForm8.
-    '
-    ' FinalizarSalidaNomina:
-    '   - Cierra archivos de captura.
-    '   - Limpia el grid.
-    '   - Ejecuta ReiniciarEstadoSesion.
-    '   - Establece CapturaActivaSesion = False.
-    '
-    ' No elimina archivos de nomina.
-    ' La decision de guardar o descartar ya se tomo
-    ' en ConfirmarSalidaNomina.
-    '=====================================================
-
     CerrandoForm8 = True
-
     FinalizarSalidaNomina
-
-    '=====================================================
-    ' RESTABLECER LA BANDERA DE CIERRE
-    '
-    ' Evitar que una instancia reutilizada conserve
-    ' CerrandoForm8 = True.
-    '=====================================================
-
     CerrandoForm8 = False
-
-    '=====================================================
-    ' REGRESAR AL FORMULARIO CORRESPONDIENTE
-    '
-    ' Mantener la navegacion original.
-    '=====================================================
-
     If mostrarForm1 Then
         Form1.Show
     End If
@@ -2114,6 +1827,10 @@ Private Sub funcionPegar_Click()
     Dim Temporal1 As String
     Dim temporal As String
 
+    If Not AutorizarCambioNominaForm8() Then
+        Exit Sub
+    End If
+    
     Temporal1 = ""
     temporal = Clipboard.GetText()
 
@@ -2134,8 +1851,6 @@ Private Sub funcionPegar_Click()
         For i = 1 To Len(temporal)
             Select Case mID(temporal, i, 1)
                 Case Chr(13)
-                    ' Verificar si el texto es un número antes de asignarlo
-                    
                         If EsColumnaNumericaCaptura(ConNom1.col) And ImporteCapturaValido(Trim$(mID$(temporal, DeAqui, i - DeAqui))) Then
                         Temporal1 = Temporal1 + ConNom1.TextMatrix(ConNom1.Row, ConNom1.col) & Chr(13)
                         ConNom1.Text = mID(temporal, DeAqui, (i - DeAqui))
@@ -2148,7 +1863,6 @@ Private Sub funcionPegar_Click()
                         End If
                         ConNom1.TopRow = 1
                     Else
-                        ' Si no es un número, pegar espacio vacío
                         Temporal1 = Temporal1 & vbCrLf
                         ConNom1.Row = ConNom1.Row + 1
                         If ConNom1.Row >= ConNom1.Rows - 3 Then
@@ -2159,7 +1873,6 @@ Private Sub funcionPegar_Click()
                     DeAqui = i + 1
             End Select
         Next i
-        ' Restaurar posición del cursor
         ConNom1.col = RetornoCarro
     End If
 
@@ -2171,6 +1884,10 @@ End Sub
 Private Sub Importar_Click()
 Dim oRS As New ADODB.Recordset
 Dim oConn As New ADODB.Connection
+    
+    If Not AutorizarCambioNominaForm8() Then
+        Exit Sub
+    End If
 
     excel.CancelError = True
     On Error GoTo ErrHandler
@@ -2185,53 +1902,39 @@ Dim oConn As New ADODB.Connection
             oRS.Open "SELECT * FROM [Hoja1$]", oConn, , , adCmdText
         Call Llenar_FlexGrid(oConn, oRS)
     End If
-    
 ErrHandler:
 End Sub
 
 Private Sub Llenar_FlexGrid(cn As Connection, rs As Recordset)
   
 On Error GoTo ErrSub
-  
     Screen.MousePointer = vbHourglass
-    ' Deshabilita el repintado del Flexgrid
     ConNom1.Redraw = False
-    ' Mueve el recordset al primer registro
     rs.MoveFirst
-    ' Agrega las filas necesarias en el FlexGRid
+    
+    If Not AutorizarCambioNominaForm8() Then
+        Exit Sub
+    End If
     ConNom1.Rows = rs.RecordCount + 1
-    ' Agrega las columnas necesarias
     ConNom1.Cols = rs.Fields.Count
       
     Dim c As Integer
-    ' Selecciona
     ConNom1.Row = 1
     ConNom1.col = 0
       
     ConNom1.RowSel = ConNom1.Rows - 1
     ConNom1.ColSel = ConNom1.Cols - 1
-      
-    'Devuelve o establece el contenido de las celdas en _
-     una región de FlexGrid seleccionada. No está disponible en tiempo de diseño. _
-     ( Esta linea de código es la que carga los registros )
     ConNom1.Clip = rs.GetString(adClipString, -1, Chr(9), Chr(13), vbNullString)
     ConNom1.Row = 1
-      
-    ' habilita nuevamente el Redraw en el control
     ConNom1.Redraw = True
-      
-    ' Cierra y elimina las referencias ( recordset y la conexión )
+    
     rs.Close
     Set rs = Nothing
     cn.Close
     Set cn = Nothing
-  
     Screen.MousePointer = vbDefault
-  
 Exit Sub
-  
 ErrSub:
-' Mensaje de error
 MsgBox Err.Description, vbCritical
 Screen.MousePointer = vbDefault
 End Sub
@@ -2275,7 +1978,7 @@ Sub Mnunomobr_Click(Index As Integer)
             impr_nomina requisito
      End Select
 End Sub
-Sub impr_nomina(Clave As Integer)
+Sub impr_nomina(clave As Integer)
     For i = 1 To 10
         sum(i) = 0
     Next i
@@ -2306,7 +2009,7 @@ Sub impr_nomina(Clave As Integer)
                 rgtro = ConNom1.TextMatrix(li, 0)
                 Get #8, rgtro, maestro
                 
-                Select Case Clave
+                Select Case clave
                     Case 10001
                         GoSub imprim_e
                     Case 10002
@@ -2329,7 +2032,7 @@ Sub impr_nomina(Clave As Integer)
                     Case Else
                         If maestro.O_2 > 0 Then
                         Else
-                            If maestro.O_1 = Clave Then
+                            If maestro.O_1 = clave Then
                                 If maestro.por_1 = 100 Then
                                     GoSub imprim_e
                                 End If
@@ -2562,7 +2265,6 @@ On Error GoTo manejadorError:
                Case 7
                     Printer.CurrentX = 200
                     Printer.Print "O.F. ";
-                    'Printer.Print "Compensacion ";
                     colocar ancho2, ConNom1.TextMatrix(li, ii), z1$
                     Printer.CurrentX = 4300 + ancho2
                     Printer.Print ConNom1.TextMatrix(li, ii)
@@ -2812,7 +2514,6 @@ manejadorError:
 End Sub
 
 Sub verifica(yavas)
-' verifica si existe un monto en los ingresos
     If nomina.dias <> 0 Then yavas = 1
     If nomina.hs_nor <> 0 Then yavas = 1
     If nomina.hs_dbl <> 0 Then yavas = 1
@@ -2849,13 +2550,11 @@ Sub eliminacion()
 
     Do While re <= limite
         If EsSeparacionNueva() Then
-            ' No quitar empleados por no tener cuenta Banamex.
             Borrar = Not IsNumeric(Trim$(ConNom1.TextMatrix(re, C_NUM)))
             If Not Borrar Then
                 Borrar = (Val(ConNom1.TextMatrix(re, C_NUM)) <= 0)
             End If
         Else
-            ' Codigo legacy y ordinario SIN cambios.
             Borrar = (Trim$(ConNom1.TextMatrix(re, C_BANAMEX)) = "")
         End If
         If Borrar Then
@@ -3265,8 +2964,7 @@ Sub checanum(camcol, datoret As Currency)
    
    ConNom1.col = antecol
 End Sub
-' REVISION 2026: PTU exenta SOLO para captura PTU.
-' La base proviene de empresa.sm; revisar ejercicio, zona y exencion anual.
+
 Private Function ExentoAutomaticoPTU(ByVal montoTotal As Currency) As Currency
     Dim tope As Currency
     If montoTotal <= 0 Then Exit Function
@@ -3282,8 +2980,7 @@ End Function
 Sub checar()
     Dim esLiq As Boolean
     Dim utilidad As Currency
-
-    ' Nueva modalidad: captura independiente, sin reutilizar columnas legacy.
+    
     If EsSeparacionNueva() Then
         checarSeparacionNueva
         Exit Sub
@@ -3294,8 +2991,7 @@ Sub checar()
     datoper
     If regtro > 0 Then
       Select Case ConNom1.col
-
-         '---------------------------------------------------------- dias
+      
          Case C_DIAS
               diat = dato_ent
               If diat > 0 Then
@@ -3306,7 +3002,6 @@ Sub checar()
                   ConNom1.Text = ""
                   ConNom1.col = C_SUELDO
                   ConNom1.Text = ""
-                  ' REVISION 2026: no borrar bono/prima capturados en especial.
                   If g_TipoNominaActiva = tnOrdinaria And N_ormal = 0 Then
                       ConNom1.col = C_CONC7
                       ConNom1.Text = ""
@@ -3314,8 +3009,6 @@ Sub checar()
                       ConNom1.Text = ""
                   End If
               End If
-              ' REVISION 2026: solo la nomina normal hereda importes diarios
-              ' del archivo permanente de personal.
               If g_TipoNominaActiva = tnOrdinaria And N_ormal = 0 Then
                   If personal.viat > 0 Then
                       ConNom1.col = C_CONC7
@@ -3327,19 +3020,12 @@ Sub checar()
                   End If
               End If
               ConNom1.col = ruta
-
-         '-------------------------------------------------------- sueldo
          Case C_SUELDO
               MsgBox "El sueldo se modifica editando su archivo de personal", vbCritical, "Captura de Nomina"
               Text2.Text = valcelant
-
-         '------------------------------ hs.Norm / hs.Dobles / hs.Triples
-         ' (en Liq estas constantes valen -1 y el Case nunca se activa)
          Case C_CONC4 To C_CONC6
               hs_ext = personal.ingr / 8
-
               If g_TipoNominaActiva = tnOrdinaria And N_ormal = 0 Then
-                  ' Nomina ordinaria: conservar horas extras del diseno original.
                   dato_sal = dato_ent * hs_ext
                   ConNom1.col = ruta
                   ConNom1.Text = Format$(dato_sal, z1$)
@@ -3351,24 +3037,8 @@ Sub checar()
                      
             Case C_CONC5
                 If g_TipoNominaActiva = tnAguinaldo Then
-            
-                    '=================================================
-                    ' AGUINALDO
-                    '
-                    ' C_CONC5 = Aguinaldo TOTAL
-                    ' C_EXENTA = Parte exenta del mismo aguinaldo
-                    '
-                    ' El importe de C_CONC5 no se divide ni modifica
-                    ' automaticamente al capturarlo.
-                    '=================================================
-            
                     If dato_ent < 0 Or dato_ent < CelCur(ConNom1.Row, C_EXENTA) Then
                         MsgBox "El aguinaldo no puede ser negativo ni menor que su percepcion exenta.", vbExclamation, "Captura de Aguinaldo"
-            
-                        'Restaurar el importe anterior.
-                        'CCur respeta las cantidades con separadores
-                        'de miles, a diferencia de Val.
-            
                         If IsNumeric(valcelant) Then
                             ConNom1.TextMatrix(ConNom1.Row, C_CONC5) = Format$(CCur(valcelant), z1$)
                         Else
@@ -3376,39 +3046,17 @@ Sub checar()
                         End If
                     ElseIf dato_ent = 0 Then
                         ConNom1.TextMatrix(ConNom1.Row, C_CONC5) = ""
-            
                     Else
-            
-                        'Conservar el TOTAL capturado.
-                        'No restar C_EXENTA aqui.
-            
                         ConNom1.TextMatrix(ConNom1.Row, C_CONC5) = Format$(dato_ent, z1$)
                     End If
                 Else
-                    'Conservar comportamiento de otras modalidades.
                     ConNom1.TextMatrix(ConNom1.Row, C_CONC5) = Format$(dato_ent, z1$)
                 End If
-                            
+                           
                 Case C_CONC6
                     If g_TipoNominaActiva = tnPTU Then
-                
-                        '=====================================================
-                        ' NOMINA ESPECIAL PTU
-                        '
-                        ' C_CONC6  = PTU TOTAL
-                        ' C_EXENTA = Parte exenta de la PTU
-                        '
-                        ' La columna PTU conserva el importe bruto.
-                        ' No restar ni trasladar automaticamente
-                        ' cantidades a Perc.exenta.
-                        '=====================================================
-                
                         If dato_ent < 0 Or dato_ent < CelCur(ConNom1.Row, C_EXENTA) Then
                             MsgBox "La PTU no puede ser negativa ni menor que su percepcion exenta.", vbExclamation, "Captura de PTU"
-                
-                            'Restaurar el importe anterior.
-                            'No modificar la percepcion exenta.
-                
                             If IsNumeric(valcelant) Then
                                 ConNom1.TextMatrix(ConNom1.Row, C_CONC6) = Format$(CCur(valcelant), z1$)
                             Else
@@ -3417,42 +3065,18 @@ Sub checar()
                         ElseIf dato_ent = 0 Then
                             ConNom1.TextMatrix(ConNom1.Row, C_CONC6) = ""
                         Else
-                
-                            'Conservar el importe TOTAL capturado.
-                
                             ConNom1.TextMatrix(ConNom1.Row, C_CONC6) = Format$(dato_ent, z1$)
                         End If
                     Else
-                    
-                        'Conservar el comportamiento de las otras modalidades de nomina.
-                
                         ConNom1.TextMatrix(ConNom1.Row, C_CONC6) = Format$(dato_ent, z1$)
                     End If
             End Select
         End If
-         '------------------------------------- O.F./BONO  y  Otras
-         
-         '-----------------------------------------------------
-         ' BONO / OTRAS PERCEPCIONES
-         '-----------------------------------------------------
+        
          Case C_CONC7, C_OTRAS
               If g_TipoNominaActiva = tnBonoPremio And ruta = C_CONC7 Then
-
-                  '=============================================
-                  ' BONO ESPECIAL
-                  '
-                  ' C_CONC7 = Bono TOTAL
-                  ' C_EXENTA = Parte exenta del bono
-                  '
-                  ' El bono debe conservar su valor completo.
-                  ' No distribuir automaticamente la exencion.
-                  '=============================================
-
                   If dato_ent < 0 Or dato_ent < CelCur(ConNom1.Row, C_EXENTA) Then
                       MsgBox "El bono no puede ser negativo ni menor que su percepcion exenta.", vbExclamation, "Captura de Bono"
-
-                      'Restaurar valor anterior sin perder los separadores de miles.
-
                       If IsNumeric(valcelant) Then
                           ConNom1.TextMatrix(ConNom1.Row, C_CONC7) = Format$(CCur(valcelant), z1$)
                       Else
@@ -3461,15 +3085,9 @@ Sub checar()
                   ElseIf dato_ent = 0 Then
                       ConNom1.TextMatrix(ConNom1.Row, C_CONC7) = ""
                   Else
-                      'Conservar importe bruto del bono.
-                      'No modificar C_EXENTA.
-
                       ConNom1.TextMatrix(ConNom1.Row, C_CONC7) = Format$(dato_ent, z1$)
                   End If
               ElseIf g_TipoNominaActiva <> tnOrdinaria Or N_ormal <> 0 Then
-
-                  'Mantener funcionamiento de las otras modalidades especiales.
-
                   ConNom1.col = ruta
 
                   If dato_ent <> 0 Then
@@ -3478,7 +3096,6 @@ Sub checar()
                       ConNom1.Text = ""
                   End If
               Else
-                  ' Nomina ordinaria: mantener la actualizacion del SDI original.
                   aoingr = Val(mID$(personal.fal, 7, 4))
                   If aoingr < 1900 Then
                       antig = 1
@@ -3516,7 +3133,6 @@ Sub checar()
                   ConNom1.Text = Format$(dato_ent, z1$)
               End If
 
-         '------------------------------------------------------ ISPT
          Case C_ISPT
               respuesta = MsgBox("Si modifica esta celda ya no se efectuara el calculo de la retencion", vbYesNo + vbExclamation + vbDefaultButton2, "Mensaje de Nomina")
               If respuesta = vbYes Then
@@ -3531,8 +3147,7 @@ Sub checar()
                   ConNom1.col = ruta
                   ConNom1.Text = Format(valcelant, z1$)
               End If
-
-         '------------------------------------------------ Sub.P/Empl.
+              
          Case C_SUBEMP
               respuesta = MsgBox("Si modifica esta celda ya no se efectuara el calculo de la retencion", vbYesNo + vbExclamation + vbDefaultButton2, "Mensaje de Nomina")
               If respuesta = vbYes Then
@@ -3547,13 +3162,9 @@ Sub checar()
                   ConNom1.col = ruta
                   ConNom1.Text = Format(valcelant, z1$)
               End If
-
-         '------------------------------------------------------- IMSS
+              
           Case C_IMSS
-
                If g_TipoNominaActiva = tnLiquidacionFiniquito Then
-                   
-                   'FINIQUITO / LIQUIDACION: captura libre y sin confirmacion.
                    si_imss = 1
                    ConNom1.col = C_FLAG_IMSS
                    ConNom1.Text = "1"
@@ -3564,7 +3175,6 @@ Sub checar()
                        ConNom1.Text = ""
                    End If
                Else
-                   'Mantener comportamiento original en las demas nominas.
                    respuesta = MsgBox("Si modifica esta celda ya no se efectuara el calculo de la retencion", vbYesNo + vbExclamation + vbDefaultButton2, "Mensaje de Nomina")
                    If respuesta = vbYes Then
                        si_imss = 1
@@ -3581,7 +3191,6 @@ Sub checar()
                    End If
                End If
                
-         '----------------------------------------------------- Banamex
          Case C_BANAMEX
               Close 12
 
@@ -3606,54 +3215,20 @@ Sub checar()
             
             Case C_EXENTA
                 If g_TipoNominaActiva = tnAguinaldo Then
-            
-                    '=================================================
-                    ' PERCEPCION EXENTA DE AGUINALDO
-                    '
-                    ' Forma parte del aguinaldo total.
-                    ' No representa un ingreso adicional.
-                    '
-                    ' Ejemplo:
-                    ' Aguinaldo = 5000
-                    ' Exento = 1500
-                    ' Gravado = 3500
-                    '=================================================
-            
                     If dato_ent < 0 Or dato_ent > CelCur(ConNom1.Row, C_CONC5) Then
                         MsgBox "La percepcion exenta no puede ser negativa ni superar el aguinaldo total.", vbExclamation, "Captura de Aguinaldo"
-            
-                        'Restaurar el valor anterior sin perder
-                        'los millares de la cantidad.
-            
                         If IsNumeric(valcelant) Then
                             ConNom1.TextMatrix(ConNom1.Row, C_EXENTA) = Format$(CCur(valcelant), z1$)
                         Else
                             ConNom1.TextMatrix(ConNom1.Row, C_EXENTA) = ""
                         End If
-            
                     ElseIf dato_ent = 0 Then
                         ConNom1.TextMatrix(ConNom1.Row, C_EXENTA) = ""
                     Else
-            
-                        'Guardar solamente la parte exenta.
-                        'No modificar Aguinaldo ni sumarla al bruto.
-            
                         ConNom1.TextMatrix(ConNom1.Row, C_EXENTA) = Format$(dato_ent, z1$)
                     End If
                                     
                 ElseIf g_TipoNominaActiva = tnPTU Then
-                
-                        '=====================================================
-                        ' PTU - PERCEPCION EXENTA
-                        '
-                        ' El exento forma parte de la PTU total.
-                        ' No es una percepcion adicional.
-                        '
-                        ' PTU total = 5000
-                        ' Exento    = 1500
-                        ' Gravado   = 3500
-                        '=====================================================
-                
                         If dato_ent < 0 Or dato_ent > CelCur(ConNom1.Row, C_CONC6) Then
                             MsgBox "La percepcion exenta no puede ser negativa ni superar el importe total de PTU.", vbExclamation, "Captura de PTU"
                             If IsNumeric(valcelant) Then
@@ -3665,20 +3240,8 @@ Sub checar()
                             ConNom1.TextMatrix(ConNom1.Row, C_EXENTA) = ""
                         Else
                             ConNom1.TextMatrix(ConNom1.Row, C_EXENTA) = Format$(dato_ent, z1$)
-                
                         End If
-                
                 ElseIf g_TipoNominaActiva = tnBonoPremio Then
-
-                    '=========================================
-                    ' PERCEPCION EXENTA DEL BONO
-                    '
-                    ' La parte exenta esta incluida en
-                    ' el importe total de C_CONC7.
-                    '
-                    ' No es un ingreso adicional.
-                    '=========================================
-
                     If dato_ent < 0 Or dato_ent > CelCur(ConNom1.Row, C_CONC7) Then
                         MsgBox "La percepcion exenta no puede ser negativa ni superar el bono total.", vbExclamation, "Captura de Bono"
                         If IsNumeric(valcelant) Then
@@ -3692,10 +3255,8 @@ Sub checar()
                         ConNom1.TextMatrix(ConNom1.Row, C_EXENTA) = Format$(dato_ent, z1$)
                     End If
 
-                Else 'Otras nominas: mantener comportamiento anterior.
-            
+                Else
                     ConNom1.col = ruta
-            
                     If dato_ent <> 0 Then
                         ConNom1.Text = Format$(dato_ent, z1$)
                     Else
@@ -3716,9 +3277,8 @@ Sub checar()
       li = ConNom1.Row
 
       sumah si_impto, si_imss
-
+      
     End If
-
     Exit Sub
 End Sub
 
@@ -4757,6 +4317,27 @@ End Sub
 Private Sub archnom_Click(Index As Integer)
 
     On Error GoTo ErrorGuardar
+
+    '=====================================================
+    ' PROTECCION DEL GUARDADO
+    '
+    ' CONSULTA:
+    ' Nunca permitir archivar.
+    '
+    ' EDICION:
+    ' Verificar nuevamente el plazo antes de
+    ' continuar con el guardado original.
+    '
+    ' CAPTURA NUEVA:
+    ' Conservar el comportamiento existente.
+    '=====================================================
+
+    If Not AutorizarCambioNominaForm8() Then
+        GuardadoFallidoSesion = True
+        MsgBox "Esta nomina no tiene autorizacion para guardar modificaciones.", vbExclamation, "Guardar nomina"
+        Exit Sub
+    End If
+
     GuardadoFallidoSesion = False
 
     Dim f As Long
@@ -4895,18 +4476,78 @@ Private Sub archnom_Click(Index As Integer)
         End If
     End If
 
+    
+    
     '=========================================================
-    ' CONTINUAR CON EL GUARDADO ORIGINAL
+    ' IDENTIFICAR FORMATO DE NOMINA
     '=========================================================
 
-    ' Capturar el formato ANTES de inicializar registros.
     nuevaSeparacion = EsSeparacionNueva()
+
+    '=========================================================
+    ' VALIDAR CMP DE NOMINA NORMAL NUEVA
+    '
+    ' Aplica a:
+    '
+    ' PRIMERA QUINCENA
+    ' SEGUNDA QUINCENA
+    '
+    ' No modifica otras modalidades.
+    '
+    ' IMPORTANTE:
+    ' Esta validacion solamente verifica registros.
+    ' NO debe envolver el resto del guardado.
+    '=========================================================
+
+    If g_TipoNominaActiva = tnOrdinaria And NominaNuevaSesion And Not EditandoNominaGuardada Then
+
+        '-----------------------------------------------------
+        ' 1. VALIDAR EMPLEADOS
+        '-----------------------------------------------------
+
+        If Dm <= 0 Then
+            Err.Raise vbObjectError + 7302, "archnom_Click", "No existen registros de personal para archivar esta nomina."
+        End If
+
+        '-----------------------------------------------------
+        ' 2. CONSULTAR EL CMP ABIERTO
+        '
+        ' El archivo se encuentra abierto como #14.
+        ' Utilizar LOF(14).
+        '-----------------------------------------------------
+
+        If LOF(14) <= 0 Then
+            Err.Raise vbObjectError + 7304, "archnom_Click", "El complemento CMP se encuentra vacio." & vbCrLf & "No se archivara una nomina incompleta."
+        End If
+
+        '-----------------------------------------------------
+        ' 3. VALIDAR LONGITUD DE REGISTROS
+        '-----------------------------------------------------
+
+        If LOF(14) Mod Len(nom_com) <> 0 Then
+            Err.Raise vbObjectError + 7303, "archnom_Click", "El complemento CMP contiene registros incompletos."
+        End If
+
+        '-----------------------------------------------------
+        ' 4. VALIDAR CANTIDAD DE EMPLEADOS
+        '-----------------------------------------------------
+
+        If (LOF(14) \ Len(nom_com)) < Dm Then
+            Err.Raise vbObjectError + 7304, "archnom_Click", "El complemento CMP no contiene los registros necesarios."
+        End If
+    End If
+
+    '=========================================================
+    ' FIN DE LA VALIDACION
+    '
+    ' IMPORTANTE:
+    ' A PARTIR DE AQUI EL GUARDADO DEBE CONTINUAR
+    ' PARA AMBAS QUINCENAS Y TODAS LAS MODALIDADES.
+    '=========================================================
 
     'Conservar una copia del NOM en memoria.
     Close #6
 
-
-    
     hayRespaldo = False
     
     If Len(Dir$(RutaNominaSesion)) > 0 Then
@@ -4984,26 +4625,93 @@ Private Sub archnom_Click(Index As Integer)
         FechaCFDI_GuardarFicha RutaNominaSesion, CStr(MiFecha)
     End If
     
-    'Una vez completado el guardado, actualizar la version recuperable del CMP en memoria.
-    If EditandoNominaGuardada Then
-        If Not HayCopiaCmpEdicion Then
-            Err.Raise vbObjectError + 3021, , "No existe respaldo CMP en memoria."
+    
+    '=========================================================
+    ' RESPALDAR EL ULTIMO CMP GUARDADO CORRECTAMENTE
+    '
+    ' EDICION:
+    ' Conservar el comportamiento de respaldo actual.
+    '
+    ' NOMINA ORDINARIA NUEVA:
+    ' Guardar tambien una copia en memoria despues
+    ' de archivar por primera vez.
+    '
+    ' Esto permite descartar cambios posteriores
+    ' sin sobrescribir el CMP archivado.
+    '=========================================================
+
+    If EditandoNominaGuardada Or (g_TipoNominaActiva = tnOrdinaria And NominaNuevaSesion) Then
+
+        '-----------------------------------------------------
+        ' VERIFICAR RESPALDO PREVIO EN EDICION
+        '-----------------------------------------------------
+
+        If EditandoNominaGuardada Then
+            If Not HayCopiaCmpEdicion Then
+                Err.Raise vbObjectError + 3021, "archnom_Click", "No existe respaldo CMP en memoria."
+            End If
         End If
-    
+
+        '-----------------------------------------------------
+        ' LEER LA VERSION QUE ACABA DE GUARDARSE
+        '-----------------------------------------------------
+
         Close #14
-    
         LeerBytesArchivo RutaCmpSesion, copiaCmpActual
-    
+
+        '-----------------------------------------------------
+        ' RESTABLECER EL ACCESO NORMAL AL CMP
+        '-----------------------------------------------------
+
         Open RutaCmpSesion For Random As #14 Len = Len(nom_com)
+
+        '-----------------------------------------------------
+        ' ACTUALIZAR RESPALDO EN MEMORIA
+        '
+        ' La copia representa el ultimo guardado
+        ' exitoso, no los cambios posteriores.
+        '-----------------------------------------------------
+
         CopiarBytesMemoria copiaCmpActual, CopiaCmpEdicion
-    
+        HayCopiaCmpEdicion = True
     End If
+
+    '=========================================================
+    ' REGISTRAR NUEVA GENERACION DE NOMINA
+    '
+    ' Solamente cuando:
+    '
+    ' 1. Es una captura nueva.
+    ' 2. No estamos editando una nomina existente.
+    ' 3. La captura aun no tiene un guardado exitoso.
+    '
+    ' Evitar incrementar el historial al guardar
+    ' varias veces durante la misma sesion.
+    '=========================================================
+
+    If Not EditandoNominaGuardada And NominaNuevaSesion And Not NominaArchivadaSesion Then
+        RegistrarPrimerGuardadoNomina RutaNominaSesion
+    End If
+
+    '=====================================================
+    ' CONFIRMAR GUARDADO ORIGINAL
+    '=====================================================
+
+    '=====================================================
+    ' GUARDADO COMPLETADO CORRECTAMENTE
+    '
+    ' Este es el unico punto donde se confirma
+    ' que ya no existen cambios pendientes.
+    '=====================================================
 
     NominaArchivadaSesion = True
     GuardadoFallidoSesion = False
 
+    archiva_o = 0
+
     MsgBox "Archivada con exito!", vbInformation, "Nomina"
     Exit Sub
+
 
 
 ErrorGuardar:
@@ -5077,6 +4785,16 @@ Private Sub capacimp_Click(Index As Integer)
 End Sub
 
 Private Sub FuncionImpuesto()
+    '=====================================================
+    ' NO RECALCULAR NOMINAS EN CONSULTA
+    '
+    ' FuncionImpuesto utiliza sumah y puede
+    ' actualizar registros del complemento CMP.
+    '=====================================================
+
+    If Not AutorizarCambioNominaForm8() Then
+        Exit Sub
+    End If
     rrenat = ConNom1.Row
     rcolant = ConNom1.col
 
@@ -5295,6 +5013,46 @@ Private Sub Combo1_KeyPress(KeyAscii As Integer)
     End If
 End Sub
 
+'=========================================================
+' IDENTIFICAR FILA DE SUMAS
+'
+' Esta fila contiene los totales calculados
+' automaticamente mediante sumavert().
+'
+' Se permite:
+' - Seleccionar la fila.
+' - Navegar por sus columnas.
+' - Consultar los importes.
+'
+' Se impide:
+' - Modificar importes.
+' - Borrar cantidades.
+' - Abrir el editor de celdas.
+'
+' No modifica sumavert ni los calculos.
+'=========================================================
+
+Private Function EsFilaSumasCaptura() As Boolean
+    EsFilaSumasCaptura = False
+
+    'Validar que exista una fila seleccionada.
+    If ConNom1.Row <= 0 Then Exit Function
+    If ConNom1.Row >= ConNom1.Rows Then
+        Exit Function
+    End If
+
+    'sumavert coloca SUMAS despues del ultimo empleado.
+    If ConNom1.Row <> limite + 1 Then
+        Exit Function
+    End If
+
+    'Confirmar que sea realmente la fila de totales.
+    If InStr(1, ConNom1.TextMatrix(ConNom1.Row, C_NOMBRE), "S u m a s", vbTextCompare) = 0 Then
+        Exit Function
+    End If
+    EsFilaSumasCaptura = True
+End Function
+
 Private Sub ConNom1_EnterCell()
     If ConNom1.col > 1 And ConNom1.Row > 0 Then
         ConNom1.CellBackColor = &H80FF80
@@ -5303,24 +5061,51 @@ End Sub
 
 Private Sub ConNom1_KeyDown(KeyCode As Integer, Shift As Integer)
 
+    '=====================================================
+    ' PROTEGER FILA SUMAS
+    '
+    ' F2: No abrir el editor.
+    ' SUPR: No borrar importes.
+    '
+    ' Las flechas y Tab siguen funcionando.
+    '=====================================================
+
+    If EsFilaSumasCaptura() Then
+        Select Case KeyCode
+            Case vbKeyDelete, vbKeyF2
+                KeyCode = 0
+                Exit Sub
+        End Select
+    End If
+
+    '=====================================================
+    ' CONSERVAR PROTECCION DE SOLO CONSULTA
+    '=====================================================
+
+    If KeyCode = vbKeyDelete Or KeyCode = vbKeyF2 Then
+        If Not AutorizarCambioNominaForm8() Then
+            KeyCode = 0
+            Exit Sub
+        End If
+    End If
+
+    '=====================================================
+    ' COMPORTAMIENTO ORIGINAL DEL GRID
+    '=====================================================
+
     Select Case KeyCode
-
         Case vbKeyDelete
-
             If Not EsColumnaNumericaCaptura(ConNom1.col) Then
                 KeyCode = 0
                 Exit Sub
             End If
-
+            
             valcelant = ConNom1.Text
-
             ConNom1.Text = ""
             checar
-
             KeyCode = 0
 
         Case vbKeyF2
-
             If Not EsColumnaNumericaCaptura(ConNom1.col) Then
                 If ConNom1.col <> C_BANAMEX Then
                     KeyCode = 0
@@ -5329,24 +5114,50 @@ Private Sub ConNom1_KeyDown(KeyCode As Integer, Shift As Integer)
             End If
 
             valcelant = ConNom1.Text
-
+            
             If EsColumnaNumericaCaptura(ConNom1.col) And IsNumeric(ConNom1.Text) Then
-
                 'Retirar separadores de miles al editar.
                 Text2.Text = LTrim$(Str$(CCur(ConNom1.Text)))
-
             Else
                 Text2.Text = ConNom1.Text
             End If
-
             Text2.SetFocus
             KeyCode = 0
-
     End Select
-
 End Sub
 
 Private Sub ConNom1_KeyPress(KeyAscii As Integer)
+
+    '=====================================================
+    ' IMPEDIR ESCRITURA DIRECTA EN LA FILA SUMAS
+    '
+    ' Si el usuario selecciona una celda de totales
+    ' y empieza a escribir un numero, letra o simbolo,
+    ' no se abrira Text2.
+    '
+    ' Enter se conserva para la navegacion.
+    '=====================================================
+
+    If EsFilaSumasCaptura() Then
+        If KeyAscii <> vbKeyReturn Then
+            KeyAscii = 0
+        End If
+        Exit Sub
+    End If
+
+    '=====================================================
+    ' IMPEDIR APERTURA DEL EDITOR EN SOLO CONSULTA
+
+    '
+    ' Conservar Enter para navegacion.
+    '=====================================================
+
+    If KeyAscii <> vbKeyReturn Then
+        If Not AutorizarCambioNominaForm8() Then
+            KeyAscii = 0
+            Exit Sub
+        End If
+    End If
 
     '=========================================================
     ' AGUINALDO - PROTEGER COLUMNAS NO CAPTURABLES
@@ -5453,6 +5264,9 @@ Private Sub IniciarCapturaDesdeTeclado()
 End Sub
 
 Private Sub generarNominas()
+    Dim complementoNuevo As nomco
+    Dim indiceCMP As Long
+
     ProgressBar1.Visible = True
     QUIN = 0
   
@@ -5513,9 +5327,87 @@ Private Sub generarNominas()
         nm = 0
     End If
     
-    Open Arch1 For Random As 14 Len = Len(nom_com)
-    Open "bnxcla.dno" For Random As 12 Len = Len(Clbnx)
-    
+  
+    '=========================================================
+    ' INICIALIZAR COMPLEMENTO DE NOMINA NORMAL
+    '
+    ' Aplica para:
+    ' - Primera quincena nueva.
+    ' - Segunda quincena nueva.
+    '
+    ' No modifica nominas especiales.
+    ' No sobrescribe complementos existentes.
+    '=========================================================
+
+    Open Arch1 For Random As #14 Len = Len(nom_com)
+
+    If Option1.Value = True And nm = 0 Then
+
+        '-----------------------------------------------------
+        ' 1. COMPROBAR NUMERO DE EMPLEADOS
+        '-----------------------------------------------------
+
+        If Dm <= 0 Then
+            Err.Raise vbObjectError + 7401, "generarNominas", "No existen empleados para generar el complemento de nomina."
+        End If
+
+        '-----------------------------------------------------
+        ' 2. ESTABLECER CANTIDAD DE REGISTROS
+        '
+        ' ceroscompl utiliza fi_nm.
+        '
+        ' Debe recibir el numero real de empleados
+        ' tanto en primera como en segunda quincena.
+        '-----------------------------------------------------
+
+        fi_nm = Dm
+
+        '-----------------------------------------------------
+        ' 3. VALIDAR ESTRUCTURA DEL CMP EXISTENTE
+        '
+        ' No alterar archivos que ya contienen
+        ' registros incompletos.
+        '-----------------------------------------------------
+
+        If LOF(14) Mod Len(nom_com) <> 0 Then
+            Err.Raise vbObjectError + 7402, "generarNominas", "El complemento CMP contiene registros incompletos."
+        End If
+
+        '-----------------------------------------------------
+        ' 4. INICIALIZAR COMPLEMENTO NUEVO
+        '
+        ' Si el archivo tiene cero bytes, escribir
+        ' un registro por cada empleado.
+        '
+        ' Se conserva el tipo nomco original.
+        '-----------------------------------------------------
+
+        If LOF(14) = 0 Then
+            For indiceCMP = 1 To Dm
+                Put #14, indiceCMP, complementoNuevo
+            Next indiceCMP
+        Else
+
+            '-------------------------------------------------
+            ' CMP EXISTENTE
+            '
+            ' No completar silenciosamente un archivo
+            ' que podria proceder de una captura fallida.
+            '-------------------------------------------------
+
+            If (LOF(14) \ Len(nom_com)) < Dm Then
+                Err.Raise vbObjectError + 7403, "generarNominas", "El complemento CMP existente o contiene todos los registros." & vbCrLf & "Debe revisarse antes de continuar."
+            End If
+        End If
+    End If
+
+    '=========================================================
+    ' CONTINUAR CON LA APERTURA ORIGINAL
+    '=========================================================
+
+    Open "bnxcla.dno" For Random As #12 Len = Len(Clbnx)
+
+
     ProgressBar1.Min = 0
     ProgressBar1.Max = Dm
     ProgressBar1.Value = 0
@@ -5833,6 +5725,13 @@ Sub ceroscompl()
 End Sub
 
 Private Sub nomordeli_Click(Index As Integer)
+    'Solo permitir la operacion durante captura nueva o edicion autorizada.
+
+    If Not AutorizarCambioNominaForm8() Then
+        Exit Sub
+    End If
+
+    
     If ConNom1.Rows < 5 Then
         Exit Sub
     End If
@@ -6164,6 +6063,23 @@ Private Sub Text2_GotFocus()
 End Sub
 
 Private Sub Text2_KeyDown(KeyCode As Integer, Shift As Integer)
+    
+    '=====================================================
+    ' BLOQUEAR OPERACIONES DEL EDITOR SOBRE SUMAS
+    '
+    ' Incluye Escape, que en el procedimiento
+    ' original puede volver a escribir una celda.
+    '=====================================================
+
+    If EsFilaSumasCaptura() Then
+        KeyCode = 0
+        Exit Sub
+    End If
+
+    If Not AutorizarCambioNominaForm8() Then
+        KeyCode = 0
+        Exit Sub
+    End If
       Select Case KeyCode
          Case vbKeyEscape
            Text2.Text = ""
@@ -6177,6 +6093,29 @@ Private Sub Text2_KeyPress(KeyAscii As Integer)
 
     Dim columna As Long
     Dim textoSeleccionado As String
+    
+    '=====================================================
+    ' BLOQUEAR CONFIRMACION DE CAMBIOS EN SUMAS
+    '=====================================================
+
+    If EsFilaSumasCaptura() Then
+
+        KeyAscii = 0
+        Exit Sub
+
+    End If
+    
+    '=====================================================
+    ' IMPEDIR CONFIRMAR CAMBIOS EN SOLO CONSULTA
+    '=====================================================
+
+    If Not AutorizarCambioNominaForm8() Then
+
+        KeyAscii = 0
+
+        Exit Sub
+
+    End If
 
     columna = ConNom1.col
 
@@ -6272,6 +6211,10 @@ Private Sub Text2_LostFocus()
 End Sub
 
 Private Sub Text3_KeyPress(KeyAscii As Integer)
+    If Not AutorizarCambioNominaForm8() Then
+        KeyAscii = 0
+        Exit Sub
+    End If
     If KeyAscii = 13 Then
         KeyAscii = 0
         If g_TipoNominaActiva = tnPTU Then
@@ -6699,145 +6642,270 @@ ErrorEliminar:
     MsgBox "No fue posible completar la limpieza de archivos." & vbCrLf & "Error " & Err.Number & ": " & Err.Description & vbCrLf & "Revise los archivos antes de continuar.", vbCritical, "Nomina"
 
 End Function
-    
-    Private Function ConfirmarSalidaNomina() As Boolean
-        
-        Dim numeroErrorCMP As Long
-        Dim descripcionErrorCMP As String
-        Dim responde As VbMsgBoxResult
-        ConfirmarSalidaNomina = False
-    
-        ' Evitar procesos de salida simultaneos
-        If CerrandoForm8 Then Exit Function
-        
-        ' Si no hay captura activa, salir normalmente.
-        If Not CapturaActivaSesion Then
+
+Private Function ConfirmarSalidaNomina() As Boolean
+
+    Dim numeroErrorCMP As Long
+    Dim descripcionErrorCMP As String
+    Dim responde As VbMsgBoxResult
+
+    ConfirmarSalidaNomina = False
+
+    '=========================================================
+    ' 1. EVITAR CIERRES SIMULTANEOS
+    '=========================================================
+
+    If CerrandoForm8 Then Exit Function
+
+    '=========================================================
+    ' 2. NO EXISTE CAPTURA ACTIVA
+    '
+    ' No preguntar.
+    '=========================================================
+
+    If Not CapturaActivaSesion Then
+        ConfirmarSalidaNomina = True
+        Exit Function
+    End If
+
+    '=========================================================
+    ' 3. NOMINA ABIERTA EN SOLO CONSULTA
+    '
+    ' No se permite modificar ni archivar.
+    ' Cerrar directamente.
+    '=========================================================
+
+    If mSoloConsulta Then
+        ConfirmarSalidaNomina = True
+        Exit Function
+    End If
+
+    '=========================================================
+    ' 4. NOMINA YA GUARDADA SIN CAMBIOS PENDIENTES
+    '
+    ' Se utiliza el estado confirmado por
+    ' archnom_Click.
+    '
+    ' No volver a preguntar.
+    ' No ejecutar nuevamente archnom_Click.
+    ' No reescribir archivos NOM ni CMP.
+    '=========================================================
+
+    If NominaArchivadaSesion And archiva_o = 0 And Not GuardadoFallidoSesion And Not FalloRestauracionNom Then
+        ConfirmarSalidaNomina = True
+        Exit Function
+    End If
+
+    '=========================================================
+    ' 5. EXISTEN CAMBIOS SIN GUARDAR O ERROR PREVIO
+    '
+    ' Preguntar:
+    '
+    ' SI:
+    '   Intentar guardar y cerrar.
+    '
+    ' NO:
+    '   Descartar cambios y cerrar.
+    '
+    ' CANCELAR:
+    '   Permanecer en Form8.
+    '=========================================================
+
+    responde = MsgBox("Desea archivar la nomina antes de salir?" & vbCrLf & vbCrLf & "SI: Guardar y salir." & vbCrLf & "NO: Salir sin guardar cambios." & vbCrLf & "CANCELAR: Continuar capturando.", vbYesNoCancel + vbQuestion + vbDefaultButton3, "Salir de captura")
+
+    Select Case responde
+
+        '=====================================================
+        ' SI - GUARDAR Y SALIR
+        '=====================================================
+
+        Case vbYes
+
+            GuardandoDuranteCierre = True
+
+            'Utilizar el guardado original.
+            archnom_Click 1
+
+            GuardandoDuranteCierre = False
+
+            'No cerrar si el guardado fallo.
+            If GuardadoFallidoSesion Then
+                ConfirmarSalidaNomina = False
+                Exit Function
+            End If
+
+            'Comprobar que realmente se archivo.
+            If Not NominaArchivadaSesion Then
+                MsgBox "No se confirmo el guardado de la nomina.", vbExclamation, "Nomina"
+                Exit Function
+            End If
+
+            'Guardado confirmado.
             ConfirmarSalidaNomina = True
+
             Exit Function
-        End If
-    
+
         '=====================================================
-        ' CONFIRMAR LA SALIDA DE UNA CAPTURA ACTIVA
-        '
-        ' Preguntar siempre que exista una sesion activa,
-        ' incluso si la nomina fue archivada anteriormente.
-        '
-        ' SI: Guardar y salir.
-        ' NO: Salir sin guardar nuevos cambios.
-        ' CANCELAR: Continuar capturando.
+        ' NO - SALIR SIN GUARDAR NUEVOS CAMBIOS
         '=====================================================
-    
-        responde = MsgBox("Desea archivar la nomina antes de salir?" & vbCrLf & vbCrLf & "SI: Guardar y salir." & vbCrLf & "NO: Salir sin guardar." & vbCrLf & "CANCELAR: Continuar capturando.", vbYesNoCancel + vbQuestion + vbDefaultButton3, "Salir de captura")
-            
-        Select Case responde
-            Case vbYes
-    
-                'Guardar antes de permitir el cierre.
-                GuardandoDuranteCierre = True
-            
-                archnom_Click 1
-            
-                GuardandoDuranteCierre = False
-    
-                ' No salir si hubo un error al guardar
-                If GuardadoFallidoSesion Then Exit Function
-    
-                If Not NominaArchivadaSesion Then
-                    MsgBox "No se confirmo el guardado de la nomina.", vbExclamation, "Nomina"
-                    Exit Function
-                End If
-    
+
+        Case vbNo
+
+            '-------------------------------------------------
+            ' A. ERROR GRAVE DE RESTAURACION DEL NOM
+            '
+            ' No intentar nuevas escrituras.
+            ' Conservar archivos para revision.
+            '
+            ' Cerrar no equivale a confirmar que
+            ' los archivos sean recuperables.
+            '-------------------------------------------------
+
+            If FalloRestauracionNom Then
+                MsgBox "No fue posible verificar la recuperacion completa de la nomina." & vbCrLf & vbCrLf & "Se conservaran todos los archivos para su revision." & vbCrLf & "No se intentara otro guardado.", vbExclamation, "Archivos pendientes de revision"
                 ConfirmarSalidaNomina = True
-    
-           
-            Case vbNo
-                'Si estamos editando una nomina existente, descartar exclusivamente los cambios pendientes.
-                If EditandoNominaGuardada Then
-                    If FalloRestauracionNom Then
-                        MsgBox "No es seguro descartar los cambios porque fallo una restauracion anterior." & vbCrLf & "Revise los archivos de nomina.", vbCritical, "Proteccion de nomina"
-                        Exit Function
-                    End If
-            
-                    If Not HayCopiaCmpEdicion Then
-                        MsgBox "No existe una copia del CMP en memoria." & vbCrLf & "No se cerrara la captura.", vbCritical, "Proteccion de nomina"
-                        Exit Function
-                    End If
-            
+                Exit Function
+            End If
+
+            '-------------------------------------------------
+            ' B. NOMINA GUARDADA ANTERIORMENTE
+            '
+            ' Aplica a:
+            '
+            ' - Nomina existente abierta en edicion.
+            ' - Nomina ordinaria nueva ya archivada.
+            '
+            ' No reescribir el NOM.
+            '
+            ' Si el CMP tiene cambios posteriores,
+            ' restaurar el ultimo respaldo confirmado.
+            '-------------------------------------------------
+
+            If EditandoNominaGuardada Or NominaArchivadaSesion Then
+                If HayCopiaCmpEdicion Then
                     On Error GoTo ErrorRestaurarCmp
-            
-                    'Liberar el archivo antes de revisarlo.
+
+                    'Liberar el archivo antes de comparar
+                    'y, en su caso, restaurar sus bytes.
+
                     Close #14
-            
-                    'Restaurar solamente si el CMP cambio.
+
                     If Not ArchivoCoincideConMemoria(RutaCmpSesion, CopiaCmpEdicion) Then
                         RestaurarBytesArchivo RutaCmpSesion, CopiaCmpEdicion
                     End If
-            
                     On Error GoTo 0
-            
-                    'NOM no necesita restauracion aqui:
-                    'solo se escribe al guardar.
-                    ConfirmarSalidaNomina = True
-                    Exit Function
+
+                ElseIf EditandoNominaGuardada Then
+
+                    'No existe respaldo recuperable.
+                    'No borrar ni sobrescribir archivos.
+
+                    MsgBox "No existe una copia del complemento que permita descartar los cambios." & vbCrLf & vbCrLf & "Los archivos se conservaran para revision.", vbExclamation, "Proteccion de nomina"
                 End If
-    
-                ' Nunca borrar archivos de una sesion no registrada
-                If Not SesionTemporalRegistrada Then
-                    MsgBox "La captura no tiene archivos temporales " & "registrados." & vbCrLf & "Se conservaran los archivos y no se " & "cerrara automaticamente la captura.", vbExclamation, "Proteccion de nomina"
-                    Exit Function
-                End If
-    
-                ' No eliminar archivos despues de un guardado fallido
-                If GuardadoFallidoSesion Then
-                    MsgBox "Se produjo un error al guardar." & vbCrLf & "Los archivos deben conservarse para revision.", vbExclamation, "Proteccion de nomina"
-                    Exit Function
-                End If
-    
-                ' Si ya se archivo anteriormente, nunca eliminar
-                ' sus archivos, aunque existan cambios nuevos.
-                If NominaArchivadaSesion Then
-                    ConfirmarSalidaNomina = True
-                    Exit Function
-                End If
-    
-                ' Descartar archivos nuevos de esta sesion
-                If Not EliminarTemporalesSesion() Then
-                    Exit Function
-                End If
-    
-                SesionTemporalRegistrada = False
-                NominaNuevaSesion = False
-                CmpNuevoSesion = False
-    
+
+                'La nomina ya estaba guardada.
+                'No eliminar NOM ni CMP.
+
                 ConfirmarSalidaNomina = True
-    
-            Case vbCancel
-                ' Continuar capturando
+                Exit Function
+            End If
+
+            '-------------------------------------------------
+            ' C. CAPTURA NUEVA CON GUARDADO FALLIDO
+            '
+            ' Es importante NO eliminar archivos
+            ' generados durante un intento fallido.
+            '
+            ' Permitir cerrar Form8.
+            '-------------------------------------------------
+
+            If GuardadoFallidoSesion Then
+                MsgBox "La captura se cerrara sin realizar otro guardado." & vbCrLf & vbCrLf & "Los archivos existentes se conservaran para su revision.", vbInformation, "Cerrar captura"
+
+                ConfirmarSalidaNomina = True
+                Exit Function
+            End If
+
+            '-------------------------------------------------
+            ' D. CAPTURA NUEVA NUNCA GUARDADA
+            '
+            ' Solamente borrar archivos temporales
+            ' cuando su origen esta registrado.
+            '-------------------------------------------------
+
+            If Not SesionTemporalRegistrada Then
+
+                'No se conoce el origen de los archivos.
+                'Cerrar sin eliminarlos.
+
+                MsgBox "No se pudo confirmar el origen de los archivos temporales." & vbCrLf & "Se conservaran para revision.", vbExclamation, "Cerrar captura"
+                ConfirmarSalidaNomina = True
+                Exit Function
+            End If
+
+            '-------------------------------------------------
+            ' E. ELIMINAR SOLO TEMPORALES IDENTIFICADOS
+            '
+            ' No modifica nominas archivadas.
+            '-------------------------------------------------
+
+            If Not EliminarTemporalesSesion() Then
                 ConfirmarSalidaNomina = False
-        End Select
-        
-        Exit Function
-    
+                Exit Function
+            End If
+
+            SesionTemporalRegistrada = False
+            NominaNuevaSesion = False
+            CmpNuevoSesion = False
+
+            'Salir sin guardar.
+            ConfirmarSalidaNomina = True
+
+            Exit Function
+
+        '=====================================================
+        ' CANCELAR - PERMANECER EN FORM8
+        '=====================================================
+
+        Case vbCancel
+            ConfirmarSalidaNomina = False
+            Exit Function
+    End Select
+
+    Exit Function
+
+'=========================================================
+' ERROR AL DESCARTAR CAMBIOS DEL CMP
+'
+' No eliminar ni sobrescribir archivos adicionales.
+' Mantener Form8 abierto para evitar un descarte
+' incompleto y no confirmado.
+'=========================================================
+
 ErrorRestaurarCmp:
-    
-        numeroErrorCMP = Err.Number
-        descripcionErrorCMP = Err.Description
-    
-        'Intentar recuperar el acceso al CMP.
-        On Error Resume Next
-    
-        Close #14
-    
+
+    numeroErrorCMP = Err.Number
+    descripcionErrorCMP = Err.Description
+
+    On Error Resume Next
+
+    Close #14
+
+    'Intentar recuperar el acceso al complemento
+    'solamente si el archivo original existe.
+
+    If Len(RutaCmpSesion) > 0 Then
         If Len(Dir$(RutaCmpSesion, vbNormal Or vbHidden Or vbReadOnly Or vbSystem)) > 0 Then
             Open RutaCmpSesion For Random As #14 Len = Len(nom_com)
         End If
-    
-        On Error GoTo 0
-    
-        MsgBox "No fue posible descartar los cambios." & vbCrLf & "El formulario permanecera abierto." & vbCrLf & "No continue modificando hasta revisar el CMP." & vbCrLf & vbCrLf & "Error " & CStr(numeroErrorCMP) & ": " & _
-               descripcionErrorCMP, vbCritical, "Restauracion de nomina"
-        ConfirmarSalidaNomina = False
-    End Function
+    End If
+
+    On Error GoTo 0
+
+    MsgBox "No fue posible descartar completamente los cambios de esta nomina." & vbCrLf & vbCrLf & "El formulario permanecera abierto." & vbCrLf & "No se eliminara ningun archivo." & vbCrLf & vbCrLf & _
+        "Error " & CStr(numeroErrorCMP) & ": " & descripcionErrorCMP, vbCritical, "Restauracion de nomina"
+    ConfirmarSalidaNomina = False
+End Function
 
 Private Sub BloquearSeleccionNomina(ByVal bloquear As Boolean)
 
@@ -6881,6 +6949,17 @@ Private Sub ReiniciarEstadoSesion()
     FalloRestauracionNom = False
     
     GuardandoDuranteCierre = False
+
+    '=====================================================
+    ' RESTABLECER ESTADO DE CONSULTA
+    '
+    ' Una nueva instancia de Form8 no debe heredar
+    ' permisos de la nomina anterior.
+    '=====================================================
+
+    mSoloConsulta = False
+    mDetalleConsulta = ""
+
 End Sub
 
 Private Sub FinalizarSalidaNomina()
@@ -7465,6 +7544,25 @@ End Function
 
 Private Sub Text2_Change()
 
+    '=====================================================
+    ' NO REFLEJAR CAMBIOS SOBRE LA FILA SUMAS
+    '
+    ' La fila solamente puede actualizarse desde
+    ' los calculos originales de sumavert().
+    '=====================================================
+
+    If EsFilaSumasCaptura() Then
+        Exit Sub
+    End If
+
+    '=====================================================
+    ' IMPEDIR MODIFICACIONES DE CELDAS EN CONSULTA
+    '=====================================================
+
+    If Not AutorizarCambioNominaForm8() Then
+        Exit Sub
+    End If
+
     '=========================================================
     ' VALIDACION DE CAMBIO EN TIEMPO REAL
     '=========================================================
@@ -7496,15 +7594,13 @@ Private Sub Text2_Change()
             End If
         End If
     End If
-
-    '=========================================================
-    ' REFLEJAR EL IMPORTE EN LA CELDA
-    '
-    ' El recalculo se realiza al confirmar con Enter.
-    '=========================================================
-
     ConNom1.Text = Text2.Text
+End Sub
 
+Public Sub PrepararCapturaNuevaDesdeForm1()
+    RegresoModalDesdeVisor = False
+    RutaEdicionPendienteVisor = ""
+    PreparandoEdicionDesdeVisor = False
 End Sub
 
 Public Function ProgramarEdicionDesdeVisor(ByVal rutaNom As String) As Boolean
@@ -7516,134 +7612,142 @@ Public Function ProgramarEdicionDesdeVisor(ByVal rutaNom As String) As Boolean
         Exit Function
     End If
 
-    'Esta apertura se realizara modal desde FormViewer.
     RegresoModalDesdeVisor = True
-
     RutaEdicionPendienteVisor = rutaNom
-
     ProgramarEdicionDesdeVisor = True
 
 End Function
 
-
 Public Sub AbrirNominaGuardadaParaEditar(ByVal rutaNom As String)
+
     Dim rutaBase As String
     Dim rutaCmp As String
     Dim detalle As String
+
     Dim r As Long
     Dim yavas As Integer
+
     Dim errorNum As Long
     Dim errorTexto As String
+
     Dim rutaActiva As String
+
+    Dim totalMaestro As Long
+    Dim totalBnx As Long
+    Dim totalCmp As Long
+
+    Dim soloConsultaApertura As Boolean
 
     On Error GoTo ErrorAbrir
 
     If CapturaActivaSesion Then
-        Err.Raise vbObjectError + 2901, , "Existe otra captura activa. No se puede abrir la edicion."
+        Err.Raise vbObjectError + 2901, "AbrirNominaGuardadaParaEditar", "Ya existe una nomina abierta en Form8."
     End If
 
-    If Not PuedeModificarNomina5Dias(rutaNom, detalle) Then
-        Err.Raise vbObjectError + 2902, , detalle
-    End If
-
+    soloConsultaApertura = Not PuedeModificarNomina5Dias(rutaNom, detalle)
+    
     If InStrRev(rutaNom, "\") = 0 Then
-        Err.Raise vbObjectError + 2903, , "La ruta de nomina no es absoluta."
+        Err.Raise vbObjectError + 2903, "AbrirNominaGuardadaParaEditar", "La ruta de nomina no es absoluta."
+    End If
+    If UCase$(Right$(rutaNom, 4)) <> ".NOM" Then
+        Err.Raise vbObjectError + 2906, "AbrirNominaGuardadaParaEditar", "El archivo debe tener extension NOM."
     End If
 
     rutaBase = Left$(rutaNom, InStrRev(rutaNom, "\"))
     rutaCmp = Left$(rutaNom, Len(rutaNom) - 4) & ".cmp"
-
-    'generarNominas trabaja con nombres relativos en una carpeta activa.
-    'La edicion nunca debe apuntar a otra empresa o directorio.
+    
     rutaActiva = CurDir$
-    If Right$(rutaActiva, 1) <> "\" Then rutaActiva = rutaActiva & "\"
+
+    If Right$(rutaActiva, 1) <> "\" Then
+        rutaActiva = rutaActiva & "\"
+    End If
+
     If StrComp(rutaActiva, rutaBase, vbTextCompare) <> 0 Then
-        Err.Raise vbObjectError + 2904, , _
-            "El directorio activo no coincide con el de la nomina."
+        Err.Raise vbObjectError + 2904, "AbrirNominaGuardadaParaEditar", "El directorio activo no coincide con el de la nomina seleccionada."
+    End If
+    If Len(Dir$(rutaNom)) = 0 Then
+        Err.Raise vbObjectError + 2909, "AbrirNominaGuardadaParaEditar", "No existe el archivo NOM."
     End If
     If Len(Dir$(rutaCmp)) = 0 Then
-        Err.Raise vbObjectError + 2905, , "Falta el complemento CMP."
+        Err.Raise vbObjectError + 2905, "AbrirNominaGuardadaParaEditar", "Falta el complemento CMP."
     End If
 
-    'Guardar el CMP original exclusivamente en memoria.
-    'Cualquier modificacion no guardada podra descartarse.
-    
+    If FileLen(rutaNom) <= 0 Then
+        Err.Raise vbObjectError + 2910, "AbrirNominaGuardadaParaEditar", "El archivo NOM esta vacio."
+    End If
+
+    If FileLen(rutaNom) Mod Len(nomina) <> 0 Then
+        Err.Raise vbObjectError + 2911, "AbrirNominaGuardadaParaEditar", "El archivo NOM contiene registros incompletos."
+    End If
+
     HayCopiaCmpEdicion = False
     Erase CopiaCmpEdicion
-    
-    LeerBytesArchivo rutaCmp, CopiaCmpEdicion
-    
-    HayCopiaCmpEdicion = True
     FalloRestauracionNom = False
 
-    'FormViewer usa #2 y #8 y los cierra al salir.
+    If Not soloConsultaApertura Then
+        LeerBytesArchivo rutaCmp, CopiaCmpEdicion
+        HayCopiaCmpEdicion = True
+    End If
+    
     Close #2
     Close #8
     Close #6
     Close #12
     Close #14
 
-    Open rutaBase & "personal.dno" For Random As #2 Len = Len(personal)
-    Open rutaBase & "maestro.dno" For Random As #8 Len = Len(maestro)
-    Open rutaBase & "bnxcla.dno" For Random As #12 Len = Len(Clbnx)
-    Open rutaNom For Random As #6 Len = Len(nomina)
-    Open rutaCmp For Random As #14 Len = Len(nom_com)
+    If soloConsultaApertura Then
+        Open rutaBase & "personal.dno" For Random Access Read As #2 Len = Len(personal)
+        Open rutaBase & "maestro.dno" For Random Access Read As #8 Len = Len(maestro)
+        Open rutaBase & "bnxcla.dno" For Random Access Read As #12 Len = Len(Clbnx)
+        Open rutaNom For Random Access Read As #6 Len = Len(nomina)
+        Open rutaCmp For Random Access Read As #14 Len = Len(nom_com)
 
-    Dm = LOF(2) / Len(personal)
-    nm = LOF(6) / Len(nomina)
+    Else
+        Open rutaBase & "personal.dno" For Random As #2 Len = Len(personal)
+        Open rutaBase & "maestro.dno" For Random As #8 Len = Len(maestro)
+        Open rutaBase & "bnxcla.dno" For Random As #12 Len = Len(Clbnx)
+        Open rutaNom For Random As #6 Len = Len(nomina)
+        Open rutaCmp For Random As #14 Len = Len(nom_com)
+    End If
+
+    Dm = LOF(2) \ Len(personal)
+    nm = LOF(6) \ Len(nomina)
 
     If nm <= 0 Or nm > Dm Then
-        Err.Raise vbObjectError + 2907, , "Los registros NOM no corresponden a personal.dno."
+        Err.Raise vbObjectError + 2907, "AbrirNominaGuardadaParaEditar", "Los registros NOM no corresponden con personal.dno."
     End If
-    
-    '====================================================
-    ' VALIDAR SOLO LOS EMPLEADOS CON MOVIMIENTOS
-    '====================================================
-    
-    Dim totalMaestro As Long
-    Dim totalBnx As Long
-    Dim totalCmp As Long
-    
+
     totalMaestro = LOF(8) \ Len(maestro)
     totalBnx = LOF(12) \ Len(Clbnx)
     totalCmp = LOF(14) \ Len(nom_com)
-    
-    Debug.Print "=== VALIDACION DE EDICION ==="
-    Debug.Print "NOM: "; nm
-    Debug.Print "PERSONAL: "; Dm
-    Debug.Print "MAESTRO: "; totalMaestro
-    Debug.Print "BNXCLA: "; totalBnx
-    Debug.Print "CMP: "; totalCmp
-    
-    'Clasificar la nomina antes de verificar
-    'los movimientos de sus registros.
+
     AplicarTipoNomina rutaNom
-    
+
     For r = 1 To nm
         Get #6, r, nomina
-    
         yavas = 0
         verifica yavas
-    
+
         If yavas > 0 Then
             If r > totalMaestro Or r > totalBnx Or r > totalCmp Then
-                Debug.Print "FALTAN AUXILIARES PARA ID: "; r
-    
-                Err.Raise vbObjectError + 2908, , "Faltan registros auxiliares para el empleado ID " & CStr(r) & "." & vbCrLf & "MAESTRO: " & CStr(totalMaestro) & " / BNXCLA: " & CStr(totalBnx) & " / CMP: " & CStr(totalCmp)
+                Err.Raise vbObjectError + 2908, "AbrirNominaGuardadaParaEditar", "Faltan registros auxiliares para el empleado ID " & CStr(r) & "." & vbCrLf & "MAESTRO: " & CStr(totalMaestro) & " / BNXCLA: " & CStr(totalBnx) & " / CMP: " & CStr(totalCmp)
             End If
         End If
     Next r
-    
-    Debug.Print "Validacion de empleados correcta."
-        
-    '====================================================
-    ' RESTAURAR CONTEXTO DE PERIODO SIN RECALCULAR
-    '====================================================
-    
+
+    '=========================================================
+    ' 11. RECUPERAR EL CONTEXTO DE LA NOMINA
+    '
+    ' No generar nomina nueva.
+    ' No ejecutar FuncionImpuesto.
+    ' No ejecutar sumah.
+    '=========================================================
+
     QUIN = 0
-    
+
     If Option1.Value = True Then
         ReferOper.mes = Combo1.ListIndex + 1
+
         If Option3.Value = True Then
             QUIN = 1
             ReferOper.dia = 15
@@ -7652,76 +7756,175 @@ Public Sub AbrirNominaGuardadaParaEditar(ByVal rutaNom As String)
             ReferOper.dia = dd(ReferOper.mes)
         End If
     End If
-    
-    If Option2.Value Then
+
+    If Option2.Value = True Then
         N_ormal = 1
     Else
         N_ormal = 0
     End If
 
+    '=========================================================
+    ' 12. RECONSTRUIR LA CUADRICULA
+    '
+    ' Se utiliza el carganom original.
+    ' No modificar sus formulas ni campos.
+    '=========================================================
+
     ConNom1.Clear
     define
     ConNom1.Rows = nm + 2
     limite = 0
-
+    
     For r = 1 To nm
         Get #6, r, nomina
         yavas = 0
         verifica yavas
+
         If yavas > 0 Then
             Get #2, r, personal
             Get #8, r, maestro
             Get #14, r, nom_com
+            
             limite = limite + 1
+
             ConNom1.Row = limite
+
             ConNom1.col = C_NUM
+
             regtro = r
             rgtro = r
+
             ConNom1.Text = Format$(r, "#####")
+
             carganom
         End If
     Next r
 
+    '=========================================================
+    ' 13. MOSTRAR TOTALES ALMACENADOS
+    '
+    ' sumavert:
+    ' Mantener la suma vertical de las celdas.
+    '
+    ' No recalcular impuestos ni percepciones.
+    '=========================================================
+
     ConNom1.Rows = limite + 2
+
     sumavert
+
     If limite > 0 Then
         ConNom1.Row = 1
         ConNom1.col = C_DIAS
     End If
 
+    '=========================================================
+    ' 14. IDENTIFICAR LA SESION ABIERTA
+    '
+    ' La nomina ya existe en ambos modos.
+    '
+    ' Nunca debe considerarse temporal o nueva.
+    '=========================================================
+    
     RutaNominaSesion = rutaNom
     RutaCmpSesion = rutaCmp
     NominaNuevaSesion = False
     CmpNuevoSesion = False
     NominaArchivadaSesion = True
     GuardadoFallidoSesion = False
-    SesionTemporalRegistrada = True
+    SesionTemporalRegistrada = False
     CapturaActivaSesion = True
-    EditandoNominaGuardada = True
-    BloqueoPorPlazoEdicion = False
+
+    '=========================================================
+    ' 15. CONFIGURAR EL PERMISO DE MODIFICACION
+    '
+    ' CONSULTA:
+    ' EditandoNominaGuardada = False.
+    '
+    ' EDICION:
+    ' EditandoNominaGuardada = True.
+    '=========================================================
+
+    mSoloConsulta = soloConsultaApertura
+    mDetalleConsulta = detalle
+    EditandoNominaGuardada = Not soloConsultaApertura
+    BloqueoPorPlazoEdicion = soloConsultaApertura
     archiva_o = 0
+
+    '=========================================================
+    ' 16. BLOQUEAR SELECCION DE OTRA NOMINA
+    '=========================================================
+
     BloquearSeleccionNomina True
-    ConNom1.SetFocus
+
+    '=========================================================
+    ' 17. APLICAR PERMISOS DE CONSULTA
+    '=========================================================
+
+    If mSoloConsulta Then
+        AplicarModoConsultaForm8
+    Else
+        Me.Caption = "Nomina - EDICION"
+    End If
+
+    '=========================================================
+    ' 18. MOSTRAR LA CUADRICULA
+    '=========================================================
+
+    If Me.Visible And ConNom1.Visible Then
+        ConNom1.SetFocus
+    End If
+
+    '=========================================================
+    ' 19. INFORMAR CUANDO NO SE PERMITE EDITAR
+    '=========================================================
+
+    
+    '=========================================================
+    ' MENSAJE DE APERTURA DE NOMINA
+    '
+    ' Informar solamente el permiso concedido.
+    '
+    ' No mostrar:
+    ' - Rutas de archivos.
+    ' - Registros internos.
+    ' - Controles utilizados para validar fechas.
+    '=========================================================
+
+    If mSoloConsulta Then
+        MsgBox "Esta nomina se encuentra fuera del periodo permitido para modificaciones." & vbCrLf & vbCrLf & "Se ha abierto en modo SOLO CONSULTA." & vbCrLf & "Puede visualizar su informacion, pero no modificar sus importes.", _
+            vbInformation, "Nomina - Solo consulta"
+    Else
+        MsgBox "Esta nomina se encuentra dentro del plazo de cinco dias habiles para realizar modificaciones." & vbCrLf & vbCrLf & "La EDICION esta permitida.", vbInformation, "Nomina - Edicion permitida"
+    End If
     Exit Sub
 
 ErrorAbrir:
+
     errorNum = Err.Number
+
     errorTexto = Err.Description
+
     On Error Resume Next
+
     Close #6
     Close #14
     Close #12
     Close #8
     Close #2
-    
+
+    mSoloConsulta = False
+    mDetalleConsulta = ""
     EditandoNominaGuardada = False
     BloqueoPorPlazoEdicion = False
-    
     ReiniciarEstadoSesion
+    
     Open "personal.dno" For Random As #2 Len = Len(personal)
     Open "maestro.dno" For Random As #8 Len = Len(maestro)
     On Error GoTo 0
-    MsgBox "No se pudo abrir la nomina para editar." & vbCrLf & "Error " & CStr(errorNum) & ": " & errorTexto, vbExclamation, "Nomina"
+
+    MsgBox "No fue posible abrir la nomina." & vbCrLf & "Error " & CStr(errorNum) & ": " & errorTexto, vbExclamation, "Abrir nomina"
+
 End Sub
 
 Private Sub Form_Activate()
@@ -7923,19 +8126,47 @@ Private Sub Form_Activate()
 
     End If
 
-    'Leer el NOM y CMP existentes. No generar una nomina nueva.
+    
+    '=========================================================
+    ' ABRIR NOMINA GUARDADA EN FORM8
+    '
+    ' El mismo procedimiento puede devolver:
+    '
+    ' 1. Edicion autorizada.
+    ' 2. Consulta de solo lectura.
+    '
+    ' Ambos modos son aperturas validas.
+    '=========================================================
+
     AbrirNominaGuardadaParaEditar rutaNom
     PreparandoEdicionDesdeVisor = False
-    
-    If Not EditandoNominaGuardada Then
-        'Cerrar la ventana modal sin descargarla durante el evento de activacion.
+
+    '=========================================================
+    ' COMPROBAR SI LA CARGA SE REALIZO
+    '
+    ' No comprobar EditandoNominaGuardada:
+    '
+    ' En consulta esa variable sera False, aunque
+    ' la nomina se haya cargado correctamente.
+    '
+    ' CapturaActivaSesion sera True para ambos modos.
+    '=========================================================
+
+    If Not CapturaActivaSesion Then
+        'La apertura fallo.
+        'Conservar el regreso modal existente.
         Me.Hide
         Exit Sub
     End If
 
+    '=========================================================
+    ' LA NOMINA ESTA CARGADA
+    '
+    ' No cerrar Form8.
+    ' No redirigir al Viewer.
+    '=========================================================
+
     Exit Sub
-
-
 ErrorEdicion:
     PreparandoEdicionDesdeVisor = False
     MsgBox "No se pudo preparar la edicion." & vbCrLf & "Error " & Err.Number & ": " & Err.Description, vbExclamation, "Modificar nomina"
@@ -8720,6 +8951,184 @@ Private Function ValidarCapturaLiquidacionNueva() As Boolean
         End If
     Next fila
     ValidarCapturaLiquidacionNueva = True
+End Function
+
+Private Sub AplicarModoConsultaForm8()
+
+    '=========================================================
+    ' FORM8 - MODO SOLO CONSULTA
+    '
+    ' IMPORTANTE:
+    '
+    ' Este procedimiento NO modifica importes.
+    ' NO recalcula percepciones.
+    ' NO archiva NOM ni CMP.
+    '
+    ' Solamente deshabilita las operaciones que
+    ' podrian modificar informacion.
+    '
+    ' Las opciones de impresion y exportacion
+    ' permanecen disponibles.
+    '=========================================================
+
+        'Aplicar tanto a consulta como a una
+    'edicion cuyo plazo acaba de vencer.
+
+    If Not mSoloConsulta And Not BloqueoPorPlazoEdicion Then
+        Exit Sub
+    End If
+
+    If mSoloConsulta Then
+        Me.Caption = "Nomina - SOLO CONSULTA"
+    Else
+        Me.Caption = "Nomina - EDICION VENCIDA"
+    End If
+    '=========================================================
+    ' 2. IMPEDIR GUARDADO Y NUEVAS CAPTURAS
+    '=========================================================
+
+    archnom(2).Enabled = False
+    nomcap_ini(1).Enabled = False
+    capturaGeneral.Enabled = False
+
+    '=========================================================
+    ' 3. IMPEDIR MODIFICACIONES DESDE LOS MENUS
+    '=========================================================
+
+    funcionPegar.Enabled = False
+    Importar.Enabled = False
+    Borrar.Enabled = False
+
+    'No abrir la edicion del archivo de personal
+    'desde una consulta de nomina.
+
+    edicionPersonalCaptura.Enabled = False
+
+    '=========================================================
+    ' 4. DESHABILITAR RECALCULOS MANUALES
+    '
+    ' En este proyecto estas operaciones pueden
+    ' actualizar ISR, IMSS y el complemento CMP.
+    '
+    ' Los importes se consultaran tal como fueron
+    ' almacenados.
+    '=========================================================
+
+    capact(0).Enabled = False
+
+    '=========================================================
+    ' 5. DESHABILITAR ORDENAMIENTOS Y ELIMINACIONES
+    '
+    ' Evitar cambios accidentales sobre las filas
+    ' de la cuadricula cargada.
+    '=========================================================
+
+    capnomord(0).Enabled = False
+
+    '=========================================================
+    ' 6. BLOQUEAR LOS EDITORES DE CELDAS
+    '
+    ' El grid permanecera habilitado para:
+    ' - Consultar importes.
+    ' - Desplazarse por filas y columnas.
+    ' - Seleccionar y copiar informacion.
+    '=========================================================
+
+    Text2.Enabled = False
+    Text3.Enabled = False
+    ConNom1.Enabled = True
+
+    '=========================================================
+    ' 7. CFDI
+    '
+    ' Una nomina fuera del plazo interno no debe
+    ' iniciar timbrado desde esta ruta.
+    '
+    ' La politica fiscal definitiva de timbrado
+    ' se verificara por separado.
+    '=========================================================
+
+    CFDI2.Enabled = False
+
+    '=========================================================
+    ' 8. CONSERVAR OPERACIONES DE CONSULTA
+    '
+    ' No modificar:
+    '
+    ' capnoimp     = Impresion
+    ' exportar     = Exportacion
+    ' CapArch      = Archivo Banamex
+    ' EdNomCopiar  = Copiar
+    ' capnosal     = Salir
+    '
+    ' IMPORTANTE:
+    ' No se habilitan opciones que originalmente
+    ' estuvieran deshabilitadas por otras razones.
+    '=========================================================
+
+End Sub
+
+Private Function AutorizarCambioNominaForm8() As Boolean
+
+    Dim detalle As String
+    AutorizarCambioNominaForm8 = False
+
+    '=========================================================
+    ' 1. NOMINA ABIERTA EN SOLO CONSULTA
+    '
+    ' No autorizar cambios de importes.
+    '=========================================================
+
+    If mSoloConsulta Then Exit Function
+
+    '=========================================================
+    ' 2. EDICION QUE YA FUE BLOQUEADA
+    '
+    ' La sesion debe cerrarse descartando los
+    ' cambios pendientes.
+    '=========================================================
+
+    If BloqueoPorPlazoEdicion Then Exit Function
+
+    '=========================================================
+    ' 3. NOMINA GUARDADA EN MODO EDICION
+    '
+    ' Comprobar el plazo nuevamente.
+    '
+    ' Esto evita que una ventana abierta antes
+    ' del vencimiento permita continuar editando
+    ' despues de la fecha limite.
+    '=========================================================
+
+    If EditandoNominaGuardada Then
+        If Len(RutaNominaSesion) = 0 Then
+            Exit Function
+        End If
+
+        If Not PuedeModificarNomina5Dias(RutaNominaSesion, detalle) Then
+            BloqueoPorPlazoEdicion = True
+            mDetalleConsulta = detalle
+
+            'Bloquear nuevas operaciones modificadoras.
+            AplicarModoConsultaForm8
+
+            MsgBox "El plazo de edicion de esta nomina ha finalizado." & vbCrLf & vbCrLf & detalle & vbCrLf & vbCrLf & "Los cambios pendientes no podran guardarse." & vbCrLf & "Cierre la ventana y seleccione NO " & _
+                   "cuando se pregunte si desea guardar, para restaurar el CMP original.", vbExclamation, "Edicion vencida"
+            Exit Function
+        End If
+    End If
+
+    '=========================================================
+    ' 4. AUTORIZAR
+    '
+    ' Captura nueva:
+    '   Funcionamiento original.
+    '
+    ' Edicion vigente:
+    '   Funcionamiento original.
+    '=========================================================
+
+    AutorizarCambioNominaForm8 = True
 End Function
 
 

@@ -801,19 +801,31 @@ ErrorSubir:
 End Sub
 
 Private Sub File1_KeyPress(KeyAscii As Integer)
+
     Dim archivoDirectorio As String
     Dim rutaCompleta As String
+
     Dim numeroError As Long
     Dim descripcionError As String
 
-    If KeyAscii <> 13 Then Exit Sub
+    '=========================================================
+    ' ABRIR NOMINA CON ENTER DESDE FORM1
+    '
+    ' FormViewer permanece en el proyecto.
+    '
+    ' La apertura principal utilizara Form8.
+    '=========================================================
 
+    If KeyAscii <> vbKeyReturn Then Exit Sub
     KeyAscii = 0
+
+    '=========================================================
+    ' 1. IDENTIFICAR EL ARCHIVO SELECCIONADO
+    '=========================================================
 
     archivoDirectorio = Trim$(File1.FileName)
 
-    If archivoDirectorio = "" Then Exit Sub
-
+    If Len(archivoDirectorio) = 0 Then Exit Sub
     If Right$(File1.Path, 1) = "\" Then
         rutaCompleta = File1.Path & archivoDirectorio
     Else
@@ -822,54 +834,83 @@ Private Sub File1_KeyPress(KeyAscii As Integer)
 
     On Error GoTo ErrorAbrir
 
-    Load FormViewer
-    FormViewer.LoadPayroll rutaCompleta
+    '=========================================================
+    ' 2. COMPROBAR EL ARCHIVO
+    '=========================================================
 
-    If Not FormViewer.CargaCorrecta Then
-        Unload FormViewer
-
-        File1.Refresh
-        File1.SetFocus
-
+    If UCase$(Right$(rutaCompleta, 4)) <> ".NOM" Then
+        MsgBox "Seleccione un archivo de nomina NOM.", vbExclamation, "Abrir nomina"
         Exit Sub
     End If
 
+    If Len(Dir$(rutaCompleta)) = 0 Then
+        MsgBox "El archivo seleccionado no existe.", vbExclamation, "Abrir nomina"
+        Exit Sub
+    End If
+
+    '=========================================================
+    ' 3. PREPARAR FORM8
+    '
+    ' No modificar FormViewer.
+    '
+    ' Reutilizar el mecanismo que ya existe
+    ' para pasar una ruta a Form8.
+    '=========================================================
+
+    Load Form8
+
+    If Not Form8.ProgramarEdicionDesdeVisor(rutaCompleta) Then
+        Exit Sub
+    End If
+
+    '=========================================================
+    ' 4. ABRIR FORM8
+    '
+    ' Form_Activate identificara:
+    '
+    ' - Normal o especial.
+    ' - Mes y quincena.
+    ' - Permiso de edicion.
+    ' - Modo consulta.
+    '
+    ' Form8 permanece modal respecto de Form1.
+    '=========================================================
+
+    Form8.Show vbModal, Me
+
+    '=========================================================
+    ' 5. REGRESAR A FORM1
+    '
+    ' Al finalizar Form8, continuar en la lista
+    ' de nominas sin modificar sus archivos.
+    '=========================================================
     
-    '=====================================================
-    ' FORMVIEWER - MANTENER LA APLICACION ACCESIBLE
-    '
-    ' Form1 permanece visible como propietario.
-    ' FormViewer conserva su comportamiento modal.
-    '
-    ' Alt + Tab podra seleccionar la ventana principal
-    ' y regresar al formulario modal activo.
-    '=====================================================
-
-    FormViewer.Show vbModal, Me
-
-    'Conservar la instruccion original de retorno.
-    Me.Show
-
+    Unload Form8
     File1.Refresh
-    File1.SetFocus
-
+    If Me.Visible And File1.Visible Then
+        File1.SetFocus
+    End If
     Exit Sub
 
 ErrorAbrir:
+
     numeroError = Err.Number
     descripcionError = Err.Description
 
     On Error Resume Next
 
-    Unload FormViewer
+    'No descargar una instancia que tenga una captura activa. Evitar perder su estado.
 
-    Me.Show
     File1.Refresh
-    File1.SetFocus
+
+    If Me.Visible And File1.Visible Then
+        File1.SetFocus
+    End If
 
     On Error GoTo 0
 
-    MsgBox "No fue posible abrir la nómina." & vbCrLf & "Error " & numeroError & ": " & descripcionError, vbCritical, "Visor de nómina"
+    MsgBox "No fue posible abrir la nomina." & vbCrLf & "Error " & CStr(numeroError) & ": " & descripcionError, vbCritical, "Abrir nomina"
+
 End Sub
 
 ' ============================================================
@@ -913,18 +954,23 @@ Private Sub NomAcu_Click(Index As Integer)
 End Sub
 
 Private Sub nomcap_Click(Index As Integer)
-    Close 2
-    Open "personal.dno" For Random As 2 Len = Len(personal)
+
+    Close #2
+
+    Open "personal.dno" For Random As #2 Len = Len(personal)
 
     Dm = LOF(2) / Len(personal)
 
     If Dm > 0 Then
-        Form1.Hide
         Load Form8
-        Form8.Show
+
+        Form8.PrepararCapturaNuevaDesdeForm1
         Form1.Hide
+        Form8.Show
+
     Else
-        Close 2
+        Close #2
+
         MsgBox "No existe archivo de personal no es posible capturar nomina", vbCritical + vbDefaultButton1, "Nomina"
     End If
 End Sub
