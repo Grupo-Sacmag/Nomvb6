@@ -446,94 +446,42 @@ Public Sub LoadPayroll(ByVal fName As String)
         GoTo Salida
 
     End If
-
-    '========================================================
-    ' 6. IDENTIFICAR TIPO DE NOMINA
-    '========================================================
-
+    
     etapaCarga = "AplicarTipoNomina"
-
-    ' Usar la ruta completa para comprobar marca interna 20261010.
     AplicarTipoNomina Arch
 
-    If EsNominaNormal(nameOnly) Then
-
+    
+    If g_TipoNominaActiva = tnOrdinaria And Not g_EspecialHistorica Then
         N_ormal = 0
         diat = 15
-
     Else
-
         N_ormal = 1
         diat = 0
-
     End If
 
-    Debug.Print "Tipo de nomina: "; g_TipoNominaActiva
-    Debug.Print "N_ormal: "; N_ormal
-    Debug.Print "C_EXENTA: "; C_EXENTA
-    Debug.Print "C_NETO: "; C_NETO
-    Debug.Print "C_TOTCOLS: "; C_TOTCOLS
-
-    '========================================================
-    ' 7. CONSTRUIR RUTAS
-    '========================================================
-
     etapaCarga = "Construir rutas de archivos"
-
     Arch = fName
-
-    Arch1 = rutaBase & _
-            Left$(nameOnly, Len(nameOnly) - 4) & ".cmp"
-
-    Debug.Print "NOM: "; Arch
-    Debug.Print "CMP: "; Arch1
-
-    '========================================================
-    ' 8. ABRIR NOMINA
-    '========================================================
-
+    Arch1 = rutaBase & Left$(nameOnly, Len(nameOnly) - 4) & ".cmp"
     etapaCarga = "Abrir archivo NOM"
 
     Open Arch For Random As #6 Len = Len(nomina)
 
     nm = LOF(6) / Len(nomina)
 
-    Debug.Print "Registros NOM: "; nm
-
     If nm <= 0 Then
-
-        MsgBox "El archivo de n mina est  vac o o " & _
-               "no contiene registros.", _
-               vbInformation, "Visor de N mina"
-
+        MsgBox "El archivo de n mina est  vac o o no contiene registros.", vbInformation, "Visor de N mina"
         GoTo Salida
-
     End If
-
-    '========================================================
-    ' 9. ABRIR ARCHIVOS AUXILIARES
-    '========================================================
-
+    
     etapaCarga = "Abrir archivos auxiliares"
 
     Open Arch1 For Random As #14 Len = Len(nom_com)
-
     Open rutaBase & "bnxcla.dno" For Random As #12 Len = Len(Clbnx)
-
     Open rutaBase & "maestro.dno" For Random As #8 Len = Len(maestro)
 
     totalCmp = LOF(14) / Len(nom_com)
     totalBnx = LOF(12) / Len(Clbnx)
     totalMaestro = LOF(8) / Len(maestro)
-
-    Debug.Print "Registros CMP: "; totalCmp
-    Debug.Print "Registros BNX: "; totalBnx
-    Debug.Print "Registros Maestro: "; totalMaestro
-
-    '========================================================
-    ' 10. DETERMINAR NUMERO DE REGISTROS
-    '========================================================
-
     etapaCarga = "Determinar numero de registros"
 
     If nm < Dm Then
@@ -542,21 +490,10 @@ Public Sub LoadPayroll(ByVal fName As String)
         fi_nm = Dm
     End If
 
-    Debug.Print "Registros a procesar: "; fi_nm
-
     If fi_nm <= 0 Then
-
-        MsgBox "No existen registros compatibles entre " & _
-               "la n mina y personal.dno.", _
-               vbInformation, "Visor de N mina"
-
+        MsgBox "No existen registros compatibles entre la n mina y personal.dno.", vbInformation, "Visor de N mina"
         GoTo Salida
-
     End If
-
-    '========================================================
-    ' 11. PREPARAR GRID
-    '========================================================
 
     etapaCarga = "Preparar grid"
 
@@ -571,29 +508,12 @@ Public Sub LoadPayroll(ByVal fName As String)
     ConNom1.col = 0
     ConNom1.ColSel = 0
 
-    Debug.Print "ANTES DE DEFINE"
-    Debug.Print "Rows: "; ConNom1.Rows
-    Debug.Print "Cols: "; ConNom1.Cols
-
-    '========================================================
-    ' 12. DEFINIR ENCABEZADOS
-    '========================================================
-
     etapaCarga = "Ejecutar define"
 
     define
 
-    Debug.Print "DESPUES DE DEFINE"
-    Debug.Print "Rows: "; ConNom1.Rows
-    Debug.Print "Cols: "; ConNom1.Cols
-    Debug.Print "Cols esperadas: "; C_TOTCOLS
-
     limite = 0
     renglon = 0
-
-    '========================================================
-    ' 13. PROGRESSBAR
-    '========================================================
 
     etapaCarga = "Inicializar ProgressBar"
 
@@ -602,46 +522,23 @@ Public Sub LoadPayroll(ByVal fName As String)
     ProgressBar1.Max = fi_nm
     ProgressBar1.Value = 0
 
-    '========================================================
-    ' 14. LEER REGISTROS
-    '========================================================
-
     For r = 1 To fi_nm
-
         registroActual = r
         etapaCarga = "Actualizar ProgressBar"
-
         ProgressBar1.Value = r
-
-        '--------------------------------------------
-        ' NOMINA
-        '--------------------------------------------
-
         etapaCarga = "Leer registro NOM"
 
         Get #6, r, nomina
 
-        '--------------------------------------------
-        ' PERSONAL
-        '--------------------------------------------
-
         etapaCarga = "Leer registro PERSONAL"
 
         Get #2, r, personal
-
-        '--------------------------------------------
-        ' MAESTRO
-        '--------------------------------------------
-
+        
         etapaCarga = "Leer registro MAESTRO"
 
         If r <= totalMaestro Then
             Get #8, r, maestro
         End If
-
-        '--------------------------------------------
-        ' CMP
-        '--------------------------------------------
 
         etapaCarga = "Leer registro CMP"
 
@@ -649,23 +546,13 @@ Public Sub LoadPayroll(ByVal fName As String)
             Get #14, r, nom_com
         End If
 
-        '--------------------------------------------
-        ' VERIFICAR INFORMACION
-        '--------------------------------------------
-
         etapaCarga = "Ejecutar verifica"
 
         yavas = 0
         verifica yavas
 
         If yavas > 0 Then
-
-            '----------------------------------------
-            ' AUMENTAR RENGLON
-            '----------------------------------------
-
             etapaCarga = "Preparar renglon"
-
             renglon = renglon + 1
 
             If renglon >= ConNom1.Rows Then
@@ -970,44 +857,21 @@ Sub carganom()
 
         If N_ormal = 1 Then
             If g_TipoNominaActiva = tnAguinaldo Then
-
-                'El usuario debe visualizar el importe bruto.
-                'La exenta ya esta dentro de ese importe.
-
-                PonCel liLocal, C_CONC5, nomina.aguin + nomina.exentos
-
+                PonCel liLocal, C_CONC5, nomina.aguin
             Else
-
-                'Resto de especiales:
-                'mantener comportamiento anterior.
-
                 PonCel liLocal, C_CONC5, nomina.aguin
             End If
             ingresosLocal = ingresosLocal + nomina.aguin
 
         Else
-            'Nomina ordinaria.
             PonCel liLocal, C_CONC5, nomina.hs_dbl
             ingresosLocal = ingresosLocal + nomina.hs_dbl
 
         End If
-
-        '=====================================================
-        ' COLUMNA 6 - COMPORTAMIENTO ORIGINAL
-        '=====================================================
-        '=========================================================
-        ' VIEWER - PTU ESPECIAL
-        '
-        ' El archivo NOM guarda:
-        '   nomina.ptu     = Gravado
-        '   nomina.exentos = Exento
-        '
-        ' El Viewer muestra el TOTAL de PTU.
-        '=========================================================
-    
+        
         If N_ormal = 1 Then
             If g_TipoNominaActiva = tnPTU Then
-                PonCel liLocal, C_CONC6, nomina.ptu + nomina.exentos
+                PonCel liLocal, C_CONC6, nomina.ptu
             Else
                 PonCel liLocal, C_CONC6, nomina.ptu
             End If
@@ -1109,40 +973,47 @@ Sub define()
     Encab C_DIAS, "dias T.", 1200
     Encab C_SUELDO, "Sueldo", 1200
 
-    If g_TipoNominaActiva = tnLiquidacionFiniquito Then
-        If Not EsSeparacionNueva() Then
-            ' LEGACY: conservar exactamente los textos y anchos anteriores.
-            Encab C_LQ_SDOVAC, "Sdo.Vac.", 1200
-            Encab C_LQ_PRIMAVAC, "P.Vacac.", 1200
-            Encab C_LQ_AGUI, "Aguinaldo", 1200
-            Encab C_LQ_ANTIG, "P.Antig.", 1200
-            Encab C_LQ_COMPENS, "Compens.", 1200
-            Encab C_LQ_INDEMN, "Indemn.", 1200
-            Encab C_LQ_BONO, "BONO", 1200
-        Else
-            ' Nuevo: solo los conceptos definidos para FINI o LIQ.
-            If C_LQ_SDOVAC >= 0 Then
-                Encab C_LQ_SDOVAC, "Sdo.Vacaciones", 1450
-            End If
-            If C_LQ_AGUI >= 0 Then
-                Encab C_LQ_AGUI, "Aguinaldo", 1200
-            End If
-            If C_LQ_ANTIG >= 0 Then
-                Encab C_LQ_ANTIG, "Prima Antiguedad", 1450
-            End If
-            If C_LQ_COMPENS >= 0 Then
-                Encab C_LQ_COMPENS, "Compensaciones", 1450
-            End If
-            If C_LQ_INDEMN >= 0 Then
-                Encab C_LQ_INDEMN, "Indemnizacion", 1450
-            End If
-            If C_LQ_BONO >= 0 Then
-                Encab C_LQ_BONO, "Bono", 1200
-            End If
-            If C_LQ_PRIMAVAC >= 0 Then
-                Encab C_LQ_PRIMAVAC, "Prima Vacacional", 1450
-            End If
+    If g_EspecialHistorica Then
+        Encab C_CONC4, "hs.Norm.", 1200
+        Encab C_CONC5, "Aguinaldo", 1200
+        Encab C_CONC6, "Ptu", 1200
+        Encab C_CONC7, "Premio punt.", 1200
+        Encab C_CONC8, "P.Vacac.", 1200
+    ElseIf g_TipoNominaActiva = tnLiquidacionFiniquito Then
+    
+    If Not EsSeparacionNueva() Then
+        ' LEGACY: conservar exactamente los textos y anchos anteriores.
+        Encab C_LQ_SDOVAC, "Sdo.Vac.", 1200
+        Encab C_LQ_PRIMAVAC, "P.Vacac.", 1200
+        Encab C_LQ_AGUI, "Aguinaldo", 1200
+        Encab C_LQ_ANTIG, "P.Antig.", 1200
+        Encab C_LQ_COMPENS, "Compens.", 1200
+        Encab C_LQ_INDEMN, "Indemn.", 1200
+        Encab C_LQ_BONO, "BONO", 1200
+    Else
+        ' Nuevo: solo los conceptos definidos para FINI o LIQ.
+        If C_LQ_SDOVAC >= 0 Then
+            Encab C_LQ_SDOVAC, "Sdo.Vacaciones", 1450
         End If
+        If C_LQ_AGUI >= 0 Then
+            Encab C_LQ_AGUI, "Aguinaldo", 1200
+        End If
+        If C_LQ_ANTIG >= 0 Then
+            Encab C_LQ_ANTIG, "Prima Antiguedad", 1450
+        End If
+        If C_LQ_COMPENS >= 0 Then
+            Encab C_LQ_COMPENS, "Compensaciones", 1450
+        End If
+        If C_LQ_INDEMN >= 0 Then
+            Encab C_LQ_INDEMN, "Indemnizacion", 1450
+        End If
+        If C_LQ_BONO >= 0 Then
+            Encab C_LQ_BONO, "Bono", 1200
+        End If
+        If C_LQ_PRIMAVAC >= 0 Then
+            Encab C_LQ_PRIMAVAC, "Prima Vacacional", 1450
+        End If
+    End If
     Else
         ' MANTENER las columnas de normales, aguinaldo, PTU y bono.
         Encab C_CONC4, "hs.Norm.", 1200
@@ -1212,8 +1083,7 @@ Sub verifica(yavas)
     If nomina.hsnor <> 0 Then yavas = 1
 
     If nomina.hstri <> 0 Then
-        If Not (EsSeparacionNueva() And _
-                nomina.hstri = CCur(MARCA_SEPARACION_2026)) Then
+        If Not EsMarcaEspecialNueva(nomina.hstri) Then
             yavas = 1
         End If
     End If
@@ -1563,13 +1433,17 @@ Private Sub mnuCopiarTodo_Click()
 End Sub
 
 Private Sub MnuEditarNomina_Click()
-
     Dim detalle As String
     Dim rutaNom As String
     Dim carpetaNom As String
     Dim carpetaSeleccionada As String
 
     If Not CargaCorrecta Then Exit Sub
+    
+    If g_EspecialHistorica Then
+        MsgBox "Esta nomina utiliza el formato historico." & vbCrLf & "Solo se permite su consulta.", vbInformation, "Nomina historica"
+    Exit Sub
+    End If
 
     rutaNom = Arch
 
@@ -2054,24 +1928,19 @@ Private Sub Encab(ByVal c As Long, ByVal txt As String, ByVal ancho As Long)
 End Sub
 
 Private Sub ActualizarVisibilidadEdicionNomina()
-
     Dim detalle As String
     Dim puedeEditar As Boolean
 
-    'Ocultar inicialmente el menu.
+
     MnuEditarNomina.Visible = False
     MnuEditarNomina.Enabled = False
 
-    'No permitir edicion sin nomina cargada.
     If Not CargaCorrecta Then Exit Sub
-
-    'Validar que exista la ruta de nomina.
+    If g_EspecialHistorica Then Exit Sub
     If Len(Trim$(Arch)) = 0 Then Exit Sub
-
-    'Consultar el plazo de cinco dias.
+    
     puedeEditar = PuedeModificarNomina5Dias(Arch, detalle)
-
-    'Mostrar exclusivamente dentro del plazo.
+    
     MnuEditarNomina.Visible = puedeEditar
     MnuEditarNomina.Enabled = puedeEditar
 

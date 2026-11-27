@@ -1,11 +1,6 @@
 Attribute VB_Name = "modColumnas"
 Option Explicit
-'============================================================
-' modColumnas - Indices de ConNom1
-' Normales: indices tradicionales INALTERADOS.
-' Liq/Fini legacy: indices actuales INALTERADOS.
-' Liq/Fini nuevo: seis percepciones en orden solicitado.
-'============================================================
+
 Public C_NUM As Long, C_NOMBRE As Long, C_DIAS As Long
 Public C_SUELDO As Long
 Public C_CONC4 As Long, C_CONC5 As Long, C_CONC6 As Long
@@ -22,15 +17,32 @@ Public C_BANAMEX As Long, C_TOTCOLS As Long
 Public C_PERC_INI As Long, C_PERC_FIN As Long
 Public C_DED_INI As Long, C_DED_FIN As Long
 
-' Campo version en .hstri SOLO para Liq/Fini nuevos.
-' Se respeta Type nom; Len(nomina) no cambia.
 Public Const MARCA_SEPARACION_2026 As Long = 20261010
+
+Public Const MARCA_AGUINALDO_2027 As Long = 20270121
+Public Const MARCA_PTU_2027 As Long = 20270122
+Public Const MARCA_BONO_2027 As Long = 20270123
+Public Const MARCA_FINIQUITO_2027 As Long = 20270124
+Public Const MARCA_LIQUIDACION_2027 As Long = 20270125
+
 Public g_FormatoSeparacionNuevo As Boolean
 Public g_EsFiniquito As Boolean
+Public g_EspecialHistorica As Boolean
+Public g_MarcaFormatoNomina As Currency
 
 Public Function EsSeparacionNueva() As Boolean
-    EsSeparacionNueva = (g_TipoNominaActiva = tnLiquidacionFiniquito _
-                        And g_FormatoSeparacionNuevo)
+    EsSeparacionNueva = (g_TipoNominaActiva = tnLiquidacionFiniquito And g_FormatoSeparacionNuevo)
+End Function
+
+Public Function MarcaFormatoNomina() As Currency
+    MarcaFormatoNomina = g_MarcaFormatoNomina
+End Function
+
+Public Function EsMarcaEspecialNueva(ByVal marca As Currency) As Boolean
+    Select Case marca
+        Case CCur(MARCA_SEPARACION_2026), CCur(MARCA_AGUINALDO_2027), CCur(MARCA_PTU_2027), CCur(MARCA_BONO_2027), CCur(MARCA_FINIQUITO_2027), CCur(MARCA_LIQUIDACION_2027)
+            EsMarcaEspecialNueva = True
+    End Select
 End Function
 
 Public Sub InicializarColumnas(ByVal tipo As TipoNominaCFDI)
@@ -95,46 +107,155 @@ Public Sub InicializarColumnas(ByVal tipo As TipoNominaCFDI)
     C_DED_FIN = C_INFONAVIT
 End Sub
 
-Public Sub AplicarTipoNomina(ByVal nombreArch As String)
+Public Sub AplicarTipoNomina(ByVal nombreArch As String, Optional ByVal tipoNuevo As Long = -1, Optional ByVal esFiniquitoNuevo As Boolean = False)
+
     Dim nArchivo As Integer
     Dim temporal As nom
     Dim existe As Boolean
+    Dim nombreBase As String
+    Dim numeroError As Long
+    Dim descripcionError As String
+
+    On Error GoTo ErrorLectura
 
     G_NombreArchivoNomina = UCase$(Trim$(nombreArch))
-    g_TipoNominaActiva = ClasificarTipoNomina(G_NombreArchivoNomina)
-    G_TipoNominaProcess = TipoNominaATexto(g_TipoNominaActiva)
+    nombreBase = NombreBaseNomina(G_NombreArchivoNomina)
+
+    g_TipoNominaActiva = tnOrdinaria
     g_FormatoSeparacionNuevo = False
     g_EsFiniquito = False
+    g_EspecialHistorica = False
+    g_MarcaFormatoNomina = 0
 
-    If g_TipoNominaActiva = tnLiquidacionFiniquito Then
-        g_EsFiniquito = (InStr(1, NombreBaseNomina(G_NombreArchivoNomina), "FINI", vbTextCompare) > 0)
-        existe = (Len(Dir$(nombreArch)) > 0)
-        If Not existe Then
-            ' Fecha de inicio para creacion de nuevos archivos.
-            g_FormatoSeparacionNuevo = (Date >= DateSerial(2026, 10, 10))
+    existe = (Len(Dir$(nombreArch)) > 0)
+
+    If Not existe Then
+        If tipoNuevo >= 0 Then
+            Select Case tipoNuevo
+                Case tnOrdinaria, tnAguinaldo, tnPTU, tnBonoPremio, tnLiquidacionFiniquito
+                    g_TipoNominaActiva = CInt(tipoNuevo)
+
+                Case Else
+                    Err.Raise vbObjectError + 2030, "AplicarTipoNomina", "Tipo de nomina nuevo no valido."
+            End Select
         Else
-            ' En archivos existentes manda la marca interna, NO FileDateTime.
-            nArchivo = FreeFile
-            On Error GoTo ErrorLectura
-            Open nombreArch For Random Access Read As #nArchivo Len = Len(temporal)
-            If LOF(nArchivo) >= Len(temporal) Then
-                Get #nArchivo, 1, temporal
-                g_FormatoSeparacionNuevo = _
-                    (temporal.hstri = CCur(MARCA_SEPARACION_2026))
+
+            g_TipoNominaActiva = ClasificarTipoNomina(nombreBase)
+
+            If g_TipoNominaActiva = tnOrdinaria And Not EsNominaNormal(nombreBase) Then
+                Err.Raise vbObjectError + 2031, "AplicarTipoNomina", "Seleccione el tipo de nomina especial."
             End If
-            Close #nArchivo
-            On Error GoTo 0
+        End If
+
+        Select Case g_TipoNominaActiva
+            Case tnAguinaldo
+                g_MarcaFormatoNomina = CCur(MARCA_AGUINALDO_2027)
+
+            Case tnPTU
+                g_MarcaFormatoNomina = CCur(MARCA_PTU_2027)
+
+            Case tnBonoPremio
+                g_MarcaFormatoNomina = CCur(MARCA_BONO_2027)
+
+            Case tnLiquidacionFiniquito
+                g_FormatoSeparacionNuevo = True
+
+                If tipoNuevo >= 0 Then
+                    g_EsFiniquito = esFiniquitoNuevo
+                Else
+                    g_EsFiniquito = (InStr(1, nombreBase, "FINI", vbTextCompare) > 0)
+                End If
+                If g_EsFiniquito Then
+                    g_MarcaFormatoNomina = CCur(MARCA_FINIQUITO_2027)
+                Else
+                    g_MarcaFormatoNomina = CCur(MARCA_LIQUIDACION_2027)
+                End If
+        End Select
+        Else
+            nArchivo = FreeFile
+
+        Open nombreArch For Random Access Read As #nArchivo Len = Len(temporal)
+
+        If LOF(nArchivo) = 0 Or LOF(nArchivo) Mod Len(temporal) <> 0 Then
+            Err.Raise vbObjectError + 2032, "AplicarTipoNomina", "El archivo NOM no contiene registros completos."
+        End If
+
+        Get #nArchivo, 1, temporal
+
+        Close #nArchivo
+        nArchivo = 0
+
+        Select Case temporal.hstri
+            Case 0
+                g_TipoNominaActiva = tnOrdinaria
+                If Not EsNominaNormal(nombreBase) Then
+                    g_EspecialHistorica = True
+                End If
+                
+            Case CCur(MARCA_AGUINALDO_2027)
+                g_TipoNominaActiva = tnAguinaldo
+
+            Case CCur(MARCA_PTU_2027)
+                g_TipoNominaActiva = tnPTU
+
+            Case CCur(MARCA_BONO_2027)
+                g_TipoNominaActiva = tnBonoPremio
+
+            Case CCur(MARCA_FINIQUITO_2027)
+                g_TipoNominaActiva = tnLiquidacionFiniquito
+                g_FormatoSeparacionNuevo = True
+                g_EsFiniquito = True
+
+            Case CCur(MARCA_LIQUIDACION_2027)
+                g_TipoNominaActiva = tnLiquidacionFiniquito
+                g_FormatoSeparacionNuevo = True
+                g_EsFiniquito = False
+
+            Case CCur(MARCA_SEPARACION_2026)
+                g_TipoNominaActiva = tnLiquidacionFiniquito
+                g_FormatoSeparacionNuevo = True
+                If InStr(1, nombreBase, "FINI", vbTextCompare) > 0 Then
+                    g_EsFiniquito = True
+                ElseIf InStr(1, nombreBase, "LIQ", vbTextCompare) > 0 Then
+                    g_EsFiniquito = False
+                Else
+                    Err.Raise vbObjectError + 2033, "AplicarTipoNomina", "La separacion de prueba no identifica si es Finiquito o Liquidacion."
+                End If
+
+            Case Else
+                Err.Raise vbObjectError + 2034, "AplicarTipoNomina", "El archivo contiene una marca de formato desconocida."
+        End Select
+
+        If Not g_EspecialHistorica Then
+            g_MarcaFormatoNomina = temporal.hstri
         End If
     End If
 
+    G_TipoNominaProcess = TipoNominaATexto(g_TipoNominaActiva)
     InicializarColumnas g_TipoNominaActiva
+
+    If g_EspecialHistorica Then
+        Debug.Print "Formato: ESPECIAL HISTORICA"
+    ElseIf g_MarcaFormatoNomina <> 0 Then
+        Debug.Print "Formato NOM: "; g_MarcaFormatoNomina
+    Else
+        Debug.Print "Formato: ORDINARIA"
+    End If
+
+    If existe And InStrRev(nombreArch, "\") > 0 Then
+        If Not EsNominaNormal(nombreBase) Then
+            Debug.Print "Generaciones FeCoNom: "; GeneracionesRegistradasFeCoNom(nombreArch)
+        End If
+    End If
+
     Exit Sub
-
+    
 ErrorLectura:
+    numeroError = Err.Number
+    descripcionError = Err.Description
     On Error Resume Next
-    Close #nArchivo
+    If nArchivo <> 0 Then Close #nArchivo
     On Error GoTo 0
-    Err.Raise vbObjectError + 2026, "AplicarTipoNomina", "No fue posible identificar el formato del archivo " & nombreArch
+    Err.Raise numeroError, "AplicarTipoNomina", descripcionError
 End Sub
-
 

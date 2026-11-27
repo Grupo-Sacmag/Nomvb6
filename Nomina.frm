@@ -2,7 +2,7 @@ VERSION 5.00
 Object = "{F9043C88-F6F2-101A-A3C9-08002B2F49FB}#1.2#0"; "ComDlg32.OCX"
 Begin VB.Form Form1 
    Caption         =   "Nomina:"
-   ClientHeight    =   7530
+   ClientHeight    =   7320
    ClientLeft      =   6630
    ClientTop       =   3570
    ClientWidth     =   9255
@@ -18,18 +18,25 @@ Begin VB.Form Form1
    Icon            =   "Nomina.frx":0000
    LinkTopic       =   "Form1"
    MaxButton       =   0   'False
-   ScaleHeight     =   7530
+   ScaleHeight     =   7320
    ScaleWidth      =   9255
+   Begin VB.ListBox lstNominas 
+      Height          =   3375
+      Left            =   5160
+      TabIndex        =   10
+      Top             =   3840
+      Width           =   3975
+   End
    Begin MSComDlg.CommonDialog CommonDialog1 
       Left            =   8640
-      Top             =   4080
+      Top             =   4560
       _ExtentX        =   847
       _ExtentY        =   847
       _Version        =   393216
    End
    Begin VB.DriveListBox Drive1 
       Height          =   375
-      Left            =   5280
+      Left            =   5160
       TabIndex        =   9
       Top             =   240
       Width           =   3975
@@ -37,10 +44,10 @@ Begin VB.Form Form1
    Begin VB.TextBox Text1 
       Appearance      =   0  'Flat
       BorderStyle     =   0  'None
-      Height          =   420
+      Height          =   300
       Left            =   2640
       TabIndex        =   7
-      Top             =   6960
+      Top             =   6840
       Width           =   2295
    End
    Begin VB.FileListBox File1 
@@ -54,10 +61,10 @@ Begin VB.Form Form1
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      Height          =   3345
+      Height          =   2955
       Left            =   5160
       TabIndex        =   5
-      Top             =   4080
+      Top             =   4200
       Width           =   3975
    End
    Begin VB.DirListBox Dir1 
@@ -90,15 +97,15 @@ Begin VB.Form Form1
          Italic          =   0   'False
          Strikethrough   =   0   'False
       EndProperty
-      Height          =   375
+      Height          =   255
       Left            =   120
       TabIndex        =   8
-      Top             =   6960
+      Top             =   6840
       Width           =   2415
    End
    Begin VB.Label Label5 
       BackColor       =   &H0080FFFF&
-      Caption         =   "Archivos:"
+      Caption         =   "--------------------------------- ARCHIVOS ---------------------------------"
       BeginProperty Font 
          Name            =   "MS Sans Serif"
          Size            =   8.25
@@ -111,7 +118,7 @@ Begin VB.Form Form1
       Height          =   255
       Left            =   5160
       TabIndex        =   6
-      Top             =   3600
+      Top             =   3480
       Width           =   3975
    End
    Begin VB.Label Label4 
@@ -160,7 +167,7 @@ Begin VB.Form Form1
          Italic          =   -1  'True
          Strikethrough   =   0   'False
       EndProperty
-      Height          =   2295
+      Height          =   2175
       Left            =   120
       TabIndex        =   1
       Top             =   4440
@@ -301,39 +308,20 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Private NavegandoDirectorio As Boolean
 
-' ============================================================
-' CARGA / CIERRE DEL FORMULARIO
-' ============================================================
-
 Private Sub Form_Load()
-
     Dim rutaInicio As String
-    
     On Error GoTo ManejoError
-
-    'Elegir el entorno antes de consultar rutas.
     ElegirEntornoNomina
-
     Apertura
 
-    
-    
     If gModoTesting Then
-    
-        '====================================================
-        ' TESTING: RECUPERAR SU RUTA INDEPENDIENTE
-        '====================================================
-    
         rutaInicio = RutaInicialNomina()
-    
-        'Evitar eventos de navegacion durante la carga.
+
         NavegandoDirectorio = True
     
         If mID$(rutaInicio, 2, 1) = ":" Then
-    
             ChDrive Left$(rutaInicio, 2)
             Drive1.Drive = Left$(rutaInicio, 2)
-    
         End If
     
         ChDir rutaInicio
@@ -341,17 +329,10 @@ Private Sub Form_Load()
         NavegandoDirectorio = False
     
     Else
-    
-        '====================================================
-        ' PRODUCCION: MANTENER FUNCIONAMIENTO ORIGINAL
-        '====================================================
-    
         NavegandoDirectorio = True
         veridir
         NavegandoDirectorio = False
-    
     End If
-
 
     ActualizarDirectorio
 
@@ -365,9 +346,16 @@ Private Sub Form_Load()
 
     empresarial
     AplicarPoliticaConexion
-
+    
     File1.Pattern = "*.NOM"
+
+    File1.Visible = False
+    lstNominas.Visible = True
+    lstNominas.ZOrder 0
+
     Label4.Caption = Dir1.Path
+
+    ActualizarListaNominasAgrupadas
 
     Me.Caption = "Nomina [" & EtiquetaEntornoNomina() & "]"
 
@@ -379,16 +367,26 @@ Private Sub Form_Load()
     Exit Sub
 
 ManejoError:
-
     MsgBox "No fue posible iniciar el entorno." & vbCrLf & Err.Description, vbCritical, "Nomina"
-
-    'Fallo de inicio: no continuar en otra ruta.
     gEntornoElegido = False
     gRutaTrabajoAprobada = vbNullString
-
     Close
     End
+End Sub
 
+Private Sub Form_Activate()
+
+    On Error GoTo ErrorActualizarLista
+    If NavegandoDirectorio Then Exit Sub
+    If StrComp(File1.Path, Dir1.Path, vbTextCompare) <> 0 Then
+        Exit Sub
+    End If
+
+    File1.Refresh
+    ActualizarListaNominasAgrupadas
+    Exit Sub
+ErrorActualizarLista:
+    Debug.Print "Error actualizando listado: " & Err.Number & " - " & Err.Description
 End Sub
 
 Private Sub Form_Unload(Cancel As Integer)
@@ -426,10 +424,6 @@ Private Sub InicializarDiasMes()
     dd(12) = 31
 End Sub
 
-' ============================================================
-' CONFIGURACION INICIAL / DIRECTORIO DE TARIFAS
-' ============================================================
-
 Sub Apertura()
     On Error GoTo mens1
     
@@ -454,13 +448,11 @@ Sub Apertura()
         Close #9
     End If
 
-    'La ruta debe terminar en "\" porque se concatena con el nombre del archivo.
     DirecT_arifas = Trim$(DirecT_arifas)
     If DirecT_arifas <> "" And Right$(DirecT_arifas, 1) <> "\" Then
         DirecT_arifas = DirecT_arifas & "\"
     End If
-
-    'Dejar las tres variables siempre iguales.
+    
     SubT_Mes = DirecT_arifas
     Dir_imptos = DirecT_arifas
 
@@ -495,10 +487,6 @@ Sub CambioDirectorio()
 mens2:
     MsgBox "No puedo crear el Rutabl.gcs", vbCritical
 End Sub
-
-' ============================================================
-' EMPRESA / BASE DE DATOS
-' ============================================================
 
 Sub empresarial()
     On Error GoTo Empre2
@@ -547,70 +535,37 @@ End Sub
 
 Private Sub ConectarBaseDatos()
     On Error Resume Next
-    
     If Not SincronizacionRemotaPermitida() Then Exit Sub
-
     If con.State <> 0 Then
         con.Close
     End If
-
     Err.Clear
-
     strconnect = "Provider=SQLOLEDB;Data Source=SQL6012.site4now.net;Initial Catalog=db_a4091b_sacmag"
-
     con.Open strconnect, "db_a4091b_sacmag_admin", "Sacmag2020"
-
-    'Si falla SQL, simplemente continuar.
     Err.Clear
 
     On Error GoTo 0
 End Sub
 
-' ============================================================
-' NAVEGACION DE DIRECTORIOS / ARCHIVOS NOM
-' ============================================================
-
-
 Private Sub Drive1_Change()
-
     On Error GoTo ErrorUnidad
-
     If NavegandoDirectorio Then Exit Sub
-
-    'Permitir seleccionar cualquier unidad disponible.
     ChDrive Left$(Drive1.Drive, 2)
-
     Dir1.Path = Left$(Drive1.Drive, 2) & "\"
 
     Exit Sub
 
 ErrorUnidad:
-
     MsgBox "No fue posible cambiar de unidad." & vbCrLf & Err.Description, vbExclamation, "Cambio de unidad"
-
-End Sub
-
-
-
-Private Sub Dir1_Click()
-    'Un solo clic únicamente selecciona la carpeta.
-    'No se navega ni se actualiza información.
 End Sub
 
 Private Sub Dir1_DblClick()
     AbrirDirectorioSeleccionado
 End Sub
 
-
 Private Sub Dir1_Change()
-
-    'No actualizar rutas mientras Form1
-    'esta configurando sus controles.
-
     If NavegandoDirectorio Then Exit Sub
-
     ActualizarDirectorio
-
 End Sub
 
 
@@ -625,35 +580,28 @@ End Sub
 Private Sub ActualizarDirectorio()
 
     Dim RutaActual As String
-
     On Error GoTo ErrorActualizar
 
     RutaActual = Trim$(Dir1.Path)
 
     If RutaActual = "" Then Exit Sub
-
-    
     If Not RutaPermitidaPorEntorno(RutaActual) Then
-    
         MsgBox "La carpeta seleccionada no existe o no se puede acceder a ella.", vbExclamation, "Directorio"
-    
         Exit Sub
-    
     End If
-
 
     If mID$(RutaActual, 2, 1) = ":" Then
         ChDrive Left$(RutaActual, 2)
     End If
 
     ChDir RutaActual
-
-    'La ruta queda aprobada solo despues de navegar.
     gRutaTrabajoAprobada = CurDir$
 
     File1.Pattern = "*.NOM"
     File1.Path = RutaActual
     File1.Refresh
+    
+    ActualizarListaNominasAgrupadas
 
     Direc_torio = RutaActual
     Label4.Caption = RutaActual
@@ -666,36 +614,23 @@ Private Sub ActualizarDirectorio()
     Exit Sub
 
 ErrorActualizar:
-
     NavegandoDirectorio = False
-
     MsgBox "No fue posible cambiar de carpeta." & vbCrLf & Err.Description, vbExclamation, "Directorio"
-
 End Sub
 
-
-
 Private Sub GuardarUltimoDirectorio(ByVal RutaActual As String)
-
     Dim h As Integer
-
     On Error GoTo ErrorGuardar
 
-    'Verificar que la carpeta corresponde al entorno.
     If Not RutaTrabajoSegura(False) Then Exit Sub
 
     If Not RutaPermitidaPorEntorno(RutaActual) Then
         Exit Sub
     End If
 
-    'Utilizar el archivo de configuracion correspondiente.
     h = FreeFile
-
     Open RutaArchivoEntornoNomina() For Random Access Read Write As #h Len = Len(basico)
-
-    'Conservar el formato binario original.
     basico.datoarch = RutaActual
-
     Put #h, 1, basico
 
 Salida:
@@ -707,11 +642,7 @@ Salida:
     Exit Sub
 
 ErrorGuardar:
-
-    Debug.Print "Error guardando ruta: " & Err.Number & " - " & Err.Description
-
     Resume Salida
-
 End Sub
 
 Private Sub AbrirDirectorioSeleccionado()
@@ -726,7 +657,6 @@ Private Sub AbrirDirectorioSeleccionado()
 
     If Trim$(RutaSeleccionada) = "" Then Exit Sub
 
-    'Ya estamos en esa carpeta (p. ej. tras un doble clic): nada que hacer.
     If StrComp(RutaSeleccionada, Dir1.Path, vbTextCompare) = 0 Then Exit Sub
 
     If Not RutaPermitidaPorEntorno(RutaSeleccionada) Then
@@ -735,12 +665,10 @@ Private Sub AbrirDirectorioSeleccionado()
         Exit Sub
     End If
 
-    'Cambiar la ruta sin disparar Dir1_Change (evita doble actualizacion).
     NavegandoDirectorio = True
     Dir1.Path = RutaSeleccionada
     NavegandoDirectorio = False
 
-    'Actualizar y guardar la carpeta seleccionada.
     ActualizarDirectorio
 
     Exit Sub
@@ -808,21 +736,9 @@ Private Sub File1_KeyPress(KeyAscii As Integer)
     Dim numeroError As Long
     Dim descripcionError As String
 
-    '=========================================================
-    ' ABRIR NOMINA CON ENTER DESDE FORM1
-    '
-    ' FormViewer permanece en el proyecto.
-    '
-    ' La apertura principal utilizara Form8.
-    '=========================================================
-
     If KeyAscii <> vbKeyReturn Then Exit Sub
     KeyAscii = 0
-
-    '=========================================================
-    ' 1. IDENTIFICAR EL ARCHIVO SELECCIONADO
-    '=========================================================
-
+    
     archivoDirectorio = Trim$(File1.FileName)
 
     If Len(archivoDirectorio) = 0 Then Exit Sub
@@ -834,10 +750,6 @@ Private Sub File1_KeyPress(KeyAscii As Integer)
 
     On Error GoTo ErrorAbrir
 
-    '=========================================================
-    ' 2. COMPROBAR EL ARCHIVO
-    '=========================================================
-
     If UCase$(Right$(rutaCompleta, 4)) <> ".NOM" Then
         MsgBox "Seleccione un archivo de nomina NOM.", vbExclamation, "Abrir nomina"
         Exit Sub
@@ -848,47 +760,19 @@ Private Sub File1_KeyPress(KeyAscii As Integer)
         Exit Sub
     End If
 
-    '=========================================================
-    ' 3. PREPARAR FORM8
-    '
-    ' No modificar FormViewer.
-    '
-    ' Reutilizar el mecanismo que ya existe
-    ' para pasar una ruta a Form8.
-    '=========================================================
-
     Load Form8
 
     If Not Form8.ProgramarEdicionDesdeVisor(rutaCompleta) Then
         Exit Sub
     End If
 
-    '=========================================================
-    ' 4. ABRIR FORM8
-    '
-    ' Form_Activate identificara:
-    '
-    ' - Normal o especial.
-    ' - Mes y quincena.
-    ' - Permiso de edicion.
-    ' - Modo consulta.
-    '
-    ' Form8 permanece modal respecto de Form1.
-    '=========================================================
-
     Form8.Show vbModal, Me
 
-    '=========================================================
-    ' 5. REGRESAR A FORM1
-    '
-    ' Al finalizar Form8, continuar en la lista
-    ' de nominas sin modificar sus archivos.
-    '=========================================================
-    
     Unload Form8
     File1.Refresh
-    If Me.Visible And File1.Visible Then
-        File1.SetFocus
+    ActualizarListaNominasAgrupadas
+    If Me.Visible And lstNominas.Visible Then
+        lstNominas.SetFocus
     End If
     Exit Sub
 
@@ -898,13 +782,11 @@ ErrorAbrir:
     descripcionError = Err.Description
 
     On Error Resume Next
+        File1.Refresh
+    ActualizarListaNominasAgrupadas
 
-    'No descargar una instancia que tenga una captura activa. Evitar perder su estado.
-
-    File1.Refresh
-
-    If Me.Visible And File1.Visible Then
-        File1.SetFocus
+    If Me.Visible And lstNominas.Visible Then
+        lstNominas.SetFocus
     End If
 
     On Error GoTo 0
@@ -912,10 +794,6 @@ ErrorAbrir:
     MsgBox "No fue posible abrir la nomina." & vbCrLf & "Error " & CStr(numeroError) & ": " & descripcionError, vbCritical, "Abrir nomina"
 
 End Sub
-
-' ============================================================
-' EVENTOS DE BOTONES / MENUS
-' ============================================================
 
 Private Sub arDirTar_Click()
     CambioDirectorio
@@ -929,7 +807,6 @@ Private Sub capturarCédulaFiscal_Click()
 End Sub
 
 Private Sub configNom_Click()
-    Rem nominaConfiguracion.Show
     EstadisticasPersonal.Show
 End Sub
 
@@ -956,21 +833,16 @@ End Sub
 Private Sub nomcap_Click(Index As Integer)
 
     Close #2
-
     Open "personal.dno" For Random As #2 Len = Len(personal)
-
     Dm = LOF(2) / Len(personal)
 
     If Dm > 0 Then
         Load Form8
-
         Form8.PrepararCapturaNuevaDesdeForm1
         Form1.Hide
         Form8.Show
-
     Else
         Close #2
-
         MsgBox "No existe archivo de personal no es posible capturar nomina", vbCritical + vbDefaultButton1, "Nomina"
     End If
 End Sub
@@ -1064,3 +936,205 @@ Private Sub AplicarPoliticaConexion()
         Err.Clear
     End If
 End Sub
+
+Private Function MesNombreArchivo(ByVal abreviatura As String) As Integer
+    Select Case UCase$(abreviatura)
+
+        Case "ENE": MesNombreArchivo = 1
+        Case "FEB": MesNombreArchivo = 2
+        Case "MAR": MesNombreArchivo = 3
+        Case "ABR": MesNombreArchivo = 4
+        Case "MAY": MesNombreArchivo = 5
+        Case "JUN": MesNombreArchivo = 6
+        Case "JUL": MesNombreArchivo = 7
+        Case "AGO": MesNombreArchivo = 8
+        Case "SEP": MesNombreArchivo = 9
+        Case "OCT": MesNombreArchivo = 10
+        Case "NOV": MesNombreArchivo = 11
+        Case "DIC": MesNombreArchivo = 12
+
+        Case Else
+            MesNombreArchivo = 0
+    End Select
+End Function
+
+Private Function ClaveOrdenArchivoNomina(ByVal nombreArchivo As String) As String
+
+    Dim nombre As String
+    Dim mes As Integer
+    Dim quincena As String
+
+    Dim posicion As Long
+    Dim numero As String
+    Dim tipo As String
+
+    nombre = UCase$(Trim$(nombreArchivo))
+
+    If Right$(nombre, 4) = ".NOM" Then
+        nombre = Left$(nombre, Len(nombre) - 4)
+    End If
+    If Len(nombre) = 8 Then
+        mes = MesNombreArchivo(Left$(nombre, 3))
+        quincena = mID$(nombre, 4, 1)
+
+        If mes > 0 And _
+           (quincena = "1" Or quincena = "2") And Right$(nombre, 4) Like "####" Then
+            ClaveOrdenArchivoNomina = "0" & Right$(nombre, 4) & Right$("0" & CStr(mes), 2) & quincena & nombre
+            Exit Function
+        End If
+    End If
+
+    posicion = 1
+
+    Do While posicion <= Len(nombre)
+        If mID$(nombre, posicion, 1) < "0" Or mID$(nombre, posicion, 1) > "9" Then
+            Exit Do
+        End If
+        posicion = posicion + 1
+    Loop
+
+    If posicion > 1 Then
+        numero = Left$(nombre, posicion - 1)
+        tipo = mID$(nombre, posicion)
+
+        If Len(numero) <= 9 Then
+            ClaveOrdenArchivoNomina = "1" & Right$(String$(9, "0") & numero, 9) & tipo
+        Else
+            ClaveOrdenArchivoNomina = "1" & numero & tipo
+        End If
+    Else
+        ClaveOrdenArchivoNomina = "1" & String$(9, "9") & nombre
+    End If
+End Function
+
+Private Function ClaveEsNominaNormal(ByVal clave As String) As Boolean
+    ClaveEsNominaNormal = (Left$(clave, 1) = "0")
+End Function
+
+Private Sub ActualizarListaNominasAgrupadas()
+
+    Dim nombres() As String
+    Dim claves() As String
+    Dim indices() As Long
+
+    Dim cantidad As Long
+    Dim i As Long
+    Dim j As Long
+
+    Dim temporalTexto As String
+    Dim temporalIndice As Long
+
+    Dim indiceVisual As Long
+    Dim grupoActual As Integer
+    Dim grupoArchivo As Integer
+
+    On Error GoTo ErrorLista
+    
+    lstNominas.Clear
+    cantidad = File1.ListCount
+
+    If cantidad <= 0 Then
+        lstNominas.AddItem "(No hay nominas guardadas)"
+        lstNominas.ItemData(0) = -1
+        Exit Sub
+    End If
+
+    ReDim nombres(0 To cantidad - 1)
+    ReDim claves(0 To cantidad - 1)
+    ReDim indices(0 To cantidad - 1)
+
+    For i = 0 To cantidad - 1
+        nombres(i) = File1.List(i)
+        claves(i) = ClaveOrdenArchivoNomina(nombres(i))
+        indices(i) = i
+    Next i
+    
+    For i = 0 To cantidad - 2
+        For j = i + 1 To cantidad - 1
+            If StrComp(claves(i), claves(j), vbTextCompare) > 0 Then
+                       
+                temporalTexto = claves(i)
+                claves(i) = claves(j)
+                claves(j) = temporalTexto
+
+                temporalTexto = nombres(i)
+                nombres(i) = nombres(j)
+                nombres(j) = temporalTexto
+
+                temporalIndice = indices(i)
+                indices(i) = indices(j)
+                indices(j) = temporalIndice
+            End If
+        Next j
+    Next i
+
+    grupoActual = -1
+    
+    For i = 0 To cantidad - 1
+        If ClaveEsNominaNormal(claves(i)) Then
+            grupoArchivo = 0
+        Else
+            grupoArchivo = 1
+        End If
+        
+        If grupoArchivo <> grupoActual Then
+            If grupoActual <> -1 Then
+                lstNominas.AddItem ""
+                lstNominas.ItemData(lstNominas.NewIndex) = -1
+            End If
+            If grupoArchivo = 0 Then
+                lstNominas.AddItem _
+                    "---- NOMINA NORMAL ----"
+            Else
+                lstNominas.AddItem _
+                    "---- NOMINA ESPECIAL ----"
+            End If
+            lstNominas.ItemData(lstNominas.NewIndex) = -1
+            grupoActual = grupoArchivo
+        End If
+        
+        lstNominas.AddItem nombres(i)
+        indiceVisual = lstNominas.NewIndex
+        lstNominas.ItemData(indiceVisual) = indices(i)
+    Next i
+    Exit Sub
+
+ErrorLista:
+    Debug.Print "Error agrupando nominas: " & Err.Number & " - " & Err.Description
+End Sub
+
+Private Sub AbrirNominaListaAgrupada()
+
+    Dim indiceArchivo As Long
+    Dim tecla As Integer
+
+    If lstNominas.ListIndex < 0 Then Exit Sub
+    indiceArchivo = lstNominas.ItemData(lstNominas.ListIndex)
+
+    If indiceArchivo < 0 Then Exit Sub
+    If indiceArchivo >= File1.ListCount Then
+        MsgBox "La lista de nominas ha cambiado." & vbCrLf & "Actualice la seleccion.", vbExclamation, "Nomina"
+
+        File1.Refresh
+        ActualizarListaNominasAgrupadas
+        Exit Sub
+    End If
+
+    File1.ListIndex = indiceArchivo
+
+    tecla = vbKeyReturn
+    File1_KeyPress tecla
+
+End Sub
+
+Private Sub lstNominas_DblClick()
+    AbrirNominaListaAgrupada
+End Sub
+
+Private Sub lstNominas_KeyPress(KeyAscii As Integer)
+    If KeyAscii = vbKeyReturn Then
+        KeyAscii = 0
+        AbrirNominaListaAgrupada
+    End If
+End Sub
+

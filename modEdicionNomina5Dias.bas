@@ -936,10 +936,6 @@ Private Function NominaHistoricaSoloConsulta(ByVal rutaNom As String, ByVal fech
     anio = CInt(Right$(nombre, 4))
     mesTexto = Left$(nombre, 3)
 
-    '=====================================================
-    ' 4. DETERMINAR MES
-    '=====================================================
-
     Select Case mesTexto
         Case "ENE"
             mes = 1
@@ -966,16 +962,8 @@ Private Function NominaHistoricaSoloConsulta(ByVal rutaNom As String, ByVal fech
         Case "DIC"
             mes = 12
         Case Else
-
-            'Nombre fuera de la convencion ordinaria.
-            'No inferir una fecha a partir de él.
-
             Exit Function
     End Select
-
-    '=====================================================
-    ' 5. OBTENER EL INICIO DEL PERIODO
-    '=====================================================
 
     If numeroQuincena = "1" Then
         diaInicio = 1
@@ -985,16 +973,48 @@ Private Function NominaHistoricaSoloConsulta(ByVal rutaNom As String, ByVal fech
 
     fechaPeriodo = DateSerial(anio, mes, diaInicio)
 
-    '=====================================================
-    ' 6. APLICAR CORTE HISTORICO
-    '
-    ' NOV12026: consulta.
-    ' NOV22026: puede editarse si su plazo sigue vigente.
-    ' OCT22026: consulta, aunque se archive hoy.
-    '=====================================================
-
     If fechaPeriodo < fechaCorte Then
         NominaHistoricaSoloConsulta = True
     End If
+End Function
+
+Public Function GeneracionesRegistradasFeCoNom(ByVal rutaNom As String) As Long
+
+    Dim numeroArchivo As Integer
+    Dim rutaNormalizada As String
+    Dim registro As RegistroFeCoNom
+    Dim posicion As Long
+    Dim generaciones As Long
+    Dim primeraFecha As Long
+    Dim ultimaRevision As Long
+    Dim vencidoHistorico As Boolean
+
+    On Error GoTo ErrorConsulta
+
+    GeneracionesRegistradasFeCoNom = 0
+
+    If Len(Dir$(RUTA_FECONOM)) = 0 Then
+        Exit Function
+    End If
+    
+    rutaNormalizada = NormalizarRutaFeCoNom(rutaNom)
+    numeroArchivo = FreeFile
+
+    Open RUTA_FECONOM For Random Access Read As #numeroArchivo Len = Len(registro)
+
+    posicion = BuscarRegistroFeCoNom(numeroArchivo, rutaNormalizada, registro, generaciones, primeraFecha, ultimaRevision, vencidoHistorico)
+
+    Close #numeroArchivo
+    numeroArchivo = 0
+
+    GeneracionesRegistradasFeCoNom = generaciones
+
+    Exit Function
+ErrorConsulta:
+    Debug.Print "Consulta FeCoNom: "; Err.Description
+
+    On Error Resume Next
+    If numeroArchivo <> 0 Then Close #numeroArchivo
+
 End Function
 
